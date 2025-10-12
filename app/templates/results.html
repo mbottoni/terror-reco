@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>TerrorReco - Results</title>
+	<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+	<main class="container">
+		<h1>Recommendations for "{{ mood }}"</h1>
+		<a href="/">← Back</a>
+		<ul class="grid">
+			{% for m in movies %}
+			<li class="card">
+				{% if m.poster_url %}
+				<img src="{{ m.poster_url }}" alt="{{ m.title }} poster">
+				{% endif %}
+				<h2>{{ m.title }}</h2>
+				<p class="meta">⭐ {{ m.vote_average }} • {{ m.release_date }}</p>
+				<p>{{ m.overview }}</p>
+			</li>
+			{% endfor %}
+		</ul>
+	</main>
+</body>
+</html>

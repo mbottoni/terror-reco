@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    image: terror-reco:latest
+    environment:
+      - OMDB_API_KEY=${OMDB_API_KEY}
+      - DEBUG=1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app:ro
+    restart: unless-stopped

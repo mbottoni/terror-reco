@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env.*
+.dist/
+dist/
+build/
+.cache/
+.pytest_cache/
+.mypy_cache/
+ruff_cache/
+.coverage
+htmlcov/
+.DS_Store
+.idea/
+.vscode/
+**/__pycache__/
+**/*.sqlite3
+
+# Node leftovers (none expected)
+node_modules/
+
+# Docker
+*.log

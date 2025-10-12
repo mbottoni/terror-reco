@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>TerrorReco</title>
+	<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+	<main class="container">
+		<h1>Find a horror movie by your mood</h1>
+		<form action="/recommend" method="get" class="search-form">
+			<label for="mood">Mood</label>
+			<input id="mood" name="mood" type="text" placeholder="e.g., tense, gory, supernatural" required>
+			<button type="submit">Recommend</button>
+		</form>
+	</main>
+</body>
+</html>
