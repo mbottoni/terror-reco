@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Summoning recommendations…</title>
+	<link rel="stylesheet" href="/static/styles.css">
+	<style>
+		.loading-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
+		.loading-inner{text-align:center}
+		.loading-inner img{max-width:360px;width:80%;height:auto;border-radius:8px;box-shadow:0 4px 30px rgba(0,0,0,.5)}
+		.loading-caption{color:#9aa0a6;margin-top:12px}
+	</style>
+</head>
+<body>
+	<div class="loading-wrap">
+		<div class="loading-inner">
+			<img src="/static/assets/spooky.gif" alt="Summoning horrors…" onerror="this.style.display='none'">
+			<p class="loading-caption">Summoning horrors…</p>
+		</div>
+	</div>
+	<script>
+		(function(){
+			const params = new URLSearchParams(window.location.search);
+			const mood = params.get('mood') || '';
+			const delayMs = 600; // brief pause to display the GIF
+			setTimeout(function(){
+				const url = '/recommend?mood=' + encodeURIComponent(mood);
+				window.location.replace(url);
+			}, delayMs);
+		})();
+	</script>
+</body>
+</html>

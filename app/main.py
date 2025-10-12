@@ -24,6 +24,11 @@ async def index(request: Request) -> HTMLResponse:
 	return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/loading", response_class=HTMLResponse)
+async def loading(request: Request, mood: str = "") -> HTMLResponse:
+	return templates.TemplateResponse("loading.html", {"request": request, "mood": mood})
+
+
 @app.get("/recommend", response_class=HTMLResponse)
 async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1)) -> HTMLResponse:
 	movies = await recommend_movies(mood=mood, limit=6)
