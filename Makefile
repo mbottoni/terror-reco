@@ -1,14 +1,15 @@
 .PHONY: setup run docker clean
 
 setup:
-	python3 -m venv .venv
+	( command -v python3.11 >/dev/null 2>&1 && python3.11 -m venv .venv ) || python3 -m venv .venv
 	source .venv/bin/activate && \
+	python -V && \
 	pip install -U pip && \
 	pip install -e '.[dev]'
 
 run: setup
-	set -a; source .env; set +a
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	set -a; source .env; set +a; \
+	.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 docker:
 	docker build -t terror-reco:latest .
