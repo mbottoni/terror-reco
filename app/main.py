@@ -26,14 +26,14 @@ async def index(request: Request) -> HTMLResponse:
 
 @app.get("/recommend", response_class=HTMLResponse)
 async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1)) -> HTMLResponse:
-	movies = await recommend_movies(mood=mood, limit=5)
+	movies = await recommend_movies(mood=mood, limit=6)
 	return templates.TemplateResponse(
 		"results.html", {"request": request, "mood": mood, "movies": movies}
 	)
 
 
 @app.get("/api/recommendations")
-async def api_recommendations(mood: str = Query(..., min_length=1), limit: int = 5) -> Dict[str, Any]:
+async def api_recommendations(mood: str = Query(..., min_length=1), limit: int = 6) -> Dict[str, Any]:
 	try:
 		movies = await recommend_movies(mood=mood, limit=limit)
 	except HTTPException:
