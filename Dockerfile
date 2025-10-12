@@ -18,7 +18,8 @@ RUN pip install --upgrade pip && pip install ".[dev]"
 # Copy source
 COPY app /app/app
 
-EXPOSE 8000
+# Render expects Docker services to listen on port 10000
+EXPOSE 10000
 
-# Run with gunicorn + uvicorn worker
-CMD gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:8000 app.main:app
+# Run with uvicorn and respect $PORT (default 10000)
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"
