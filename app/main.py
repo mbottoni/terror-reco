@@ -1,22 +1,40 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
 from .settings import get_settings
 from .services.recommender import recommend_movies
+from .db import init_db
+from .auth import router as auth_router, get_current_user
+from .history import router as history_router, save_history
 
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
-app = FastAPI(title=get_settings().APP_NAME, debug=get_settings().DEBUG)
+settings = get_settings()
+app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
+app.add_middleware(
+	SessionMiddleware,
+	secret_key=settings.SECRET_KEY,
+	session_cookie=settings.SESSION_COOKIE_NAME,
+	https_only=not settings.DEBUG,
+	max_age=60 * 60 * 24 * 30,
+)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+app.state.templates = templates
+
+# Initialize DB on startup (for SQLite dev); for Postgres use migrations
+@app.on_event("startup")
+async def _startup() -> None:
+	init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -30,8 +48,14 @@ async def loading(request: Request, mood: str = "") -> HTMLResponse:
 
 
 @app.get("/recommend", response_class=HTMLResponse)
-async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1)) -> HTMLResponse:
+async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1), user=Depends(get_current_user)) -> HTMLResponse:
 	movies = await recommend_movies(mood=mood, limit=6)
+	# Save history if logged in
+	if user:
+		from sqlalchemy.orm import Session
+		from .db import get_db_session
+		with get_db_session() as db:  # type: Session
+			save_history(db, user.id, mood, None, movies)
 	return templates.TemplateResponse(
 		"results.html", {"request": request, "mood": mood, "movies": movies}
 	)
@@ -47,3 +71,8 @@ async def api_recommendations(mood: str = Query(..., min_length=1), limit: int =
 		raise HTTPException(status_code=500, detail=str(exc))
 
 	return {"mood": mood, "count": len(movies), "results": movies}
+
+
+# Routers
+app.include_router(auth_router)
+app.include_router(history_router)

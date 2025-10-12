@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Your History</title>
+	<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+	<main class="container">
+		<h1>Your search history</h1>
+		<ul class="grid">
+			{% for item in items %}
+			<li class="card">
+				<p><strong>Mood:</strong> {{ item.mood }}</p>
+				<p class="meta">{{ item.created_at }}</p>
+			</li>
+			{% endfor %}
+		</ul>
+	</main>
+</body>
+</html>

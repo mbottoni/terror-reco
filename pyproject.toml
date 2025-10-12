@@ -19,6 +19,10 @@ dependencies = [
   "pydantic-settings>=2.3.4",
   "tenacity>=9.0.0",
   "scikit-learn>=1.4.0",
+  "SQLAlchemy>=2.0.29",
+  "psycopg[binary]>=3.2.1",
+  "argon2-cffi>=23.1.0",
+  "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
