@@ -8,12 +8,31 @@
 </head>
 <body>
 	<main class="container">
-		<h1>Find a horror movie by your mood</h1>
+		<h1>Find a horror movie by your mood 👻🎬</h1>
+		<p class="tagline">Type a vibe and get terrifying picks.</p>
+
+		<ul class="examples">
+			<li><button class="example" onclick="pickMood('A fun movie with a lot of blood')">A fun movie with a lot of blood</button></li>
+			<li><button class="example" onclick="pickMood('Supernatural hauntings with ghosts')">Supernatural hauntings with ghosts</button></li>
+			<li><button class="example" onclick="pickMood('Mind-bending psychological horror')">Mind-bending psychological horror</button></li>
+			<li><button class="example" onclick="pickMood('Zombie apocalypse survival')">Zombie apocalypse survival</button></li>
+			<li><button class="example" onclick="pickMood('Classic slasher with suspense')">Classic slasher with suspense</button></li>
+		</ul>
+
 		<form action="/recommend" method="get" class="search-form">
 			<label for="mood">Mood</label>
-			<input id="mood" name="mood" type="text" placeholder="e.g., tense, gory, supernatural" required>
+			<input id="mood" name="mood" type="text" placeholder="Describe the vibe… e.g., haunted house with ghosts" required>
 			<button type="submit">Recommend</button>
 		</form>
+
+		<p class="footer">Powered by OMDb • Have fun and stay spooky 🎃</p>
 	</main>
+	<script>
+		function pickMood(v){
+			var i = document.getElementById('mood');
+			i.value = v;
+			document.querySelector('.search-form').submit();
+		}
+	</script>
 </body>
 </html>

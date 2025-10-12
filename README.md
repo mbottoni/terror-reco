@@ -24,8 +24,9 @@ Future work include a monetization strategy using stripe
 ## Run locally
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -U pip && pip install -e .[dev]
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -U pip
+pip install -e '.[dev]'
 set -a; source .env; set +a
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -34,10 +35,10 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 docker build -t terror-reco:latest .
-docker run -e OMDB_API_KEY=your_key -p 8000:8000 terror-reco:latest
+docker run --env-file .env -p 8000:8000 terror-reco:latest
 ```
 
-Or with docker-compose:
+Or with docker-compose (auto-loads `.env`):
 
 ```bash
 docker compose up --build
@@ -47,7 +48,6 @@ docker compose up --build
 
 - GitHub Actions workflow runs lint, type-check, tests, and builds the image.
 
-## Stripe (future)
+## Notes
 
-- Add a checkout flow to paywall extended recommendations and history.
-- Use `stripe` Python SDK with webhook verification and test mode keys.
+- Gunicorn is included in the image and used as the production server.

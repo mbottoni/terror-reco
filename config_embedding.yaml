@@ -1,0 +1,14 @@
+# Embedding strategy hyperparameters
+# Controls candidate pooling and ranking behavior
+min_candidates: 30            # minimum items to collect before ranking
+max_candidates: 120           # hard cap on candidate pool
+search_queries:
+  - "{mood} horror"
+  - "horror"
+  - "scary horror"
+  - "supernatural horror"
+  - "slasher horror"
+  - "zombie horror"
+top_k_multiplier: 3           # pool top K as max(limit*multiplier, 10)
+max_features: 5000            # TF-IDF max_features
+randomize_from_top_k: true    # sample randomly from top-K results
