@@ -20,13 +20,19 @@ def _normalize_database_url(raw: str) -> str:
 		return raw
 	p = urlparse(raw)
 	scheme = p.scheme
+	
+	# Only normalize PostgreSQL URLs, leave SQLite and others unchanged
+	if scheme not in ("postgres", "postgresql"):
+		return raw
+	
 	# Map postgres/postgresql to psycopg driver name
-	if scheme in ("postgres", "postgresql"):
-		scheme = "postgresql+psycopg"
-	# Ensure sslmode=require if not present (and not sqlite)
+	scheme = "postgresql+psycopg"
+	
+	# Ensure sslmode=require if not present
 	query_pairs = dict(parse_qsl(p.query))
-	if scheme.startswith("postgresql") and "sslmode" not in query_pairs:
+	if "sslmode" not in query_pairs:
 		query_pairs["sslmode"] = "require"
+	
 	new_query = urlencode(query_pairs)
 	new_p = p._replace(scheme=scheme, query=new_query)
 	return urlunparse(new_p)
