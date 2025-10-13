@@ -17,10 +17,6 @@ class Base(DeclarativeBase):
 	pass
 
 
-<<<<<<< HEAD
-_settings = get_settings()
-_engine = create_engine(_settings.DATABASE_URL, future=True)
-=======
 def _normalize_database_url(raw: str) -> str:
 	"""Convert postgres URLs to SQLAlchemy's psycopg v3 driver and ensure SSL on Render."""
 	if not raw:
@@ -42,7 +38,6 @@ def _normalize_database_url(raw: str) -> str:
 _settings = get_settings()
 _DB_URL = _normalize_database_url(_settings.DATABASE_URL)
 _engine = create_engine(_DB_URL, future=True)
->>>>>>> 8adc085 (fix db for render)
 _SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
