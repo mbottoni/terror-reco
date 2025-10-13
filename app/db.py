@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from typing import Generator, Iterator
-<<<<<<< HEAD
-=======
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
->>>>>>> 8adc085 (fix db for render)
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
