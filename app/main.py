@@ -9,7 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .settings import get_settings
 from .services.recommender import recommend_movies
-from .db import init_db
+from .db import init_db, get_db
 from .auth import router as auth_router, get_current_user
 from .history import router as history_router, save_history
 
@@ -38,8 +38,9 @@ async def _startup() -> None:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> HTMLResponse:
-	return templates.TemplateResponse("index.html", {"request": request})
+async def index(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
+	flash = request.session.pop("flash", None)
+	return templates.TemplateResponse("index.html", {"request": request, "flash": flash, "user": user})
 
 
 @app.get("/loading", response_class=HTMLResponse)
@@ -48,14 +49,11 @@ async def loading(request: Request, mood: str = "") -> HTMLResponse:
 
 
 @app.get("/recommend", response_class=HTMLResponse)
-async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1), user=Depends(get_current_user)) -> HTMLResponse:
+async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1), user=Depends(get_current_user), db=Depends(get_db)) -> HTMLResponse:
 	movies = await recommend_movies(mood=mood, limit=6)
 	# Save history if logged in
 	if user:
-		from sqlalchemy.orm import Session
-		from .db import get_db_session
-		with get_db_session() as db:  # type: Session
-			save_history(db, user.id, mood, None, movies)
+		save_history(db, user.id, mood, None, movies)
 	return templates.TemplateResponse(
 		"results.html", {"request": request, "mood": mood, "movies": movies}
 	)

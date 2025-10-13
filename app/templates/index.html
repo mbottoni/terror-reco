@@ -8,7 +8,22 @@
 </head>
 <body>
 	<main class="container">
-		<nav class="topbar"><a href="/">Home</a> · <a href="/history/">History</a> · <a href="/auth/login">Login</a></nav>
+		<nav class="topbar">
+			<a href="/">Home</a> · <a href="/history/">History</a>
+			<span style="float:right">
+			{% if user %}
+				<span class="meta">Signed in as {{ user.email }}</span>
+				<form action="/auth/logout" method="post" style="display:inline">
+					<button type="submit" class="tag" style="margin-left:8px">Sign out</button>
+				</form>
+			{% else %}
+				<a href="/auth/login">Login</a> · <a href="/auth/register">Register</a>
+			{% endif %}
+			</span>
+		</nav>
+		{% if flash %}
+		<div class="flash">{{ flash }}</div>
+		{% endif %}
 		<h1>Find a horror movie by your mood 👻🎬</h1>
 		<p class="tagline">Type a vibe and get terrifying picks.</p>
 
@@ -26,7 +41,7 @@
 			<button type="submit">Recommend</button>
 		</form>
 
-		<p class="footer">Powered by OMDb • Have fun and stay spooky 🎃</p>
+		<p class="footer">Have fun and stay spooky 🎃</p>
 	</main>
 	<script>
 		function pickMood(v){

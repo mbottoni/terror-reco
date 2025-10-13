@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Generator, Iterator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -29,3 +29,9 @@ def get_db_session() -> Iterator[Session]:
 		yield session
 	finally:
 		session.close()
+
+
+def get_db() -> Generator[Session, None, None]:
+	# FastAPI dependency: yields a session and ensures cleanup
+	with get_db_session() as session:
+		yield session

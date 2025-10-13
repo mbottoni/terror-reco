@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user
-from .db import get_db_session
+from .db import get_db
 from .models import SearchHistory, User
 
 
@@ -15,9 +15,9 @@ router = APIRouter(prefix="/history")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def history_page(request: Request, user: Optional[User] = Depends(get_current_user), db: Session = Depends(get_db_session)) -> HTMLResponse:
+async def history_page(request: Request, user: Optional[User] = Depends(get_current_user), db: Session = Depends(get_db)) -> HTMLResponse:
 	if not user:
-		raise HTTPException(status_code=401, detail="Login required")
+		return RedirectResponse(url="/auth/login", status_code=303)
 	items = (
 		db.query(SearchHistory)
 		.filter(SearchHistory.user_id == user.id)
