@@ -41,7 +41,7 @@
 			<button type="submit">Recommend</button>
 		</form>
 
-		<p class="footer">Have fun and stay spooky 🎃</p>
+		<p class="footer">Powered by OMDb • Have fun and stay spooky 🎃</p>
 	</main>
 	<script>
 		function pickMood(v){
@@ -49,6 +49,11 @@
 			i.value = v;
 			document.querySelector('.search-form').submit();
 		}
+		// auto-hide flash messages
+		setTimeout(function(){
+			var f = document.querySelector('.flash');
+			if(f){ f.style.display = 'none'; }
+		}, 3000);
 	</script>
 </body>
 </html>
