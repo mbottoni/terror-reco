@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Login</title>
+	<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+	<main class="container">
+		<h1>Login</h1>
+		{% if flash %}
+		<div class="flash">{{ flash }}</div>
+		{% endif %}
+		<form action="/auth/login" method="post" class="search-form">
+			<input type="hidden" name="csrf" value="{{ csrf }}">
+			<label for="email">Email</label>
+			<input id="email" type="email" name="email" required>
+			<label for="password">Password</label>
+			<input id="password" type="password" name="password" required>
+			<button type="submit">Sign in</button>
+		</form>
+		<p class="footer"><a href="/auth/register">Create an account</a></p>
+	</main>
+</body>
+</html>

@@ -19,3 +19,9 @@ clean:
 	rm -rf .venv
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
+
+format:
+	ruff check . --fix
+	black .
+	mypy app
+	pytest

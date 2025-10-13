@@ -5,7 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AppSettings(BaseSettings):
-	model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
+	model_config = SettingsConfigDict(
+		env_prefix="",
+		case_sensitive=False,
+		env_file=(".env",),
+		env_file_encoding="utf-8",
+	)
 
 	# OMDb only
 	OMDB_API_KEY: str | None = Field(default=None)
@@ -14,6 +19,11 @@ class AppSettings(BaseSettings):
 	# App
 	APP_NAME: str = Field(default="TerrorReco")
 	DEBUG: bool = Field(default=False)
+
+	# Auth / DB
+	DATABASE_URL: str = Field(default="sqlite:///./app.db")
+	SECRET_KEY: str = Field(default="change-me-please")
+	SESSION_COOKIE_NAME: str = Field(default="terror_session")
 
 
 @lru_cache(maxsize=1)
