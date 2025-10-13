@@ -25,3 +25,7 @@ format:
 	black .
 	mypy app
 	pytest
+
+deployment:
+	python test_deployment.py
+	python deployment_checklist.py
