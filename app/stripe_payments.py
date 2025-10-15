@@ -17,6 +17,21 @@ settings = get_settings()
 if settings.STRIPE_SECRET_KEY:
     stripe.api_key = settings.STRIPE_SECRET_KEY
 
+
+@router.get("/debug")
+async def stripe_debug():
+    """Debug endpoint to check Stripe configuration."""
+    import os
+    return {
+        "stripe_publishable_key_set": bool(settings.STRIPE_PUBLISHABLE_KEY),
+        "stripe_secret_key_set": bool(settings.STRIPE_SECRET_KEY),
+        "coffee_price_id_set": bool(settings.COFFEE_PRICE_ID),
+        "webhook_secret_set": bool(settings.STRIPE_WEBHOOK_SECRET),
+        "stripe_publishable_key": settings.STRIPE_PUBLISHABLE_KEY[:20] + "..." if settings.STRIPE_PUBLISHABLE_KEY else None,
+        "coffee_price_id": settings.COFFEE_PRICE_ID,
+        "running_on_render": bool(os.getenv('RENDER')),
+    }
+
 # Get templates from app state
 def get_templates():
     from fastapi import Request
@@ -47,14 +62,25 @@ async def buy_coffee_page(request: Request):
 @router.post("/create-checkout-session")
 async def create_checkout_session(request: Request):
     """Create a Stripe checkout session for coffee purchase."""
+    print(f"🔍 Creating checkout session...")
+    print(f"STRIPE_SECRET_KEY set: {bool(settings.STRIPE_SECRET_KEY)}")
+    print(f"COFFEE_PRICE_ID set: {bool(settings.COFFEE_PRICE_ID)}")
+    
     if not settings.STRIPE_SECRET_KEY or not settings.COFFEE_PRICE_ID:
-        raise HTTPException(status_code=500, detail="Stripe not configured")
+        error_msg = "Stripe not configured - missing keys"
+        print(f"❌ {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
     
     try:
         # Build URLs manually to avoid issues in production
         base_url = str(request.base_url).rstrip('/')
         success_url = f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{base_url}/stripe/cancel"
+        
+        print(f"Base URL: {base_url}")
+        print(f"Success URL: {success_url}")
+        print(f"Cancel URL: {cancel_url}")
+        print(f"Price ID: ...{settings.COFFEE_PRICE_ID[-3:] if settings.COFFEE_PRICE_ID else 'None'}")
         
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -71,13 +97,14 @@ async def create_checkout_session(request: Request):
             }
         )
         
+        print(f"✅ Checkout session created: ...{checkout_session.id[-3:]}")
         return {"checkout_url": checkout_session.url}
         
     except stripe.StripeError as e:
-        print(f"Stripe error: {e}")  # Log for debugging
+        print(f"❌ Stripe error: {e}")
         raise HTTPException(status_code=400, detail=f"Payment error: {str(e)}")
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Log for debugging
+        print(f"❌ Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
