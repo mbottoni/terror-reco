@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Buy me a coffee ☕ - TerrorReco</title>
+	<link rel="stylesheet" href="/static/styles.css">
+	<script src="https://js.stripe.com/v3/"></script>
+	<style>
+		.coffee-container {
+			max-width: 500px;
+			margin: 2rem auto;
+			padding: 2rem;
+			text-align: center;
+			background: #1a1a1a;
+			border-radius: 12px;
+			border: 1px solid #333;
+		}
+		.coffee-title {
+			font-size: 2rem;
+			margin-bottom: 1rem;
+			color: #fff;
+		}
+		.coffee-description {
+			color: #ccc;
+			margin-bottom: 2rem;
+			line-height: 1.6;
+		}
+		.coffee-button {
+			background: linear-gradient(45deg, #ff6b35, #f7931e);
+			color: white;
+			border: none;
+			padding: 1rem 2rem;
+			font-size: 1.2rem;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: transform 0.2s;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		.coffee-button:hover {
+			transform: translateY(-2px);
+		}
+		.coffee-button:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+			transform: none;
+		}
+		.back-link {
+			margin-top: 2rem;
+		}
+		.back-link a {
+			color: #666;
+			text-decoration: none;
+		}
+		.back-link a:hover {
+			color: #999;
+		}
+	</style>
+</head>
+<body>
+	<main class="container">
+		<nav class="topbar">
+			<a href="/">← Back to TerrorReco</a>
+		</nav>
+		
+		<div class="coffee-container">
+			<h1 class="coffee-title">☕ Buy me a coffee</h1>
+			<p class="coffee-description">
+				Enjoying TerrorReco? Help keep the spooky recommendations coming! 
+				Your support helps me maintain and improve this horror movie recommendation engine.
+			</p>
+			
+			<button id="coffee-button" class="coffee-button">
+				☕ Buy me a coffee ($3)
+			</button>
+			
+			<div class="back-link">
+				<a href="/">Return to movie recommendations</a>
+			</div>
+		</div>
+	</main>
+
+	<script>
+		const stripe = Stripe('{{ stripe_publishable_key }}');
+		const coffeeButton = document.getElementById('coffee-button');
+		
+		coffeeButton.addEventListener('click', async () => {
+			coffeeButton.disabled = true;
+			coffeeButton.textContent = 'Processing...';
+			
+			try {
+				const response = await fetch('/stripe/create-checkout-session', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				});
+				
+				const data = await response.json();
+				
+				if (data.checkout_url) {
+					window.location.href = data.checkout_url;
+				} else {
+					throw new Error('No checkout URL received');
+				}
+			} catch (error) {
+				console.error('Error:', error);
+				alert('Something went wrong. Please try again.');
+				coffeeButton.disabled = false;
+				coffeeButton.textContent = '☕ Buy me a coffee ($3)';
+			}
+		});
+	</script>
+</body>
+</html>

@@ -24,6 +24,7 @@ dependencies = [
   "argon2-cffi>=23.1.0",
   "python-multipart>=0.0.9",
   "itsdangerous>=2.1.2",
+  "stripe>=7.0.0",
 ]
 
 [project.optional-dependencies]

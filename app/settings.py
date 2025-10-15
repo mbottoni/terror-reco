@@ -25,6 +25,12 @@ class AppSettings(BaseSettings):
 	SECRET_KEY: str = Field(default="change-me-please")
 	SESSION_COOKIE_NAME: str = Field(default="terror_session")
 
+	# Stripe
+	STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None)
+	STRIPE_SECRET_KEY: str | None = Field(default=None)
+	STRIPE_WEBHOOK_SECRET: str | None = Field(default=None)
+	COFFEE_PRICE_ID: str | None = Field(default=None)  # Stripe Price ID for coffee
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> AppSettings:
