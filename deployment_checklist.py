@@ -27,6 +27,10 @@ def print_checklist():
     print("• OMDB_API_KEY: Your OMDb API key")
     print("• SECRET_KEY: A secure random string")
     print("• DEBUG: false")
+    print("• STRIPE_PUBLISHABLE_KEY: Your Stripe publishable key")
+    print("• STRIPE_SECRET_KEY: Your Stripe secret key")
+    print("• STRIPE_WEBHOOK_SECRET: Your Stripe webhook secret (optional)")
+    print("• COFFEE_PRICE_ID: Your Stripe price ID for coffee")
     
     print("\n📊 Database Setup:")
     print("1. Create PostgreSQL database on Render")

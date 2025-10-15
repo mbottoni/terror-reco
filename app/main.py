@@ -12,6 +12,7 @@ from .services.recommender import recommend_movies
 from .db import init_db, get_db
 from .auth import router as auth_router, get_current_user
 from .history import router as history_router, save_history
+from .stripe_payments import router as stripe_router
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -74,3 +75,4 @@ async def api_recommendations(mood: str = Query(..., min_length=1), limit: int =
 # Routers
 app.include_router(auth_router)
 app.include_router(history_router)
+app.include_router(stripe_router)
