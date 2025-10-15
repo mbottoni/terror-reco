@@ -51,6 +51,11 @@ async def create_checkout_session(request: Request):
         raise HTTPException(status_code=500, detail="Stripe not configured")
     
     try:
+        # Build URLs manually to avoid issues in production
+        base_url = str(request.base_url).rstrip('/')
+        success_url = f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{base_url}/stripe/cancel"
+        
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -58,8 +63,8 @@ async def create_checkout_session(request: Request):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=str(request.url_for('stripe_success')) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=str(request.url_for('stripe_cancel')),
+            success_url=success_url,
+            cancel_url=cancel_url,
             metadata={
                 'app': 'terror-reco',
                 'type': 'coffee'
@@ -69,7 +74,11 @@ async def create_checkout_session(request: Request):
         return {"checkout_url": checkout_session.url}
         
     except stripe.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print(f"Stripe error: {e}")  # Log for debugging
+        raise HTTPException(status_code=400, detail=f"Payment error: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")  # Log for debugging
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
 @router.get("/success", response_class=HTMLResponse)
