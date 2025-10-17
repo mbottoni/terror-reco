@@ -2,15 +2,10 @@
 # Recommendation engine for horror movies
 
 The objective of this project is to create a fully functional
-recommendation engine for horror movies. This project should
-search public api's of movie databases and given the "mood" of 
+recommendation engine for horror movies. This project search on
+public api's of movie databases and given the "mood" of 
 the user (The user will type) the site should search the 
-best matches on the database and offer 5 movie options.
-
-This should contain the whole project, the frontend and the backend. 
-The project should use Docker files, GH Actions, Only Python code.
-
-Future work include a monetization strategy using stripe
+best matches on the database and offer movie options.
 
 ---
 
@@ -43,11 +38,3 @@ Or with docker-compose (auto-loads `.env`):
 ```bash
 docker compose up --build
 ```
-
-## CI
-
-- GitHub Actions workflow runs lint, type-check, tests, and builds the image.
-
-## Notes
-
-- Gunicorn is included in the image and used as the production server.
