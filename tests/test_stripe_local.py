@@ -5,11 +5,12 @@ Tests the complete coffee payment flow locally.
 """
 
 import os
-import sys
 import subprocess
+import sys
 import time
 import webbrowser
 from pathlib import Path
+
 
 def print_header(title):
     """Print a formatted header."""

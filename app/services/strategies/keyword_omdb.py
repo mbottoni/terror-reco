@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import random
 from math import log
-from typing import Any, Dict, List
+from typing import Any
 
 from ..omdb_client import get_omdb_client
 
-
-MOOD_KEYWORDS: Dict[str, List[str]] = {
+MOOD_KEYWORDS: dict[str, list[str]] = {
 	"gory": ["gore", "bloody", "splatter", "blood"],
 	"supernatural": ["supernatural", "ghost", "haunted", "possession", "demonic"],
 	"slasher": ["slasher", "serial killer", "stalking"],
@@ -30,9 +29,9 @@ def _normalize(text: str) -> str:
 	return text.strip().lower()
 
 
-def _expand_queries(mood: str) -> List[str]:
+def _expand_queries(mood: str) -> list[str]:
 	m = _normalize(mood)
-	queries: List[str] = [f"{m} horror"]
+	queries: list[str] = [f"{m} horror"]
 	# Heuristics to expand search based on common words
 	if "blood" in m or "bloody" in m:
 		queries += ["gory horror", "gore horror", "bloody horror", "splatter horror"]
@@ -48,7 +47,7 @@ def _expand_queries(mood: str) -> List[str]:
 	]
 	# De-duplicate while preserving order
 	seen = set()
-	uniq: List[str] = []
+	uniq: list[str] = []
 	for q in queries:
 		if q not in seen:
 			uniq.append(q)
@@ -56,7 +55,7 @@ def _expand_queries(mood: str) -> List[str]:
 	return uniq
 
 
-def _score_omdb(detail: Dict[str, Any]) -> float:
+def _score_omdb(detail: dict[str, Any]) -> float:
 	rating_str = (detail.get("imdbRating") or "0").replace("N/A", "0")
 	votes_str = (detail.get("imdbVotes") or "0").replace(",", "")
 	try:
@@ -71,10 +70,10 @@ def _score_omdb(detail: Dict[str, Any]) -> float:
 
 
 class KeywordOMDbStrategy:
-	async def recommend(self, mood: str, limit: int = 5) -> List[Dict[str, Any]]:
+	async def recommend(self, mood: str, limit: int = 5) -> list[dict[str, Any]]:
 		client = await get_omdb_client()
 
-		ids: List[str] = []
+		ids: list[str] = []
 		for q in _expand_queries(mood):
 			if len(ids) >= 150:
 				break
@@ -93,7 +92,7 @@ class KeywordOMDbStrategy:
 
 		ids = list(dict.fromkeys(ids))[:150]
 
-		details: List[Dict[str, Any]] = []
+		details: list[dict[str, Any]] = []
 		for imdb_id in ids:
 			d = await client.get_by_id(imdb_id)
 			if not d:

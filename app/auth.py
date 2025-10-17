@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from .db import get_db
 from .models import User
-from .security import hash_password, verify_password, generate_csrf_token, validate_csrf_token
-from .settings import get_settings
+from .security import generate_csrf_token, hash_password, validate_csrf_token, verify_password
 
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
 	user_id = request.session.get("user_id")
 	if not user_id:
 		return None

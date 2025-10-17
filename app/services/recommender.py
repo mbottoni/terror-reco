@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .strategies.base import RecommenderStrategy
-from .strategies.keyword_omdb import KeywordOMDbStrategy
 from .strategies.embedding_omdb import EmbeddingOMDbStrategy
+from .strategies.keyword_omdb import KeywordOMDbStrategy
 
 
 def get_strategy(name: str) -> RecommenderStrategy:
@@ -15,6 +15,6 @@ def get_strategy(name: str) -> RecommenderStrategy:
 	return KeywordOMDbStrategy()
 
 
-async def recommend_movies(mood: str, limit: int = 5, strategy: str = "keyword") -> List[Dict[str, Any]]:
+async def recommend_movies(mood: str, limit: int = 5, strategy: str = "keyword") -> list[dict[str, Any]]:
 	impl = get_strategy(strategy)
 	return await impl.recommend(mood=mood, limit=limit)

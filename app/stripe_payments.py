@@ -4,8 +4,8 @@ Handles "Buy me a coffee" payments.
 """
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from .settings import get_settings
@@ -34,8 +34,6 @@ async def stripe_debug():
 
 # Get templates from app state
 def get_templates():
-    from fastapi import Request
-    from fastapi.templating import Jinja2Templates
     from pathlib import Path
     BASE_DIR = Path(__file__).resolve().parent
     TEMPLATES_DIR = BASE_DIR / "templates"
@@ -62,7 +60,7 @@ async def buy_coffee_page(request: Request):
 @router.post("/create-checkout-session")
 async def create_checkout_session(request: Request):
     """Create a Stripe checkout session for coffee purchase."""
-    print(f"🔍 Creating checkout session...")
+    print("🔍 Creating checkout session...")
     print(f"STRIPE_SECRET_KEY set: {bool(settings.STRIPE_SECRET_KEY)}")
     print(f"COFFEE_PRICE_ID set: {bool(settings.COFFEE_PRICE_ID)}")
     

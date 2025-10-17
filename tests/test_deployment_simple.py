@@ -4,9 +4,9 @@ Simplified pre-deployment test script for TerrorReco application.
 Tests core functionality that can be verified before deploying to Render.
 """
 
-import os
 import sys
 from pathlib import Path
+
 
 def print_header(title):
     """Print a formatted header."""
@@ -83,7 +83,7 @@ def test_database_configuration():
     
     try:
         # Test URL normalization function directly
-        from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+        from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
         
         def _normalize_database_url(raw: str) -> str:
             """Convert postgres URLs to SQLAlchemy's psycopg v3 driver and ensure SSL on Render."""
@@ -174,7 +174,7 @@ def test_docker_configuration():
             
             # Basic syntax check
             try:
-                with open(docker_file, 'r') as f:
+                with open(docker_file) as f:
                     content = f.read()
                 print_success(f"Docker file {docker_file} is readable")
             except Exception as e:
@@ -191,7 +191,7 @@ def test_pyproject_toml():
     print_header("Testing pyproject.toml Configuration")
     
     try:
-        with open("pyproject.toml", 'r') as f:
+        with open("pyproject.toml") as f:
             content = f.read()
         
         # Check for required sections
@@ -246,7 +246,7 @@ def test_syntax_check():
     for file_path in python_files:
         if Path(file_path).exists():
             try:
-                with open(file_path, 'r') as f:
+                with open(file_path) as f:
                     content = f.read()
                 
                 # Basic syntax check by compiling
@@ -300,7 +300,7 @@ def test_render_deployment_readiness():
     # Check Dockerfile
     if Path("Dockerfile").exists():
         try:
-            with open("Dockerfile", 'r') as f:
+            with open("Dockerfile") as f:
                 dockerfile_content = f.read()
             
             # Check for Python 3.11
@@ -321,7 +321,7 @@ def test_render_deployment_readiness():
     
     # Check pyproject.toml for Python version
     try:
-        with open("pyproject.toml", 'r') as f:
+        with open("pyproject.toml") as f:
             pyproject_content = f.read()
         
         if "requires-python = \">=3.11\"" in pyproject_content:

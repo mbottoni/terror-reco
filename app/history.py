@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -10,12 +10,11 @@ from .auth import get_current_user
 from .db import get_db
 from .models import SearchHistory, User
 
-
 router = APIRouter(prefix="/history")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def history_page(request: Request, user: Optional[User] = Depends(get_current_user), db: Session = Depends(get_db)) -> HTMLResponse:
+async def history_page(request: Request, user: User | None = Depends(get_current_user), db: Session = Depends(get_db)) -> HTMLResponse:
 	if not user:
 		return RedirectResponse(url="/auth/login", status_code=303)
 	items = (
@@ -28,7 +27,7 @@ async def history_page(request: Request, user: Optional[User] = Depends(get_curr
 	return request.app.state.templates.TemplateResponse("history.html", {"request": request, "items": items})
 
 
-def save_history(db: Session, user_id: int, mood: str, strategy: Optional[str], results: List[Dict[str, Any]]) -> None:
+def save_history(db: Session, user_id: int, mood: str, strategy: str | None, results: list[dict[str, Any]]) -> None:
 	entry = SearchHistory(user_id=user_id, mood=mood, strategy=strategy, results_json={"results": results})
 	db.add(entry)
 	db.commit()

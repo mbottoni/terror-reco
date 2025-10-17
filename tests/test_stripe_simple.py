@@ -7,7 +7,9 @@ Tests the coffee button and payment flow without starting the full server.
 import os
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
+
 
 def test_stripe_configuration():
     """Test Stripe configuration."""

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
-from typing import Generator, Iterator
-from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker

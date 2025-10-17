@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 
@@ -8,13 +8,13 @@ from ..settings import get_settings
 
 
 class OMDbClient:
-	def __init__(self, client: Optional[httpx.AsyncClient] = None) -> None:
+	def __init__(self, client: httpx.AsyncClient | None = None) -> None:
 		settings = get_settings()
 		self._base_url = settings.OMDB_BASE_URL
 		self._api_key = settings.OMDB_API_KEY or ""
 		self._client = client or httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=5.0))
 
-	async def _get(self, params: Dict[str, Any]) -> Dict[str, Any]:
+	async def _get(self, params: dict[str, Any]) -> dict[str, Any]:
 		merged = {"apikey": self._api_key}
 		merged.update(params)
 		resp = await self._client.get(self._base_url, params=merged)
@@ -25,12 +25,12 @@ class OMDbClient:
 			return {}
 		return data
 
-	async def search_titles(self, query: str, page: int = 1) -> List[Dict[str, Any]]:
+	async def search_titles(self, query: str, page: int = 1) -> list[dict[str, Any]]:
 		data = await self._get({"s": query, "type": "movie", "page": page})
 		results = data.get("Search") if isinstance(data, dict) else None
 		return list(results or [])
 
-	async def get_by_id(self, imdb_id: str) -> Dict[str, Any]:
+	async def get_by_id(self, imdb_id: str) -> dict[str, Any]:
 		data = await self._get({"i": imdb_id, "plot": "short"})
 		return data or {}
 

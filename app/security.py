@@ -3,12 +3,10 @@ from __future__ import annotations
 import hmac
 import secrets
 from hashlib import sha256
-from typing import Optional
 
 from argon2 import PasswordHasher
 
 from .settings import get_settings
-
 
 _ph = PasswordHasher()
 

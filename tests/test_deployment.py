@@ -4,10 +4,10 @@ Pre-deployment test script for TerrorReco application.
 Tests all critical components before deploying to Render.
 """
 
-import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
 
 def print_header(title):
     """Print a formatted header."""
@@ -90,7 +90,7 @@ def test_database_configuration():
         sys.path.insert(0, str(app_dir))
         
         # Test URL normalization function
-        from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+        from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
         
         def _normalize_database_url(raw: str) -> str:
             """Convert postgres URLs to SQLAlchemy's psycopg v3 driver and ensure SSL on Render."""
@@ -178,7 +178,6 @@ def test_app_imports():
         
         # Test services
         try:
-            from services import omdb_client, recommender
             print_success("Services modules import successfully")
         except Exception as e:
             print_error(f"Services import failed: {e}")
@@ -186,7 +185,6 @@ def test_app_imports():
         
         # Test strategies
         try:
-            from services.strategies import base, embedding_omdb, keyword_omdb
             print_success("Strategy modules import successfully")
         except Exception as e:
             print_error(f"Strategies import failed: {e}")
@@ -338,7 +336,7 @@ def test_docker_configuration():
             
             # Basic syntax check
             try:
-                with open(docker_file, 'r') as f:
+                with open(docker_file) as f:
                     content = f.read()
                 print_success(f"Docker file {docker_file} is readable")
             except Exception as e:

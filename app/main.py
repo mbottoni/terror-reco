@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
@@ -7,13 +7,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from .settings import get_settings
+from .auth import get_current_user
+from .auth import router as auth_router
+from .db import get_db, init_db
+from .history import router as history_router
+from .history import save_history
 from .services.recommender import recommend_movies
-from .db import init_db, get_db
-from .auth import router as auth_router, get_current_user
-from .history import router as history_router, save_history
+from .settings import get_settings
 from .stripe_payments import router as stripe_router
-
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -61,7 +62,7 @@ async def ui_recommendations(request: Request, mood: str = Query(..., min_length
 
 
 @app.get("/api/recommendations")
-async def api_recommendations(mood: str = Query(..., min_length=1), limit: int = 6) -> Dict[str, Any]:
+async def api_recommendations(mood: str = Query(..., min_length=1), limit: int = 6) -> dict[str, Any]:
 	try:
 		movies = await recommend_movies(mood=mood, limit=limit)
 	except HTTPException:

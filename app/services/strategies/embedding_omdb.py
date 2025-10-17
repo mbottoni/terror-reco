@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -15,7 +15,7 @@ def _normalize(text: str) -> str:
 	return (text or "").strip().lower()
 
 
-def _load_config() -> Dict[str, Any]:
+def _load_config() -> dict[str, Any]:
 	cfg_path = Path(__file__).resolve().parents[3] / "config_embedding.yaml"
 	if not cfg_path.exists():
 		return {}
@@ -40,9 +40,9 @@ class EmbeddingOMDbStrategy:
 		self.max_features = int(cfg.get("max_features", 5000))
 		self.randomize_from_top_k = bool(cfg.get("randomize_from_top_k", True))
 
-	async def _fetch_horror_items(self, mood: str, min_needed: int) -> List[Dict[str, Any]]:
+	async def _fetch_horror_items(self, mood: str, min_needed: int) -> list[dict[str, Any]]:
 		client = await get_omdb_client()
-		ids: List[str] = []
+		ids: list[str] = []
 		for q in self.search_queries:
 			query = q.format(mood=mood)
 			if len(ids) >= self.max_candidates:
@@ -62,7 +62,7 @@ class EmbeddingOMDbStrategy:
 
 		ids = list(dict.fromkeys(ids))[: self.max_candidates]
 
-		items: List[Dict[str, Any]] = []
+		items: list[dict[str, Any]] = []
 		client = await get_omdb_client()
 		for imdb_id in ids:
 			d = await client.get_by_id(imdb_id)
@@ -88,12 +88,12 @@ class EmbeddingOMDbStrategy:
 				break
 		return items
 
-	async def recommend(self, mood: str, limit: int = 5) -> List[Dict[str, Any]]:
+	async def recommend(self, mood: str, limit: int = 5) -> list[dict[str, Any]]:
 		items = await self._fetch_horror_items(mood=mood, min_needed=limit)
 		if not items:
 			return []
 
-		plots: List[str] = [_normalize(m.get("overview") or "") for m in items]
+		plots: list[str] = [_normalize(m.get("overview") or "") for m in items]
 		if not any(plots):
 			return random.sample(items, k=min(limit, len(items)))
 
@@ -104,7 +104,7 @@ class EmbeddingOMDbStrategy:
 		plot_vecs = X[1:]
 		scores = cosine_similarity(mood_vec, plot_vecs).ravel()
 
-		ranked = sorted(zip(items, scores), key=lambda t: t[1], reverse=True)
+		ranked = sorted(zip(items, scores, strict=False), key=lambda t: t[1], reverse=True)
 		top_k = min(len(ranked), max(10, limit * self.top_k_multiplier))
 		pool = [m for (m, s) in ranked[:top_k] if s >= 0]
 		if len(pool) < limit:

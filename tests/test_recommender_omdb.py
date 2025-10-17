@@ -1,6 +1,6 @@
+import httpx
 import pytest
 import respx
-import httpx
 
 from app.services.recommender import recommend_movies
 from app.settings import get_settings

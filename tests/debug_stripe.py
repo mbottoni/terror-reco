@@ -4,8 +4,9 @@ Debug script for Stripe integration issues on Render
 """
 
 import os
-import sys
+
 from dotenv import load_dotenv
+
 
 def check_render_environment():
     """Check if we're running on Render and what environment variables are available."""
