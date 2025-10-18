@@ -38,7 +38,35 @@
 		<form action="/loading" method="get" class="search-form">
 			<label for="mood">Mood</label>
 			<input id="mood" name="mood" type="text" placeholder="Describe the vibe… e.g., haunted house with ghosts" required>
-			<button type="submit">Recommend</button>
+
+			<div class="controls" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px">
+				<div>
+					<label for="min_year">Min year</label>
+					<input id="min_year" name="min_year" type="number" min="1900" max="2100" placeholder="e.g., 2005">
+				</div>
+				<div>
+					<label for="max_year">Max year</label>
+					<input id="max_year" name="max_year" type="number" min="1900" max="2100" placeholder="e.g., 2024">
+				</div>
+				<div>
+					<label for="limit">How many</label>
+					<input id="limit" name="limit" type="number" min="1" max="20" value="6">
+				</div>
+				<div>
+					<label for="kind">Type</label>
+					<select id="kind" name="kind">
+						<option value="movie" selected>Movies</option>
+						<option value="series">Series</option>
+						<option value="both">Both</option>
+					</select>
+				</div>
+				<div style="display:flex;align-items:end;gap:6px">
+					<label for="english" style="margin:0">English only</label>
+					<input id="english" name="english" type="checkbox" value="1">
+				</div>
+			</div>
+
+			<button type="submit" style="margin-top:12px">Recommend</button>
 		</form>
 
 		<p class="footer">Have fun and stay spooky 🎃</p>

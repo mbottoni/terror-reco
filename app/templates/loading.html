@@ -25,7 +25,19 @@
 			const mood = params.get('mood') || '';
 			const delayMs = 600; // brief pause to display the GIF
 			setTimeout(function(){
-				const url = '/recommend?mood=' + encodeURIComponent(mood);
+				const min_year = params.get('min_year');
+				const max_year = params.get('max_year');
+				const limit = params.get('limit');
+				const kind = params.get('kind');
+				const english = params.get('english');
+				const usp = new URLSearchParams();
+				usp.set('mood', mood);
+				if(min_year) usp.set('min_year', min_year);
+				if(max_year) usp.set('max_year', max_year);
+				if(limit) usp.set('limit', limit);
+				if(kind) usp.set('kind', kind);
+				if(english) usp.set('english', english);
+				const url = '/recommend?' + usp.toString();
 				window.location.replace(url);
 			}, delayMs);
 		})();

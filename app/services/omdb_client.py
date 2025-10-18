@@ -25,13 +25,16 @@ class OMDbClient:
 			return {}
 		return data
 
-	async def search_titles(self, query: str, page: int = 1) -> list[dict[str, Any]]:
-		data = await self._get({"s": query, "type": "movie", "page": page})
+	async def search_titles(self, query: str, page: int = 1, *, type_: str = "movie", year: int | None = None) -> list[dict[str, Any]]:
+		params: dict[str, Any] = {"s": query, "type": type_, "page": page}
+		if year is not None:
+			params["y"] = year
+		data = await self._get(params)
 		results = data.get("Search") if isinstance(data, dict) else None
 		return list(results or [])
 
-	async def get_by_id(self, imdb_id: str) -> dict[str, Any]:
-		data = await self._get({"i": imdb_id, "plot": "short"})
+	async def get_by_id(self, imdb_id: str, *, plot_full: bool = False) -> dict[str, Any]:
+		data = await self._get({"i": imdb_id, "plot": ("full" if plot_full else "short")})
 		return data or {}
 
 	async def aclose(self) -> None:

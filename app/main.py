@@ -12,7 +12,7 @@ from .auth import router as auth_router
 from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
-from .services.recommender import recommend_movies
+from .services.recommender import recommend_movies, recommend_movies_advanced
 from .settings import get_settings
 from .stripe_payments import router as stripe_router
 
@@ -51,13 +51,47 @@ async def loading(request: Request, mood: str = "") -> HTMLResponse:
 
 
 @app.get("/recommend", response_class=HTMLResponse)
-async def ui_recommendations(request: Request, mood: str = Query(..., min_length=1), user=Depends(get_current_user), db=Depends(get_db)) -> HTMLResponse:
-	movies = await recommend_movies(mood=mood, limit=6)
+async def ui_recommendations(
+	request: Request,
+	mood: str = Query(..., min_length=1),
+	min_year: int | None = Query(default=None, ge=1900, le=2100),
+	max_year: int | None = Query(default=None, ge=1900, le=2100),
+	limit: int = Query(default=6, ge=1, le=20),
+	kind: str = Query(default="movie"),  # movie | series | both
+	english: int | None = Query(default=None),
+	user=Depends(get_current_user),
+	db=Depends(get_db),
+) -> HTMLResponse:
+	# Use advanced recommender if any advanced filters provided, else fallback
+	use_advanced = any([
+		min_year is not None,
+		max_year is not None,
+		kind in ("series", "both"),
+		english is not None,
+		limit != 6,
+	])
+	if use_advanced:
+		movies = await recommend_movies_advanced(
+			mood=mood,
+			limit=limit,
+			min_year=min_year,
+			max_year=max_year,
+			kind=kind,
+			english_only=bool(english),
+			pages=3,
+		)
+	else:
+		movies = await recommend_movies(mood=mood, limit=limit)
 	# Save history if logged in
 	if user:
 		save_history(db, user.id, mood, None, movies)
 	return templates.TemplateResponse(
-		"results.html", {"request": request, "mood": mood, "movies": movies}
+		"results.html",
+		{
+			"request": request,
+			"mood": mood,
+			"movies": movies,
+		},
 	)
 
 
