@@ -13,6 +13,7 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .services.recommender import recommend_movies, recommend_movies_advanced
+from .services.unified_recommender import recommend_unified_semantic
 from .settings import get_settings
 from .stripe_payments import router as stripe_router
 
@@ -75,18 +76,35 @@ async def ui_recommendations(
             limit != 6,
         ]
     )
-    if use_advanced:
-        movies = await recommend_movies_advanced(
+    if settings.USE_UNIFIED_RECOMMENDER:
+        pool = await recommend_movies_advanced(
             mood=mood,
-            limit=limit,
+            limit=max(limit * 10, 60),
             min_year=min_year,
             max_year=max_year,
             kind=kind,
             english_only=bool(english),
             pages=3,
         )
+        movies = recommend_unified_semantic(
+            mood=mood,
+            items=pool,
+            limit=limit,
+            diversity_lambda=settings.UNIFIED_DIVERSITY_LAMBDA,
+        )
     else:
-        movies = await recommend_movies(mood=mood, limit=limit)
+        if use_advanced:
+            movies = await recommend_movies_advanced(
+                mood=mood,
+                limit=limit,
+                min_year=min_year,
+                max_year=max_year,
+                kind=kind,
+                english_only=bool(english),
+                pages=3,
+            )
+        else:
+            movies = await recommend_movies(mood=mood, limit=limit)
     # Save history if logged in
     if user:
         save_history(db, user.id, mood, None, movies)

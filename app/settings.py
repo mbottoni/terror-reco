@@ -20,6 +20,11 @@ class AppSettings(BaseSettings):
     APP_NAME: str = Field(default="TerrorReco")
     DEBUG: bool = Field(default=False)
 
+    # Unified recommender toggles
+    USE_UNIFIED_RECOMMENDER: bool = Field(default=False)
+    UNIFIED_USE_CROSS_ENCODER: bool = Field(default=False)
+    UNIFIED_DIVERSITY_LAMBDA: float = Field(default=0.7)
+
     # Auth / DB
     DATABASE_URL: str = Field(default="sqlite:///./app.db")
     SECRET_KEY: str = Field(default="change-me-please")
