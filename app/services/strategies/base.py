@@ -4,5 +4,4 @@ from typing import Any, Protocol
 
 
 class RecommenderStrategy(Protocol):
-	async def recommend(self, mood: str, limit: int = 5) -> list[dict[str, Any]]:
-		...
+    async def recommend(self, mood: str, limit: int = 5) -> list[dict[str, Any]]: ...

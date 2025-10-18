@@ -1,32 +1,33 @@
 from __future__ import annotations
 
+from math import log
 from typing import Any
 
+from .omdb_client import get_omdb_client
 from .strategies.base import RecommenderStrategy
 from .strategies.embedding_omdb import EmbeddingOMDbStrategy
 from .strategies.keyword_omdb import KeywordOMDbStrategy
-from .omdb_client import get_omdb_client
-
-from math import log
 
 
 def get_strategy(name: str) -> RecommenderStrategy:
-	key = (name or "").strip().lower()
-	if key in ("embed", "embedding", "tfidf"):
-		return EmbeddingOMDbStrategy()
-	# default
-	return KeywordOMDbStrategy()
+    key = (name or "").strip().lower()
+    if key in ("embed", "embedding", "tfidf"):
+        return EmbeddingOMDbStrategy()
+    # default
+    return KeywordOMDbStrategy()
 
 
-async def recommend_movies(mood: str, limit: int = 5, strategy: str = "keyword") -> list[dict[str, Any]]:
-	impl = get_strategy(strategy)
-	return await impl.recommend(mood=mood, limit=limit)
+async def recommend_movies(
+    mood: str, limit: int = 5, strategy: str = "keyword"
+) -> list[dict[str, Any]]:
+    impl = get_strategy(strategy)
+    return await impl.recommend(mood=mood, limit=limit)
 
 
 def _score_popularity(detail: dict[str, Any]) -> float:
     rating = float(detail.get("vote_average") or 0.0)
     votes_str = (detail.get("imdbVotes") or detail.get("imdb_votes_raw") or "0").replace(",", "")
-    metascore_str = (detail.get("Metascore") or detail.get("metascore_raw") or "0")
+    metascore_str = detail.get("Metascore") or detail.get("metascore_raw") or "0"
     try:
         votes = int(votes_str)
     except Exception:
@@ -108,9 +109,11 @@ async def recommend_movies_advanced(
                 "overview": d.get("Plot") or "",
                 "poster_url": poster_url,
                 "release_date": d.get("Released"),
-                "vote_average": float(d.get("imdbRating") or 0)
-                if (d.get("imdbRating") and d.get("imdbRating") != "N/A")
-                else None,
+                "vote_average": (
+                    float(d.get("imdbRating") or 0)
+                    if (d.get("imdbRating") and d.get("imdbRating") != "N/A")
+                    else None
+                ),
                 "_score": _score_popularity(d),
             }
         )
