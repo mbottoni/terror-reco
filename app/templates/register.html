@@ -6,23 +6,135 @@
 <a href="/auth/login" class="btn btn-ghost btn-sm">Log in</a>
 {% endblock %}
 
+{% block flash_area %}{% endblock %}
+
 {% block content %}
 <div class="auth-wrapper">
   <div class="auth-card">
+    <div class="auth-brand">Terror<em>Reco</em></div>
     <h1 class="auth-title">Create account</h1>
-    <form action="/auth/register" method="post" class="auth-form">
+    <p class="auth-subtitle">Save your searches and get personalized recommendations</p>
+
+    {% if flash %}
+    <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+    {% endif %}
+
+    <form action="/auth/register" method="post" class="auth-form" id="register-form" novalidate>
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input id="email" type="email" name="email" placeholder="you@example.com" required>
+
+      <div class="form-group" id="email-group">
+        <label for="email">Email address</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" value="{{ email or '' }}" required autocomplete="email">
+        <p class="form-error" id="email-error">Please enter a valid email address</p>
       </div>
-      <div class="form-group">
+
+      <div class="form-group" id="pw-group">
         <label for="password">Password</label>
-        <input id="password" type="password" name="password" placeholder="Choose a password" required>
+        <div class="input-wrap">
+          <input id="password" type="password" name="password" placeholder="At least 8 characters" required autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('password',this)" aria-label="Show password">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+        <p class="pw-strength-label" id="pw-label">&nbsp;</p>
+        <p class="form-error" id="pw-error">Password must be at least 8 characters</p>
       </div>
-      <button type="submit" class="btn btn-primary">Create account</button>
+
+      <div class="form-group" id="cpw-group">
+        <label for="confirm_password">Confirm password</label>
+        <div class="input-wrap">
+          <input id="confirm_password" type="password" name="confirm_password" placeholder="Re-enter your password" required autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('confirm_password',this)" aria-label="Show password">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p class="form-error" id="cpw-error">Passwords do not match</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        <span class="btn-text">Create account</span>
+        <span class="btn-spinner"><span class="spinner"></span></span>
+      </button>
     </form>
+
+    <div class="auth-divider"><span>or</span></div>
+
+    <p class="auth-footer" style="margin-top:0">Already have an account? <a href="/auth/login">Sign in</a></p>
   </div>
-  <p class="auth-footer">Already have an account? <a href="/auth/login">Sign in</a></p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePw(id,btn){
+  var inp=document.getElementById(id);
+  var show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+  btn.style.color=show?'#9c9caa':'#555566';
+}
+
+// Password strength meter
+var pwInput=document.getElementById('password');
+var bar=document.getElementById('pw-bar');
+var label=document.getElementById('pw-label');
+
+pwInput.addEventListener('input',function(){
+  var v=pwInput.value;
+  var score=0;
+  if(v.length>=8) score++;
+  if(v.length>=12) score++;
+  if(/[A-Z]/.test(v)&&/[a-z]/.test(v)) score++;
+  if(/\d/.test(v)) score++;
+  if(/[^A-Za-z0-9]/.test(v)) score++;
+
+  bar.className='pw-strength-bar';
+  label.className='pw-strength-label';
+
+  if(v.length===0){
+    bar.style.width='0';
+    label.innerHTML='&nbsp;';
+  } else if(score<=1){
+    bar.classList.add('weak');label.classList.add('weak');
+    label.textContent='Weak';
+  } else if(score<=3){
+    bar.classList.add('medium');label.classList.add('medium');
+    label.textContent='Fair';
+  } else {
+    bar.classList.add('strong');label.classList.add('strong');
+    label.textContent='Strong';
+  }
+});
+
+// Form validation
+document.getElementById('register-form').addEventListener('submit',function(e){
+  var ok=true;
+  var eg=document.getElementById('email-group');
+  var pg=document.getElementById('pw-group');
+  var cg=document.getElementById('cpw-group');
+  var email=document.getElementById('email');
+  var pw=document.getElementById('password');
+  var cpw=document.getElementById('confirm_password');
+
+  eg.classList.remove('has-error');
+  pg.classList.remove('has-error');
+  cg.classList.remove('has-error');
+
+  if(!email.value||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)){
+    eg.classList.add('has-error');ok=false;
+  }
+  if(!pw.value||pw.value.length<8){
+    pg.classList.add('has-error');ok=false;
+  }
+  if(pw.value!==cpw.value){
+    cg.classList.add('has-error');ok=false;
+  }
+
+  if(!ok){e.preventDefault();return}
+
+  var btn=document.getElementById('submit-btn');
+  btn.classList.add('btn-loading');
+});
+</script>
 {% endblock %}

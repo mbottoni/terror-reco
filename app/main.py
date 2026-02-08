@@ -23,11 +23,16 @@ STATIC_DIR = BASE_DIR / "static"
 
 settings = get_settings()
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
+
+_https_only = not settings.DEBUG
+print(f"[TerrorReco] DEBUG={settings.DEBUG}, session https_only={_https_only}")
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SECRET_KEY,
     session_cookie=settings.SESSION_COOKIE_NAME,
-    https_only=not settings.DEBUG,
+    https_only=_https_only,
+    same_site="lax",
     max_age=60 * 60 * 24 * 30,
 )
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -44,8 +49,11 @@ async def _startup() -> None:
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
     flash = request.session.pop("flash", None)
+    flash_type = request.session.pop("flash_type", "success")
+    print(f"[HOME] user_id_in_session={request.session.get('user_id')}, user={user}, flash={flash}")
     return templates.TemplateResponse(
-        "index.html", {"request": request, "flash": flash, "user": user}
+        "index.html",
+        {"request": request, "flash": flash, "flash_type": flash_type, "user": user},
     )
 
 

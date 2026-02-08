@@ -72,17 +72,63 @@ select{cursor:pointer}
   background:transparent;color:#6b6b78;
   border:1px solid #333340;border-radius:8px;
   padding:5px 14px;font-size:.8125rem;font-weight:600;
-  cursor:pointer;transition:all .15s;
+  cursor:pointer;transition:all .15s;width:100%;text-align:left;
 }
 .btn-signout:hover{border-color:#555;color:#a0a0ad}
 
+/* ---- AVATAR / PROFILE MENU ---- */
+.avatar-wrap{position:relative}
+.avatar-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:#e03131;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.8125rem;letter-spacing:.02em;
+  cursor:pointer;border:2px solid transparent;
+  transition:border-color .15s,box-shadow .15s;
+  text-transform:uppercase;flex-shrink:0;
+}
+.avatar-btn:hover,.avatar-btn[aria-expanded="true"]{
+  border-color:rgba(224,49,49,.4);
+  box-shadow:0 0 0 3px rgba(224,49,49,.15);
+}
+.avatar-menu{
+  position:absolute;right:0;top:calc(100% + 8px);
+  min-width:220px;
+  background:#16161c;border:1px solid #2a2a33;border-radius:12px;
+  padding:6px;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+  opacity:0;visibility:hidden;transform:translateY(-4px);
+  transition:opacity .15s ease,transform .15s ease,visibility .15s;
+  z-index:200;
+}
+.avatar-menu.open{opacity:1;visibility:visible;transform:translateY(0)}
+.avatar-menu-header{padding:12px 14px 10px;border-bottom:1px solid #2a2a33;margin-bottom:4px}
+.avatar-menu-label{font-size:.7rem;font-weight:700;color:#555566;text-transform:uppercase;letter-spacing:.06em}
+.avatar-menu-email{font-size:.8125rem;color:#e8e8ec;font-weight:600;margin-top:2px;word-break:break-all}
+.avatar-menu-item{
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:10px 14px;border-radius:8px;
+  font-size:.8125rem;font-weight:600;color:#9c9caa;
+  transition:background .12s,color .12s;
+  background:none;border:none;cursor:pointer;text-align:left;
+}
+.avatar-menu-item:hover{background:#1e1e26;color:#e8e8ec}
+.avatar-menu-item svg{width:16px;height:16px;opacity:.6;flex-shrink:0}
+
 /* ---- FLASH ---- */
 .flash{
-  padding:12px 18px;border-radius:10px;
-  background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);
-  color:#6ee7b7;font-size:.875rem;font-weight:500;
-  margin-bottom:24px;transition:opacity .3s,transform .3s;
+  padding:14px 20px;border-radius:10px;
+  background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);
+  color:#6ee7b7;font-size:.875rem;font-weight:600;
+  margin-bottom:24px;transition:opacity .4s,transform .4s;
+  display:flex;align-items:center;gap:10px;
 }
+.flash::before{content:'✓';font-size:1.1rem}
+.flash-error{
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  color:#fca5a5;
+}
+.flash-error::before{content:'!';display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(239,68,68,.2);font-size:.75rem;font-weight:800;flex-shrink:0}
 
 /* ---- HERO (HOME) ---- */
 .hero{padding:64px 0 48px;text-align:center}
@@ -244,6 +290,44 @@ select{cursor:pointer}
 .auth-footer{text-align:center;margin-top:24px;font-size:.8125rem;color:#555566}
 .auth-footer a{color:#9c9caa;font-weight:700;transition:color .15s}
 .auth-footer a:hover{color:#e8e8ec}
+.auth-brand{text-align:center;margin-bottom:8px;font-size:1.25rem;font-weight:900;letter-spacing:-.04em}
+.auth-brand em{font-style:normal;color:#e03131}
+.auth-subtitle{text-align:center;color:#555566;font-size:.8125rem;margin-bottom:28px}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#2a2a33}
+.auth-divider span{color:#555566;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.form-group{position:relative}
+.input-wrap{position:relative}
+.input-wrap input{padding-right:48px !important}
+.pw-toggle{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none !important;border:none !important;color:#555566;
+  padding:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:color .15s;
+}
+.pw-toggle:hover{color:#9c9caa}
+.pw-toggle svg{width:20px;height:20px}
+.pw-hint{font-size:.75rem;color:#555566;margin-top:6px}
+.pw-strength{height:3px;border-radius:2px;background:#2a2a33;margin-top:8px;overflow:hidden}
+.pw-strength-bar{height:100%;border-radius:2px;width:0;transition:width .3s ease,background .3s ease}
+.pw-strength-bar.weak{width:33%;background:#ef4444}
+.pw-strength-bar.medium{width:66%;background:#f59e0b}
+.pw-strength-bar.strong{width:100%;background:#22c55e}
+.pw-strength-label{font-size:.7rem;font-weight:600;margin-top:4px;transition:color .2s}
+.pw-strength-label.weak{color:#ef4444}
+.pw-strength-label.medium{color:#f59e0b}
+.pw-strength-label.strong{color:#22c55e}
+.btn-loading{pointer-events:none;opacity:.7}
+.btn-loading .btn-text{visibility:hidden}
+.btn-loading .btn-spinner{position:absolute}
+.btn-spinner{display:none}
+.btn-loading .btn-spinner{display:block}
+.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.auth-form .btn{position:relative;display:flex;align-items:center;justify-content:center}
+.form-error{font-size:.75rem;color:#fca5a5;margin-top:6px;display:none}
+.form-group.has-error input{border-color:#ef4444 !important}
+.form-group.has-error .form-error{display:block}
 
 /* ---- HISTORY ---- */
 .history-list{display:flex;flex-direction:column;gap:8px}
@@ -354,11 +438,13 @@ select{cursor:pointer}
 </nav>
 
 <main class="page-main">
+  {% block flash_area %}
   {% if flash is defined and flash %}
   <div class="container" style="padding-top:20px">
-    <div class="flash" id="flash-msg">{{ flash }}</div>
+    <div class="flash{% if flash_type is defined and flash_type == 'error' %} flash-error{% endif %}" id="flash-msg" data-type="{{ flash_type|default('success') }}">{{ flash }}</div>
   </div>
   {% endif %}
+  {% endblock %}
   {% block content %}{% endblock %}
 </main>
 
@@ -372,7 +458,10 @@ select{cursor:pointer}
 <script>
 (function(){
   var f=document.getElementById('flash-msg');
-  if(f)setTimeout(function(){f.style.opacity='0';f.style.transform='translateY(-8px)';setTimeout(function(){f.remove()},300)},3500);
+  if(!f)return;
+  // Error flashes stay visible — only auto-hide success messages
+  if(f.getAttribute('data-type')==='error')return;
+  setTimeout(function(){f.style.opacity='0';f.style.transform='translateY(-8px)';setTimeout(function(){f.remove()},400)},5000);
 })();
 </script>
 {% block scripts %}{% endblock %}

@@ -4,10 +4,25 @@
 
 {% block nav_right %}
 {% if user %}
-  <span class="user-email">{{ user.email }}</span>
-  <form action="/auth/logout" method="post" style="display:inline">
-    <button type="submit" class="btn-signout">Sign out</button>
-  </form>
+  <div class="avatar-wrap">
+    <button type="button" class="avatar-btn" id="avatar-btn" aria-expanded="false" onclick="toggleAvatar()">{{ user.email[0] }}</button>
+    <div class="avatar-menu" id="avatar-menu">
+      <div class="avatar-menu-header">
+        <div class="avatar-menu-label">Signed in as</div>
+        <div class="avatar-menu-email">{{ user.email }}</div>
+      </div>
+      <a href="/history/" class="avatar-menu-item">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd"/></svg>
+        Search history
+      </a>
+      <form action="/auth/logout" method="post">
+        <button type="submit" class="avatar-menu-item" style="color:#fca5a5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M19 10a.75.75 0 0 0-.75-.75H8.704l1.048-.943a.75.75 0 1 0-1.004-1.114l-2.5 2.25a.75.75 0 0 0 0 1.114l2.5 2.25a.75.75 0 1 0 1.004-1.114l-1.048-.943h9.546A.75.75 0 0 0 19 10Z" clip-rule="evenodd"/></svg>
+          Sign out
+        </button>
+      </form>
+    </div>
+  </div>
 {% else %}
   <a href="/auth/login" class="btn btn-ghost btn-sm">Log in</a>
   <a href="/auth/register" class="btn btn-sm">Sign up</a>
@@ -91,5 +106,19 @@ function toggleFilters(){
   p.classList.toggle('collapsed');
   b.setAttribute('aria-expanded',String(!open));
 }
+function toggleAvatar(){
+  var m=document.getElementById('avatar-menu');
+  var b=document.getElementById('avatar-btn');
+  var open=m.classList.toggle('open');
+  b.setAttribute('aria-expanded',String(open));
+}
+// Close menu when clicking outside
+document.addEventListener('click',function(e){
+  var wrap=document.querySelector('.avatar-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('avatar-menu')?.classList.remove('open');
+    document.getElementById('avatar-btn')?.setAttribute('aria-expanded','false');
+  }
+});
 </script>
 {% endblock %}

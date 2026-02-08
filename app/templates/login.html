@@ -6,23 +6,83 @@
 <a href="/auth/register" class="btn btn-sm">Sign up</a>
 {% endblock %}
 
+{% block flash_area %}{% endblock %}
+
 {% block content %}
 <div class="auth-wrapper">
   <div class="auth-card">
+    <div class="auth-brand">Terror<em>Reco</em></div>
     <h1 class="auth-title">Welcome back</h1>
-    <form action="/auth/login" method="post" class="auth-form">
+    <p class="auth-subtitle">Sign in to save your search history</p>
+
+    {% if flash %}
+    <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+    {% endif %}
+
+    <form action="/auth/login" method="post" class="auth-form" id="login-form" novalidate>
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input id="email" type="email" name="email" placeholder="you@example.com" required>
+
+      <div class="form-group" id="email-group">
+        <label for="email">Email address</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" value="{{ email or '' }}" required autocomplete="email">
+        <p class="form-error" id="email-error">Please enter a valid email address</p>
       </div>
-      <div class="form-group">
+
+      <div class="form-group" id="pw-group">
         <label for="password">Password</label>
-        <input id="password" type="password" name="password" placeholder="Your password" required>
+        <div class="input-wrap">
+          <input id="password" type="password" name="password" placeholder="Your password" required autocomplete="current-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('password',this)" aria-label="Show password">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p class="form-error" id="pw-error">Please enter your password</p>
       </div>
-      <button type="submit" class="btn btn-primary">Sign in</button>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        <span class="btn-text">Sign in</span>
+        <span class="btn-spinner"><span class="spinner"></span></span>
+      </button>
     </form>
+
+    <div class="auth-divider"><span>or</span></div>
+
+    <p class="auth-footer" style="margin-top:0">New to TerrorReco? <a href="/auth/register">Create an account</a></p>
   </div>
-  <p class="auth-footer">Don't have an account? <a href="/auth/register">Create one</a></p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePw(id,btn){
+  var inp=document.getElementById(id);
+  var show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+  btn.style.color=show?'#9c9caa':'#555566';
+}
+
+document.getElementById('login-form').addEventListener('submit',function(e){
+  var ok=true;
+  var eg=document.getElementById('email-group');
+  var pg=document.getElementById('pw-group');
+  var email=document.getElementById('email');
+  var pw=document.getElementById('password');
+
+  eg.classList.remove('has-error');
+  pg.classList.remove('has-error');
+
+  if(!email.value||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)){
+    eg.classList.add('has-error');ok=false;
+  }
+  if(!pw.value){
+    pg.classList.add('has-error');ok=false;
+  }
+
+  if(!ok){e.preventDefault();return}
+
+  var btn=document.getElementById('submit-btn');
+  btn.classList.add('btn-loading');
+});
+</script>
 {% endblock %}
