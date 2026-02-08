@@ -24,3 +24,4 @@ node_modules/
 
 # Docker
 *.log
+app.db
