@@ -28,3 +28,6 @@ app.db
 
 # Notebook experiment caches
 notebooks/cache/
+
+# Corpus & embeddings cache (built from OMDb at runtime)
+data/

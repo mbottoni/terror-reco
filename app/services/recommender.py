@@ -3,7 +3,6 @@ from __future__ import annotations
 from math import log
 from typing import Any
 
-from .omdb_client import get_omdb_client
 from .strategies.base import RecommenderStrategy
 from .strategies.embedding_omdb import EmbeddingOMDbStrategy
 from .strategies.keyword_omdb import KeywordOMDbStrategy
@@ -45,50 +44,39 @@ async def recommend_movies_advanced(
     limit: int = 6,
     min_year: int | None = None,
     max_year: int | None = None,
-    kind: str = "movie",  # "movie" | "series" | "both"
+    kind: str = "movie",  # "movie" | "series" | "both"  (corpus is movies only)
     english_only: bool = False,
-    pages: int = 3,
+    pages: int = 2,
 ) -> list[dict[str, Any]]:
-    client = await get_omdb_client()
+    """Return horror movies ranked by semantic similarity to *mood*.
 
-    mood_norm = (mood or "").strip().lower()
-    queries = [
-        f"{mood_norm} horror",
-        "horror",
-        "scary horror",
-        "supernatural horror",
-        "slasher horror",
-        "zombie horror",
-    ]
+    Uses a pre-built corpus of horror movies + sentence-transformer
+    embeddings.  The corpus is built once from OMDb on first call and
+    cached to disk; every subsequent call is a fast numpy dot-product.
 
-    types: list[str]
-    if kind == "both":
-        types = ["movie", "series"]
-    else:
-        types = [kind]
+    No hardcoded mood-to-keyword mapping is involved -- matching is
+    purely ML-based.
+    """
+    from .corpus import build_corpus, get_corpus_embeddings, load_corpus, semantic_search
 
-    # Collect IDs across queries/types/pages
-    ids: list[str] = []
-    for q in queries:
-        for t in types:
-            for page in range(1, max(1, pages) + 1):
-                res = await client.search_titles(q, page=page, type_=t)
-                for item in res or []:
-                    imdb_id = item.get("imdbID")
-                    if isinstance(imdb_id, str):
-                        ids.append(imdb_id)
-    ids = list(dict.fromkeys(ids))
+    # Load or build the horror movie corpus (one-time cost)
+    corpus = load_corpus()
+    if not corpus:
+        print("Building horror movie corpus (first run, takes a few minutes)...")
+        corpus = await build_corpus(pages=pages)
 
-    # Fetch details, filter to horror, year range, language
-    details: list[dict[str, Any]] = []
-    for imdb_id in ids:
-        d = await client.get_by_id(imdb_id, plot_full=True)
-        if not d:
-            continue
-        genre = (d.get("Genre") or "").lower()
-        if "horror" not in genre:
-            continue
-        year_str = d.get("Year") or ""
+    # Get pre-computed plot embeddings
+    embeddings = get_corpus_embeddings(corpus)
+
+    # Semantic search: rank entire corpus by similarity to the user text
+    candidates = semantic_search(
+        mood, corpus, embeddings, top_k=max(limit * 10, 60)
+    )
+
+    # Apply optional filters (year range, language)
+    results: list[dict[str, Any]] = []
+    for movie in candidates:
+        year_str = movie.get("year") or ""
         try:
             year_int = int(str(year_str)[:4]) if year_str else None
         except Exception:
@@ -98,36 +86,11 @@ async def recommend_movies_advanced(
         if max_year is not None and (year_int is None or year_int > max_year):
             continue
         if english_only:
-            lang = (d.get("Language") or "").lower()
+            lang = (movie.get("language") or "").lower()
             if "english" not in lang:
                 continue
-        poster = d.get("Poster")
-        poster_url = poster if poster and poster != "N/A" else None
-        details.append(
-            {
-                "title": d.get("Title"),
-                "overview": d.get("Plot") or "",
-                "poster_url": poster_url,
-                "release_date": d.get("Released"),
-                "vote_average": (
-                    float(d.get("imdbRating") or 0)
-                    if (d.get("imdbRating") and d.get("imdbRating") != "N/A")
-                    else None
-                ),
-                "_score": _score_popularity(d),
-            }
-        )
-        if len(details) >= max(limit * 8, 60):
-            break
 
-    if not details:
-        return []
+        # Strip internal scoring field
+        results.append({k: v for k, v in movie.items() if not k.startswith("_")})
 
-    ranked = sorted(details, key=lambda x: x.get("_score", 0.0), reverse=True)
-    pool = ranked[: max(10, limit * 3)]
-    if len(pool) <= limit:
-        return [{k: v for k, v in m.items() if k != "_score"} for m in pool[:limit]]
-    import random
-
-    chosen = random.sample(pool, k=limit)
-    return [{k: v for k, v in m.items() if k != "_score"} for m in chosen]
+    return results[:limit]

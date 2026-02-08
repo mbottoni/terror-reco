@@ -6,23 +6,18 @@ from typing import Any
 
 from ..omdb_client import get_omdb_client
 
-MOOD_KEYWORDS: dict[str, list[str]] = {
-    "gory": ["gore", "bloody", "splatter", "blood"],
-    "supernatural": ["supernatural", "ghost", "haunted", "possession", "demonic"],
-    "slasher": ["slasher", "serial killer", "stalking"],
-    "psychological": ["psychological", "mind-bending", "paranoia"],
-    "monster": ["monster", "creature", "alien"],
-    "zombie": ["zombie", "undead", "apocalypse"],
-    "vampire": ["vampire", "bloodsucker"],
-    "witch": ["witch", "witchcraft", "coven"],
-    "found footage": ["found footage", "mockumentary"],
-    "folk": ["folk horror", "ritual", "pagan"],
-    "occult": ["occult", "satanic", "cult"],
-    "survival": ["survival", "isolated", "remote"],
-    "paranormal": ["paranormal", "haunting"],
-    "body": ["body horror", "mutation", "transformation"],
-    "lovecraftian": ["lovecraftian", "cosmic horror"],
-}
+# No hardcoded mood-to-keyword mapping.
+# The main recommendation pipeline (recommend_movies_advanced) uses
+# sentence-transformer embeddings against a pre-built corpus.
+# This strategy's _expand_queries is only used for the lightweight
+# KeywordOMDbStrategy (live OMDb search fallback).
+
+_STOP_WORDS = frozenset(
+    {
+        "a", "an", "and", "the", "in", "of", "with", "for", "on", "to",
+        "lots", "very", "that", "this", "but", "not", "its", "my", "me",
+    }
+)
 
 
 def _normalize(text: str) -> str:
@@ -30,29 +25,32 @@ def _normalize(text: str) -> str:
 
 
 def _expand_queries(mood: str) -> list[str]:
-    m = _normalize(mood)
-    queries: list[str] = [f"{m} horror"]
-    # Heuristics to expand search based on common words
-    if "blood" in m or "bloody" in m:
-        queries += ["gory horror", "gore horror", "bloody horror", "splatter horror"]
-    if "fun" in m or "funny" in m or "comedy" in m:
-        queries += ["comedy horror", "campy horror"]
-    # Generic fallbacks to build a pool
-    queries += [
-        "horror",
-        "scary horror",
-        "supernatural horror",
-        "slasher horror",
-        "zombie horror",
-    ]
-    # De-duplicate while preserving order
-    seen = set()
-    uniq: list[str] = []
-    for q in queries:
-        if q not in seen:
-            uniq.append(q)
-            seen.add(q)
-    return uniq
+    """Generate OMDb title-search queries from a mood description.
+
+    Simply splits the mood text into content words and adjacent pairs.
+    No hardcoded keyword mapping -- the heavy lifting is done by the
+    corpus-based semantic search in :mod:`app.services.corpus`.
+    """
+    words = _normalize(mood).split()
+    content = [w for w in words if w not in _STOP_WORDS and len(w) >= 3]
+
+    queries: list[str] = []
+
+    # Individual content words (each may match a movie title)
+    for w in content:
+        queries.append(w)
+
+    # Adjacent pairs (e.g. "found footage", "body horror")
+    for i in range(len(content) - 1):
+        queries.append(f"{content[i]} {content[i + 1]}")
+
+    # Minimal fallback
+    if not queries:
+        queries = ["horror", "thriller", "supernatural"]
+
+    # De-duplicate preserving order
+    seen: set[str] = set()
+    return [q for q in queries if q not in seen and not seen.add(q)]  # type: ignore[func-returns-value]
 
 
 def _score_omdb(detail: dict[str, Any]) -> float:
