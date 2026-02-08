@@ -44,6 +44,10 @@ app.state.templates = templates
 @app.on_event("startup")
 async def _startup() -> None:
     init_db()
+    # Pre-load the sentence-transformer model so the first request is fast
+    from .services.unified_recommender import _get_sbert
+
+    _get_sbert()
 
 
 @app.get("/", response_class=HTMLResponse)

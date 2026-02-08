@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from math import isfinite, log
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -13,6 +14,10 @@ except Exception:  # pragma: no cover - optional in prod
 
 _MODEL_CACHE: dict[str, Any] = {}
 
+# Local model cache directory (avoids re-downloading from HuggingFace).
+# Falls back to the default HF cache if the directory doesn't exist.
+_MODELS_DIR = Path(__file__).resolve().parent.parent.parent / "models"
+
 
 def _normalize_text(s: str | None) -> str:
     return (s or "").strip().lower()
@@ -22,7 +27,10 @@ def _get_sbert(model_name: str = "sentence-transformers/all-mpnet-base-v2") -> A
     if SentenceTransformer is None:
         return None
     if model_name not in _MODEL_CACHE:
-        _MODEL_CACHE[model_name] = SentenceTransformer(model_name)
+        cache_folder = str(_MODELS_DIR) if _MODELS_DIR.is_dir() else None
+        _MODEL_CACHE[model_name] = SentenceTransformer(
+            model_name, cache_folder=cache_folder,
+        )
     return _MODEL_CACHE[model_name]
 
 

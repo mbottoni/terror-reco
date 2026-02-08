@@ -31,3 +31,6 @@ notebooks/cache/
 
 # Corpus & embeddings cache (built from OMDb at runtime)
 data/
+
+# Local sentence-transformer model weights (downloaded via scripts/download_model.py)
+models/

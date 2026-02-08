@@ -18,6 +18,10 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 COPY pyproject.toml README.md /app/
 RUN pip install --upgrade pip && pip install .
 
+# Pre-download the sentence-transformer model so the container starts fast
+# (no HuggingFace download at runtime)
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-mpnet-base-v2')"
+
 # Copy source
 COPY app /app/app
 
