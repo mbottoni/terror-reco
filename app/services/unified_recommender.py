@@ -30,7 +30,8 @@ def _get_sbert(model_name: str = "sentence-transformers/all-mpnet-base-v2") -> A
     if model_name not in _MODEL_CACHE:
         cache_folder = str(_MODELS_DIR) if _MODELS_DIR.is_dir() else None
         _MODEL_CACHE[model_name] = _SentenceTransformer(
-            model_name, cache_folder=cache_folder,
+            model_name,
+            cache_folder=cache_folder,
         )
     return _MODEL_CACHE[model_name]
 

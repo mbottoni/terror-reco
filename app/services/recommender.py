@@ -69,9 +69,7 @@ async def recommend_movies_advanced(
     embeddings = get_corpus_embeddings(corpus)
 
     # Semantic search: rank entire corpus by similarity to the user text
-    candidates = semantic_search(
-        mood, corpus, embeddings, top_k=max(limit * 10, 60)
-    )
+    candidates = semantic_search(mood, corpus, embeddings, top_k=max(limit * 10, 60))
 
     # Apply optional filters (year range, language)
     results: list[dict[str, Any]] = []

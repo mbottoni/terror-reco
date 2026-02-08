@@ -93,9 +93,7 @@ class EmbeddingOMDbStrategy:
                     "release_date": d.get("Released"),
                     "year": d.get("Year"),
                     "vote_average": (
-                        float(rating_str)
-                        if rating_str and rating_str != "N/A"
-                        else None
+                        float(rating_str) if rating_str and rating_str != "N/A" else None
                     ),
                     "genre": d.get("Genre"),
                     "director": _na_val(d.get("Director")),

@@ -30,23 +30,76 @@ import numpy as np
 # ---------------------------------------------------------------------------
 DISCOVERY_TERMS: list[str] = [
     # Common title words
-    "horror", "dead", "evil", "night", "blood", "dark",
-    "ghost", "devil", "hell", "curse", "haunted", "terror",
-    "scream", "nightmare", "death", "kill", "fear",
-    "fright", "tomb", "grave", "shadow",
+    "horror",
+    "dead",
+    "evil",
+    "night",
+    "blood",
+    "dark",
+    "ghost",
+    "devil",
+    "hell",
+    "curse",
+    "haunted",
+    "terror",
+    "scream",
+    "nightmare",
+    "death",
+    "kill",
+    "fear",
+    "fright",
+    "tomb",
+    "grave",
+    "shadow",
     # Creatures & archetypes
-    "zombie", "vampire", "demon", "witch", "alien", "werewolf",
-    "creature", "monster", "dracula", "frankenstein", "mummy",
+    "zombie",
+    "vampire",
+    "demon",
+    "witch",
+    "alien",
+    "werewolf",
+    "creature",
+    "monster",
+    "dracula",
+    "frankenstein",
+    "mummy",
     # Iconic franchises & well-known titles
-    "halloween", "saw", "conjuring", "exorcist", "friday 13",
-    "omen", "purge", "insidious", "paranormal", "sinister",
-    "hereditary", "babadook", "poltergeist", "candyman",
-    "hellraiser", "chucky", "jaws", "cloverfield", "psycho",
-    "ring", "grudge", "it", "us",
+    "halloween",
+    "saw",
+    "conjuring",
+    "exorcist",
+    "friday 13",
+    "omen",
+    "purge",
+    "insidious",
+    "paranormal",
+    "sinister",
+    "hereditary",
+    "babadook",
+    "poltergeist",
+    "candyman",
+    "hellraiser",
+    "chucky",
+    "jaws",
+    "cloverfield",
+    "psycho",
+    "ring",
+    "grudge",
+    "it",
+    "us",
     # Subgenre & thematic
-    "slasher", "possession", "haunting", "survival",
-    "massacre", "cannibal", "asylum", "cabin", "ritual",
-    "annihilation", "midsommar", "descent",
+    "slasher",
+    "possession",
+    "haunting",
+    "survival",
+    "massacre",
+    "cannibal",
+    "asylum",
+    "cabin",
+    "ritual",
+    "annihilation",
+    "midsommar",
+    "descent",
 ]
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -112,8 +165,7 @@ async def build_corpus(
                     raw_ids.append(imdb_id)
             if done % 20 == 0:
                 print(
-                    f"  Corpus search: {done}/{total_queries} queries, "
-                    f"{len(raw_ids)} raw IDs"
+                    f"  Corpus search: {done}/{total_queries} queries, " f"{len(raw_ids)} raw IDs"
                 )
 
     unique_ids = list(dict.fromkeys(raw_ids))
@@ -181,9 +233,7 @@ async def build_corpus(
                 "poster_url": poster_url,
                 "release_date": _na(d.get("Released")),
                 "year": d.get("Year"),
-                "vote_average": (
-                    float(rating_str) if rating_str and rating_str != "N/A" else None
-                ),
+                "vote_average": (float(rating_str) if rating_str and rating_str != "N/A" else None),
                 "genre": d.get("Genre"),
                 "director": _na(d.get("Director")),
                 "actors": _na(d.get("Actors")),

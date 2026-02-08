@@ -14,8 +14,25 @@ from ..omdb_client import get_omdb_client
 
 _STOP_WORDS = frozenset(
     {
-        "a", "an", "and", "the", "in", "of", "with", "for", "on", "to",
-        "lots", "very", "that", "this", "but", "not", "its", "my", "me",
+        "a",
+        "an",
+        "and",
+        "the",
+        "in",
+        "of",
+        "with",
+        "for",
+        "on",
+        "to",
+        "lots",
+        "very",
+        "that",
+        "this",
+        "but",
+        "not",
+        "its",
+        "my",
+        "me",
     }
 )
 
@@ -72,9 +89,7 @@ def _build_movie(d: dict[str, Any], score: float | None = None) -> dict[str, Any
         "poster_url": poster_url,
         "release_date": _na(d.get("Released")),
         "year": d.get("Year"),
-        "vote_average": (
-            float(rating_str) if rating_str and rating_str != "N/A" else None
-        ),
+        "vote_average": (float(rating_str) if rating_str and rating_str != "N/A" else None),
         "genre": d.get("Genre"),
         "director": _na(d.get("Director")),
         "actors": _na(d.get("Actors")),

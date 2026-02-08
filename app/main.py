@@ -132,14 +132,10 @@ async def ui_recommendations(
         )
     elif strategy_key == "embedding":
         # TF-IDF cosine similarity on OMDb plot descriptions
-        movies = await recommend_movies(
-            mood=mood, limit=limit, strategy="embedding"
-        )
+        movies = await recommend_movies(mood=mood, limit=limit, strategy="embedding")
     else:
         # Keyword: OMDb title search ranked by IMDb rating
-        movies = await recommend_movies(
-            mood=mood, limit=limit, strategy="keyword"
-        )
+        movies = await recommend_movies(mood=mood, limit=limit, strategy="keyword")
 
     # Save history if logged in
     if user:

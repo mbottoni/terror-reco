@@ -84,17 +84,13 @@ async def create_checkout_session(request: Request) -> dict[str, Any]:
     try:
         # Build URLs manually to avoid issues in production
         base_url = str(request.base_url).rstrip("/")
-        success_url = (
-            f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}"
-        )
+        success_url = f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{base_url}/stripe/cancel"
 
         print(f"Base URL: {base_url}")
         print(f"Success URL: {success_url}")
         print(f"Cancel URL: {cancel_url}")
-        price_suffix = (
-            settings.COFFEE_PRICE_ID[-3:] if settings.COFFEE_PRICE_ID else "None"
-        )
+        price_suffix = settings.COFFEE_PRICE_ID[-3:] if settings.COFFEE_PRICE_ID else "None"
         print(f"Price ID: ...{price_suffix}")
 
         checkout_session = stripe.checkout.Session.create(
@@ -116,20 +112,14 @@ async def create_checkout_session(request: Request) -> dict[str, Any]:
 
     except stripe.StripeError as e:
         print(f"Stripe error: {e}")
-        raise HTTPException(
-            status_code=400, detail=f"Payment error: {e!s}"
-        ) from e
+        raise HTTPException(status_code=400, detail=f"Payment error: {e!s}") from e
     except Exception as e:
         print(f"Unexpected error: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Server error: {e!s}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Server error: {e!s}") from e
 
 
 @router.get("/success", response_class=HTMLResponse)
-async def stripe_success(
-    request: Request, session_id: str | None = None
-) -> HTMLResponse:
+async def stripe_success(request: Request, session_id: str | None = None) -> HTMLResponse:
     """Handle successful payment."""
     if not session_id:
         raise HTTPException(status_code=400, detail="No session ID provided")
@@ -158,9 +148,7 @@ async def stripe_cancel(request: Request) -> HTMLResponse:
     """Handle cancelled payment."""
     templates = get_templates()
     return HTMLResponse(
-        templates.TemplateResponse(
-            "coffee_cancel.html", {"request": request}
-        ).body,
+        templates.TemplateResponse("coffee_cancel.html", {"request": request}).body,
     )
 
 
@@ -168,9 +156,7 @@ async def stripe_cancel(request: Request) -> HTMLResponse:
 async def stripe_webhook(request: Request) -> dict[str, str]:
     """Handle Stripe webhooks."""
     if not settings.STRIPE_WEBHOOK_SECRET:
-        raise HTTPException(
-            status_code=500, detail="Webhook secret not configured"
-        )
+        raise HTTPException(status_code=500, detail="Webhook secret not configured")
 
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")

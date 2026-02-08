@@ -51,118 +51,203 @@ def load_data():
         {
             "mood": "slow-burn psychological dread",
             "gold": [
-                "the witch", "hereditary", "the babadook", "it follows",
-                "the lighthouse", "midsommar", "rosemary's baby",
-                "the shining", "black swan",
+                "the witch",
+                "hereditary",
+                "the babadook",
+                "it follows",
+                "the lighthouse",
+                "midsommar",
+                "rosemary's baby",
+                "the shining",
+                "black swan",
             ],
         },
         {
             "mood": "campy fun with lots of blood",
             "gold": [
-                "evil dead", "braindead", "dead alive", "re-animator",
-                "the return of the living dead", "army of darkness",
-                "tucker and dale vs evil", "shaun of the dead", "bad taste",
+                "evil dead",
+                "braindead",
+                "dead alive",
+                "re-animator",
+                "the return of the living dead",
+                "army of darkness",
+                "tucker and dale vs evil",
+                "shaun of the dead",
+                "bad taste",
             ],
         },
         {
             "mood": "cosmic Lovecraftian isolation",
             "gold": [
-                "the thing", "color out of space", "annihilation",
-                "in the mouth of madness", "the void", "from beyond",
-                "the mist", "event horizon", "underwater",
+                "the thing",
+                "color out of space",
+                "annihilation",
+                "in the mouth of madness",
+                "the void",
+                "from beyond",
+                "the mist",
+                "event horizon",
+                "underwater",
             ],
         },
         {
             "mood": "haunted house with dark secrets",
             "gold": [
-                "the haunting", "the others", "the conjuring", "insidious",
-                "poltergeist", "the amityville horror", "hill house",
-                "the innocents", "the changeling",
+                "the haunting",
+                "the others",
+                "the conjuring",
+                "insidious",
+                "poltergeist",
+                "the amityville horror",
+                "hill house",
+                "the innocents",
+                "the changeling",
             ],
         },
         {
             "mood": "slasher with suspense and a masked killer",
             "gold": [
-                "scream", "halloween", "friday the 13th",
-                "a nightmare on elm street", "the texas chain saw massacre",
-                "black christmas", "you're next", "happy death day",
+                "scream",
+                "halloween",
+                "friday the 13th",
+                "a nightmare on elm street",
+                "the texas chain saw massacre",
+                "black christmas",
+                "you're next",
+                "happy death day",
             ],
         },
         {
             "mood": "zombie apocalypse survival",
             "gold": [
-                "dawn of the dead", "28 days later", "train to busan",
-                "world war z", "night of the living dead",
-                "zombieland", "cargo", "the girl with all the gifts",
+                "dawn of the dead",
+                "28 days later",
+                "train to busan",
+                "world war z",
+                "night of the living dead",
+                "zombieland",
+                "cargo",
+                "the girl with all the gifts",
             ],
         },
         {
             "mood": "demonic possession and exorcism",
             "gold": [
-                "the exorcist", "the conjuring", "the rite",
-                "the last exorcism", "insidious", "the nun",
-                "evil dead", "deliver us from evil",
+                "the exorcist",
+                "the conjuring",
+                "the rite",
+                "the last exorcism",
+                "insidious",
+                "the nun",
+                "evil dead",
+                "deliver us from evil",
             ],
         },
         {
             "mood": "creepy kids and childhood fears",
             "gold": [
-                "the omen", "children of the corn", "the ring", "orphan",
-                "the sixth sense", "the others", "goodnight mommy",
+                "the omen",
+                "children of the corn",
+                "the ring",
+                "orphan",
+                "the sixth sense",
+                "the others",
+                "goodnight mommy",
                 "the innocents",
             ],
         },
         {
             "mood": "found footage realistic terror",
             "gold": [
-                "the blair witch project", "paranormal activity", "rec",
-                "[rec]", "cloverfield", "as above, so below", "creep",
-                "the last exorcism", "grave encounters",
+                "the blair witch project",
+                "paranormal activity",
+                "rec",
+                "[rec]",
+                "cloverfield",
+                "as above, so below",
+                "creep",
+                "the last exorcism",
+                "grave encounters",
             ],
         },
         {
             "mood": "survival horror isolated in nature",
             "gold": [
-                "the descent", "the ritual", "backcountry", "eden lake",
-                "the ruins", "wrong turn", "the forest", "crawl", "prey",
+                "the descent",
+                "the ritual",
+                "backcountry",
+                "eden lake",
+                "the ruins",
+                "wrong turn",
+                "the forest",
+                "crawl",
+                "prey",
             ],
         },
         {
             "mood": "vampire gothic romance",
             "gold": [
-                "interview with the vampire", "let the right one in",
-                "only lovers left alive", "bram stoker's dracula",
-                "nosferatu", "a girl walks home alone at night",
-                "the hunger", "what we do in the shadows",
+                "interview with the vampire",
+                "let the right one in",
+                "only lovers left alive",
+                "bram stoker's dracula",
+                "nosferatu",
+                "a girl walks home alone at night",
+                "the hunger",
+                "what we do in the shadows",
             ],
         },
         {
             "mood": "body horror and grotesque transformation",
             "gold": [
-                "the fly", "the thing", "videodrome", "tusk", "society",
-                "slither", "from beyond", "possessor", "titane",
+                "the fly",
+                "the thing",
+                "videodrome",
+                "tusk",
+                "society",
+                "slither",
+                "from beyond",
+                "possessor",
+                "titane",
             ],
         },
         {
             "mood": "eerie folk horror pagan rituals",
             "gold": [
-                "the wicker man", "midsommar", "the witch", "apostle",
-                "kill list", "a field in england", "the ritual",
+                "the wicker man",
+                "midsommar",
+                "the witch",
+                "apostle",
+                "kill list",
+                "a field in england",
+                "the ritual",
                 "hagazussa",
             ],
         },
         {
             "mood": "home invasion and paranoia",
             "gold": [
-                "the strangers", "you're next", "funny games",
-                "don't breathe", "hush", "inside", "the purge", "us",
+                "the strangers",
+                "you're next",
+                "funny games",
+                "don't breathe",
+                "hush",
+                "inside",
+                "the purge",
+                "us",
             ],
         },
         {
             "mood": "sci-fi horror in space",
             "gold": [
-                "alien", "aliens", "event horizon", "pandorum",
-                "life", "sunshine", "the thing", "underwater",
+                "alien",
+                "aliens",
+                "event horizon",
+                "pandorum",
+                "life",
+                "sunshine",
+                "the thing",
+                "underwater",
             ],
         },
     ]
@@ -205,7 +290,7 @@ def eval_helpers():
         t = t.lower().strip()
         for prefix in ("the ", "a ", "an "):
             if t.startswith(prefix):
-                t = t[len(prefix):]
+                t = t[len(prefix) :]
         return t
 
     def title_match(candidate, gold_set):
@@ -291,7 +376,8 @@ def run_comparison(MODELS, TEST_SET, pools, score_pipeline):
             )
             pop = _minmax(
                 np.array(
-                    [_popularity(it) for it in items], dtype=np.float32,
+                    [_popularity(it) for it in items],
+                    dtype=np.float32,
                 )
             )
 
@@ -312,9 +398,7 @@ def run_comparison(MODELS, TEST_SET, pools, score_pipeline):
                 )
                 rec = _minmax(y_arr.astype(np.float32))
 
-            blended = (
-                0.45 * sem + 0.20 * kw + 0.20 * pop + 0.05 * rec
-            ).astype(np.float32)
+            blended = (0.45 * sem + 0.20 * kw + 0.20 * pop + 0.05 * rec).astype(np.float32)
             order = np.argsort(-blended)
             pool_idx = order[: max(10, limit * 5)]
             pool = [items[i] for i in pool_idx]
@@ -356,16 +440,10 @@ def run_comparison(MODELS, TEST_SET, pools, score_pipeline):
             _titles = [_it.get("title", "") for _it in _ranked]
             _all_scores.append(score_pipeline(_titles, _gold, k=6))
 
-        _avg = {
-            key: float(np.mean([s[key] for s in _all_scores]))
-            for key in _all_scores[0]
-        }
+        _avg = {key: float(np.mean([s[key] for s in _all_scores])) for key in _all_scores[0]}
         _avg["latency_ms"] = latencies[short_name]
         results[short_name] = _avg
-        print(
-            f"           NDCG@6: {_avg['ndcg@k']:.4f}, "
-            f"Hit@6: {_avg['hit_rate@k']:.4f}"
-        )
+        print(f"           NDCG@6: {_avg['ndcg@k']:.4f}, " f"Hit@6: {_avg['hit_rate@k']:.4f}")
 
     print("Done.")
     mo.md(f"Evaluated **{len(results)}** models.")
@@ -443,19 +521,14 @@ def heatmap(MODELS, SentenceTransformer, TEST_SET, pools):
             f"### Cosine Similarity: '{_sample_mood}' vs top-10\n",
         ]
         _lines.append("```")
-        _lines.append(
-            f"{'Movie':<32s} | "
-            + " | ".join(f"{_n[:8]:>8s}" for _n in MODELS)
-        )
+        _lines.append(f"{'Movie':<32s} | " + " | ".join(f"{_n[:8]:>8s}" for _n in MODELS))
         _lines.append("-" * (34 + 11 * len(MODELS)))
 
         _sim_by_model = {}
         for _sn, _hf in MODELS.items():
             print(f"  Heatmap: encoding with {_sn}...")
             _m = SentenceTransformer(_hf)
-            _texts = [_sample_mood] + [
-                _it.get("overview") or "" for _it in _items
-            ]
+            _texts = [_sample_mood] + [_it.get("overview") or "" for _it in _items]
             _embs = np.asarray(
                 _m.encode(_texts, normalize_embeddings=True),
                 dtype=np.float32,
@@ -464,9 +537,7 @@ def heatmap(MODELS, SentenceTransformer, TEST_SET, pools):
             _sim_by_model[_sn] = _sims
 
         for _i, _title in enumerate(_titles):
-            _vals = " | ".join(
-                f"{_sim_by_model[_n][_i]:8.4f}" for _n in MODELS
-            )
+            _vals = " | ".join(f"{_sim_by_model[_n][_i]:8.4f}" for _n in MODELS)
             _lines.append(f"{_title:<32s} | {_vals}")
 
         _lines.append("```")
