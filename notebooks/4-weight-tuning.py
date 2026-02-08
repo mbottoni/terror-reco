@@ -13,7 +13,6 @@ app = marimo.App(width="medium")
 
 with app.setup:
     import itertools
-    import json
     import math
     import sys
     import time
@@ -30,19 +29,21 @@ with app.setup:
 
     load_dotenv(PROJECT_ROOT / ".env")
 
+    from app.services.corpus import load_corpus
+
     mo.md("## 4 - Weight Optimization")
 
 
 @app.cell
 def load_data():
-    CACHE_FILE = PROJECT_ROOT / "notebooks" / "cache" / "candidate_pools.json"
+    """Load the horror movie corpus and gold test set."""
+    corpus = load_corpus()
 
-    if not CACHE_FILE.exists():
-        mo.md("**Error:** Cache not found. Run `marimo run notebooks/1-evaluation.py` first.")
-        pools = {}
-    else:
-        with open(CACHE_FILE) as f:
-            pools = json.load(f)
+    if not corpus:
+        mo.md(
+            "**Error:** Corpus not found.  \n"
+            "Run `marimo run notebooks/1-evaluation.py` first to build the corpus."
+        )
 
     TEST_SET = [
         {
@@ -161,7 +162,13 @@ def load_data():
         },
     ]
 
-    mo.md(f"Loaded **{len(pools)}** cached pools, **{len(TEST_SET)}** test moods.")
+    # Every mood uses the full corpus as its candidate pool
+    pools = {_entry["mood"]: list(corpus) for _entry in TEST_SET}
+
+    mo.md(
+        f"Loaded **{len(corpus)}** horror movies from corpus, "
+        f"**{len(TEST_SET)}** test moods."
+    )
     return TEST_SET, pools
 
 
@@ -247,7 +254,9 @@ def precompute_signals(TEST_SET, pools):
             print(f"  [{_idx}/{len(TEST_SET)}] {_mood[:40]} -> SKIP (no items)")
             continue
 
-        _plots = [_normalize_text(_mood)] + [_normalize_text(_m.get("overview") or "") for _m in _items]
+        _plots = [_normalize_text(_mood)] + [
+            _normalize_text(_m.get("overview") or "") for _m in _items
+        ]
         _embs = _embed(_plots)
         _mood_vec, _plot_vecs = _embs[0:1], _embs[1:]
         _sem = _minmax(_cosine(_mood_vec, _plot_vecs).ravel())
@@ -421,7 +430,10 @@ def compare_best_vs_baseline(
         "Baseline (0.45/0.20/0.20/0.05, lam=0.7)", {}
     ).get("ndcg@k", 0)
 
-    mo.md("### Baseline vs Optimized\n\n" + _rows + f"\nNDCG@6 improvement: **{_improvement:+.4f}**")
+    mo.md(
+        "### Baseline vs Optimized\n\n" + _rows
+        + f"\nNDCG@6 improvement: **{_improvement:+.4f}**"
+    )
     return (final_results,)
 
 

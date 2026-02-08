@@ -6,11 +6,8 @@ __generated_with = "0.19.9"
 app = marimo.App(width="medium")
 
 with app.setup:
-    import asyncio
-    import json
     import math
     import sys
-    import time
     from pathlib import Path
 
     import marimo as mo
@@ -24,9 +21,13 @@ with app.setup:
 
     load_dotenv(PROJECT_ROOT / ".env")
 
-    CACHE_DIR = PROJECT_ROOT / "notebooks" / "cache"
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    CACHE_FILE = CACHE_DIR / "candidate_pools.json"
+    from app.services.corpus import (
+        CORPUS_FILE,
+        build_corpus,
+        get_corpus_embeddings,
+        load_corpus,
+        semantic_search,
+    )
 
     mo.md("## 1 - Evaluation Framework for TerrorReco Recommendations")
 
@@ -158,7 +159,7 @@ def gold_test_set():
 
 
 @app.cell
-async def load_or_fetch_cache(TEST_SET):
+async def load_or_fetch_cache(CACHE_FILE, TEST_SET):
     """Load cached candidate pools or fetch from OMDb if missing."""
 
     def _load_cache():

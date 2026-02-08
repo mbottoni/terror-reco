@@ -15,7 +15,6 @@ __generated_with = "0.19.9"
 app = marimo.App(width="medium")
 
 with app.setup:
-    import json
     import math
     import sys
     import time
@@ -32,11 +31,13 @@ with app.setup:
 
     load_dotenv(PROJECT_ROOT / ".env")
 
+    from app.services.corpus import load_corpus
+
     mo.md("## 2 - Embedding Model Comparison")
 
 
 @app.cell
-def load_data():
+def load_data(json):
     """Load the cached candidate pools and gold test set."""
     CACHE_FILE = PROJECT_ROOT / "notebooks" / "cache" / "candidate_pools.json"
 
@@ -311,7 +312,7 @@ def run_comparison(MODELS, TEST_SET, pools, score_pipeline):
 
         # Measure embedding latency on 50 sample texts
         sample_texts = []
-        for mood_key, items in pools.items():
+        for _mood_key, items in pools.items():
             for it in items[:5]:
                 sample_texts.append(it.get("overview") or "")
             if len(sample_texts) >= 50:

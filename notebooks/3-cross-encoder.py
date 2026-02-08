@@ -13,7 +13,6 @@ __generated_with = "0.19.9"
 app = marimo.App(width="medium")
 
 with app.setup:
-    import json
     import math
     import sys
     import time
@@ -30,19 +29,21 @@ with app.setup:
 
     load_dotenv(PROJECT_ROOT / ".env")
 
+    from app.services.corpus import load_corpus
+
     mo.md("## 3 - Cross-Encoder Reranking")
 
 
 @app.cell
 def load_data():
-    CACHE_FILE = PROJECT_ROOT / "notebooks" / "cache" / "candidate_pools.json"
+    """Load the horror movie corpus and gold test set."""
+    corpus = load_corpus()
 
-    if not CACHE_FILE.exists():
-        mo.md("**Error:** Cache not found. Run `marimo run notebooks/1-evaluation.py` first.")
-        pools = {}
-    else:
-        with open(CACHE_FILE) as f:
-            pools = json.load(f)
+    if not corpus:
+        mo.md(
+            "**Error:** Corpus not found.  \n"
+            "Run `marimo run notebooks/1-evaluation.py` first to build the corpus."
+        )
 
     TEST_SET = [
         {
@@ -161,7 +162,13 @@ def load_data():
         },
     ]
 
-    mo.md(f"Loaded **{len(pools)}** cached pools, **{len(TEST_SET)}** test moods.")
+    # Every mood uses the full corpus as its candidate pool
+    pools = {_entry["mood"]: list(corpus) for _entry in TEST_SET}
+
+    mo.md(
+        f"Loaded **{len(corpus)}** horror movies from corpus, "
+        f"**{len(TEST_SET)}** test moods."
+    )
     return TEST_SET, pools
 
 
