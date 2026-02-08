@@ -13,7 +13,7 @@ from .auth import router as auth_router
 from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
-from .models import User
+from .models import MovieFeedback, User
 from .services.recommender import recommend_movies, recommend_movies_advanced
 from .services.unified_recommender import recommend_unified_semantic
 from .settings import get_settings
@@ -140,6 +140,16 @@ async def ui_recommendations(
     # Save history if logged in
     if user:
         save_history(db, user.id, mood, strategy_key, movies)
+    # Load existing feedback for this user so the UI can show active states
+    user_feedback: dict[str, int] = {}
+    if user:
+        rows = (
+            db.query(MovieFeedback.imdb_id, MovieFeedback.rating)
+            .filter(MovieFeedback.user_id == user.id)
+            .all()
+        )
+        user_feedback = {r.imdb_id: r.rating for r in rows}
+
     return templates.TemplateResponse(
         "results.html",
         {
@@ -148,6 +158,8 @@ async def ui_recommendations(
             "movies": movies,
             "strategy": strategy_key,
             "strategy_label": STRATEGY_LABELS[strategy_key],
+            "user": user,
+            "user_feedback": user_feedback,
         },
     )
 
@@ -164,6 +176,64 @@ async def api_recommendations(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {"mood": mood, "count": len(movies), "results": movies}
+
+
+@app.post("/api/feedback")
+async def submit_feedback(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Record a like (+1) or dislike (-1) for a movie.
+
+    Expects JSON: ``{"imdb_id": "...", "title": "...", "rating": 1,
+    "mood": "...", "strategy": "..."}``.
+    Upserts: if the user already rated this movie, the rating is updated.
+    Sending the same rating again removes the feedback (toggle off).
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Sign in to rate movies")
+
+    body = await request.json()
+    imdb_id: str = body.get("imdb_id", "")
+    title: str = body.get("title", "")
+    rating: int = int(body.get("rating", 0))
+    mood: str | None = body.get("mood")
+    strategy: str | None = body.get("strategy")
+
+    if not imdb_id or rating not in (1, -1):
+        raise HTTPException(status_code=400, detail="Invalid feedback payload")
+
+    existing = (
+        db.query(MovieFeedback)
+        .filter(MovieFeedback.user_id == user.id, MovieFeedback.imdb_id == imdb_id)
+        .first()
+    )
+
+    if existing:
+        if existing.rating == rating:
+            # Toggle off: same button pressed again -> remove feedback
+            db.delete(existing)
+            db.commit()
+            return {"status": "removed", "imdb_id": imdb_id, "rating": 0}
+        # Switch rating
+        existing.rating = rating
+        existing.mood = mood
+        existing.strategy = strategy
+        db.commit()
+        return {"status": "updated", "imdb_id": imdb_id, "rating": rating}
+
+    fb = MovieFeedback(
+        user_id=user.id,
+        imdb_id=imdb_id,
+        title=title,
+        rating=rating,
+        mood=mood,
+        strategy=strategy,
+    )
+    db.add(fb)
+    db.commit()
+    return {"status": "created", "imdb_id": imdb_id, "rating": rating}
 
 
 # Routers

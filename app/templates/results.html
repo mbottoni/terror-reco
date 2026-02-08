@@ -62,6 +62,8 @@
 
         <p class="modal-plot" id="modal-plot"></p>
 
+        <div class="modal-feedback" id="modal-feedback"></div>
+
         <div class="modal-actions" id="modal-actions"></div>
       </div>
     </div>
@@ -94,7 +96,16 @@ var MOVIES = [
   {% endfor %}
 ];
 
+var IS_LOGGED_IN = {{ "true" if user else "false" }};
+var MOOD = {{ mood | tojson }};
+var STRATEGY = {{ strategy | tojson }};
+
+// Track feedback state client-side (seeded from server for logged-in users)
+var feedbackState = {{ user_feedback | tojson }};
+var _currentIdx = null;
+
 function openDetail(idx){
+  _currentIdx = idx;
   var m = MOVIES[idx];
   if(!m) return;
 
@@ -102,10 +113,8 @@ function openDetail(idx){
   var poster = document.getElementById('modal-poster');
   var noPoster = document.getElementById('modal-no-poster');
 
-  // Title
   document.getElementById('modal-title').textContent = m.title;
 
-  // Poster
   if(m.poster_url && m.poster_url !== 'N/A'){
     poster.src = m.poster_url;
     poster.alt = m.title;
@@ -116,15 +125,13 @@ function openDetail(idx){
     noPoster.style.display = 'flex';
   }
 
-  // Badges row (rating, year, runtime, rated)
   var badges = '';
-  if(m.vote_average) badges += '<span class="modal-badge rating-badge">★ '+m.vote_average+'</span>';
+  if(m.vote_average) badges += '<span class="modal-badge rating-badge">&#9733; '+m.vote_average+'</span>';
   if(m.year) badges += '<span class="modal-badge">'+m.year+'</span>';
   if(m.runtime) badges += '<span class="modal-badge">'+m.runtime+'</span>';
   if(m.rated) badges += '<span class="modal-badge rated-badge">'+m.rated+'</span>';
   document.getElementById('modal-badges').innerHTML = badges;
 
-  // Meta grid (director, actors, genre, etc.)
   var meta = '';
   if(m.director) meta += '<div class="modal-meta-item"><span class="meta-label">Director</span><span class="meta-value">'+m.director+'</span></div>';
   if(m.actors) meta += '<div class="modal-meta-item"><span class="meta-label">Cast</span><span class="meta-value">'+m.actors+'</span></div>';
@@ -135,8 +142,10 @@ function openDetail(idx){
   if(m.awards) meta += '<div class="modal-meta-item"><span class="meta-label">Awards</span><span class="meta-value">'+m.awards+'</span></div>';
   document.getElementById('modal-meta').innerHTML = meta;
 
-  // Plot
   document.getElementById('modal-plot').textContent = m.overview || 'No plot available.';
+
+  // Feedback buttons
+  renderFeedback(m.imdb_id);
 
   // Actions (IMDb link)
   var actions = '';
@@ -147,10 +156,75 @@ function openDetail(idx){
   }
   document.getElementById('modal-actions').innerHTML = actions;
 
-  // Show modal
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+function renderFeedback(imdbId){
+  var el = document.getElementById('modal-feedback');
+  if(!IS_LOGGED_IN || !imdbId){
+    el.innerHTML = IS_LOGGED_IN ? '' : '<p class="feedback-hint">Sign in to rate movies</p>';
+    return;
+  }
+  var current = feedbackState[imdbId] || 0;
+  el.innerHTML =
+    '<span class="feedback-label">Rate this recommendation</span>' +
+    '<div class="feedback-btns">' +
+      '<button class="fb-btn fb-like'+(current===1?' active':'')+'" onclick="sendFeedback(\''+imdbId+'\',1)" title="Like">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M1 8.25a1.25 1.25 0 1 1 2.5 0v7.5a1.25 1.25 0 1 1-2.5 0v-7.5ZM11 3c-.91 0-1.72.54-2.08 1.34L7.13 8H5.5a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h8.83a1.5 1.5 0 0 0 1.46-1.16l1.2-5A1.5 1.5 0 0 0 15.53 8H12V4.5A1.5 1.5 0 0 0 10.5 3H11Z"/></svg>' +
+      '</button>' +
+      '<button class="fb-btn fb-dislike'+(current===-1?' active':'')+'" onclick="sendFeedback(\''+imdbId+'\',-1)" title="Dislike">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M19 11.75a1.25 1.25 0 1 1-2.5 0v-7.5a1.25 1.25 0 0 1 2.5 0v7.5ZM9 17c.91 0 1.72-.54 2.08-1.34L12.87 12h1.63a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5H5.67a1.5 1.5 0 0 0-1.46 1.16l-1.2 5A1.5 1.5 0 0 0 4.47 12H8v3.5A1.5 1.5 0 0 0 9.5 17H9Z"/></svg>' +
+      '</button>' +
+    '</div>';
+}
+
+function sendFeedback(imdbId, rating){
+  var m = MOVIES[_currentIdx];
+  fetch('/api/feedback', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      imdb_id: imdbId,
+      title: m ? m.title : '',
+      rating: rating,
+      mood: MOOD,
+      strategy: STRATEGY
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    feedbackState[imdbId] = data.rating;
+    renderFeedback(imdbId);
+    // Update card overlay indicator
+    updateCardIndicator(imdbId, data.rating);
+  })
+  .catch(function(err){ console.error('Feedback error:', err); });
+}
+
+function updateCardIndicator(imdbId, rating){
+  // Find the card index for this movie and update a small indicator
+  for(var i=0; i<MOVIES.length; i++){
+    if(MOVIES[i].imdb_id === imdbId){
+      var card = document.querySelectorAll('.card')[i];
+      if(!card) return;
+      var old = card.querySelector('.card-feedback-indicator');
+      if(old) old.remove();
+      if(rating === 0) return;
+      var ind = document.createElement('div');
+      ind.className = 'card-feedback-indicator ' + (rating === 1 ? 'liked' : 'disliked');
+      ind.textContent = rating === 1 ? '\u25B2' : '\u25BC';
+      card.appendChild(ind);
+    }
+  }
+}
+
+// On load, set indicators for existing feedback
+document.addEventListener('DOMContentLoaded', function(){
+  for(var id in feedbackState){
+    if(feedbackState[id] !== 0) updateCardIndicator(id, feedbackState[id]);
+  }
+});
 
 function closeDetail(e){
   if(e && e.target !== document.getElementById('movie-modal')) return;
