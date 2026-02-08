@@ -407,6 +407,82 @@ select{cursor:pointer}
 .loading-dots::after{content:'';animation:ldots 1.4s steps(4,end) infinite}
 @keyframes ldots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
 
+/* ---- MOVIE DETAIL MODAL ---- */
+.modal-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;
+  transition:opacity .25s ease,visibility .25s ease;
+  padding:24px;
+}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal-content{
+  position:relative;
+  background:#141419;border:1px solid #2a2a33;border-radius:20px;
+  max-width:780px;width:100%;max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 80px rgba(0,0,0,.7);
+  animation:modalIn .3s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-close{
+  position:absolute;top:16px;right:16px;z-index:10;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.06) !important;border:1px solid #333340 !important;
+  color:#9c9caa;font-size:1.25rem;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;
+}
+.modal-close:hover{background:rgba(255,255,255,.12) !important;color:#fff}
+.modal-layout{display:flex;gap:28px;padding:32px}
+.modal-poster-wrap{flex-shrink:0;width:220px}
+.modal-poster{width:100%;border-radius:12px;aspect-ratio:2/3;object-fit:cover}
+.modal-no-poster{
+  width:100%;aspect-ratio:2/3;border-radius:12px;
+  background:#1a1a22;display:flex;align-items:center;justify-content:center;
+  font-size:3rem;color:#333340;
+}
+.modal-info{flex:1;min-width:0}
+.modal-title{font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:-.03em;margin-bottom:12px;line-height:1.2}
+.modal-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.modal-badge{
+  display:inline-flex;align-items:center;
+  padding:4px 12px;border-radius:999px;
+  font-size:.75rem;font-weight:700;
+  background:#1e1e26;color:#9c9caa;border:1px solid #2a2a33;
+}
+.modal-badge.rating-badge{color:#f5c518;border-color:rgba(245,197,24,.25);background:rgba(245,197,24,.08)}
+.modal-badge.rated-badge{color:#e03131;border-color:rgba(224,49,49,.25);background:rgba(224,49,49,.08)}
+.modal-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:18px}
+.modal-meta-item{display:flex;flex-direction:column;gap:2px}
+.meta-label{font-size:.65rem;font-weight:700;color:#555566;text-transform:uppercase;letter-spacing:.06em}
+.meta-value{font-size:.8125rem;color:#c8c8d0;line-height:1.4}
+.modal-plot{
+  font-size:.875rem;color:#8b8b96;line-height:1.7;
+  margin-bottom:20px;padding-top:14px;
+  border-top:1px solid #2a2a33;
+}
+.modal-actions{display:flex;gap:10px}
+.btn-imdb{
+  background:#f5c518 !important;color:#000 !important;border:none !important;
+  padding:10px 20px;border-radius:10px;
+  font-weight:800;font-size:.8125rem;
+  display:inline-flex;align-items:center;gap:7px;
+  transition:all .2s ease;
+}
+.btn-imdb:hover{background:#ffd740 !important;transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,197,24,.25)}
+.btn-imdb svg{width:14px;height:14px}
+
+/* Clickable cards */
+.card[role="button"]{cursor:pointer}
+
+@media(max-width:640px){
+  .modal-layout{flex-direction:column;padding:24px 20px}
+  .modal-poster-wrap{width:100%;max-width:240px;margin:0 auto}
+  .modal-meta-grid{grid-template-columns:1fr}
+  .modal-close{top:12px;right:12px}
+}
+
 /* ---- EMPTY STATE ---- */
 .empty-state{text-align:center;padding:56px 16px;color:#555566}
 .empty-state-icon{font-size:3rem;margin-bottom:12px;opacity:.6}

@@ -15,6 +15,13 @@ def _normalize(text: str) -> str:
     return (text or "").strip().lower()
 
 
+def _na_val(val: object) -> str | None:
+    """Return None for OMDb 'N/A' sentinel values."""
+    if val is None or val == "N/A":
+        return None
+    return str(val)
+
+
 def _load_config() -> dict[str, Any]:
     cfg_path = Path(__file__).resolve().parents[3] / "config_embedding.yaml"
     if not cfg_path.exists():
@@ -76,17 +83,27 @@ class EmbeddingOMDbStrategy:
                 continue
             poster = d.get("Poster")
             poster_url = poster if poster and poster != "N/A" else None
+            rating_str = d.get("imdbRating") or ""
             items.append(
                 {
+                    "imdb_id": d.get("imdbID"),
                     "title": d.get("Title"),
                     "overview": d.get("Plot") or "",
                     "poster_url": poster_url,
                     "release_date": d.get("Released"),
+                    "year": d.get("Year"),
                     "vote_average": (
-                        float(d.get("imdbRating") or 0)
-                        if (d.get("imdbRating") and d.get("imdbRating") != "N/A")
+                        float(rating_str)
+                        if rating_str and rating_str != "N/A"
                         else None
                     ),
+                    "genre": d.get("Genre"),
+                    "director": _na_val(d.get("Director")),
+                    "actors": _na_val(d.get("Actors")),
+                    "runtime": _na_val(d.get("Runtime")),
+                    "rated": _na_val(d.get("Rated")),
+                    "language": _na_val(d.get("Language")),
+                    "country": _na_val(d.get("Country")),
                 }
             )
             if len(items) >= max(self.min_candidates, min_needed * 5):

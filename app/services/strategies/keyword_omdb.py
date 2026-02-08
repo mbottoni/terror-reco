@@ -53,6 +53,43 @@ def _expand_queries(mood: str) -> list[str]:
     return [q for q in queries if q not in seen and not seen.add(q)]  # type: ignore[func-returns-value]
 
 
+def _na(val: Any) -> str | None:
+    """Return None for OMDb 'N/A' sentinel values."""
+    if val is None or val == "N/A":
+        return None
+    return str(val)
+
+
+def _build_movie(d: dict[str, Any], score: float | None = None) -> dict[str, Any]:
+    """Build a normalised movie dict from a raw OMDb detail response."""
+    poster = d.get("Poster")
+    poster_url = poster if poster and poster != "N/A" else None
+    rating_str = d.get("imdbRating") or ""
+    movie: dict[str, Any] = {
+        "imdb_id": d.get("imdbID"),
+        "title": d.get("Title"),
+        "overview": d.get("Plot") or "",
+        "poster_url": poster_url,
+        "release_date": _na(d.get("Released")),
+        "year": d.get("Year"),
+        "vote_average": (
+            float(rating_str) if rating_str and rating_str != "N/A" else None
+        ),
+        "genre": d.get("Genre"),
+        "director": _na(d.get("Director")),
+        "actors": _na(d.get("Actors")),
+        "writer": _na(d.get("Writer")),
+        "runtime": _na(d.get("Runtime")),
+        "language": _na(d.get("Language")),
+        "country": _na(d.get("Country")),
+        "rated": _na(d.get("Rated")),
+        "awards": _na(d.get("Awards")),
+    }
+    if score is not None:
+        movie["_score"] = score
+    return movie
+
+
 def _score_omdb(detail: dict[str, Any]) -> float:
     rating_str = (detail.get("imdbRating") or "0").replace("N/A", "0")
     votes_str = (detail.get("imdbVotes") or "0").replace(",", "")
@@ -98,22 +135,7 @@ class KeywordOMDbStrategy:
             genre = (d.get("Genre") or "").lower()
             if "horror" not in genre:
                 continue
-            poster = d.get("Poster")
-            poster_url = poster if poster and poster != "N/A" else None
-            details.append(
-                {
-                    "title": d.get("Title"),
-                    "overview": d.get("Plot"),
-                    "poster_url": poster_url,
-                    "release_date": d.get("Released"),
-                    "vote_average": (
-                        float(d.get("imdbRating") or 0)
-                        if (d.get("imdbRating") and d.get("imdbRating") != "N/A")
-                        else None
-                    ),
-                    "_score": _score_omdb(d),
-                }
-            )
+            details.append(_build_movie(d, score=_score_omdb(d)))
             if len(details) >= max(limit * 6, 30):
                 break
 
@@ -130,22 +152,7 @@ class KeywordOMDbStrategy:
                 genre = (d.get("Genre") or "").lower()
                 if "horror" not in genre:
                     continue
-                poster = d.get("Poster")
-                poster_url = poster if poster and poster != "N/A" else None
-                details.append(
-                    {
-                        "title": d.get("Title"),
-                        "overview": d.get("Plot"),
-                        "poster_url": poster_url,
-                        "release_date": d.get("Released"),
-                        "vote_average": (
-                            float(d.get("imdbRating") or 0)
-                            if (d.get("imdbRating") and d.get("imdbRating") != "N/A")
-                            else None
-                        ),
-                        "_score": _score_omdb(d),
-                    }
-                )
+                details.append(_build_movie(d, score=_score_omdb(d)))
                 if len(details) >= limit:
                     break
 

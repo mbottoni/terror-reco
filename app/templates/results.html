@@ -17,7 +17,7 @@
   {% if movies %}
   <ul class="grid">
     {% for m in movies %}
-    <li class="card">
+    <li class="card" onclick="openDetail({{ loop.index0 }})" role="button" tabindex="0">
       {% if m.poster_url and m.poster_url != 'N/A' %}
       <img class="card-poster" src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
       {% else %}
@@ -43,4 +43,123 @@
   </div>
   {% endif %}
 </div>
+
+{# ---- Movie detail modal ---- #}
+<div class="modal-overlay" id="movie-modal" onclick="closeDetail(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeDetail()" aria-label="Close">&times;</button>
+    <div class="modal-layout">
+      <div class="modal-poster-wrap">
+        <img class="modal-poster" id="modal-poster" src="" alt="">
+        <div class="modal-no-poster" id="modal-no-poster">🎬</div>
+      </div>
+      <div class="modal-info">
+        <h2 class="modal-title" id="modal-title"></h2>
+
+        <div class="modal-badges" id="modal-badges"></div>
+
+        <div class="modal-meta-grid" id="modal-meta"></div>
+
+        <p class="modal-plot" id="modal-plot"></p>
+
+        <div class="modal-actions" id="modal-actions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var MOVIES = [
+  {% for m in movies %}
+  {
+    title: {{ m.title | tojson }},
+    overview: {{ (m.overview or "") | tojson }},
+    poster_url: {{ (m.poster_url or "") | tojson }},
+    imdb_id: {{ (m.imdb_id or "") | tojson }},
+    release_date: {{ (m.release_date or "") | tojson }},
+    year: {{ (m.year or "") | tojson }},
+    vote_average: {{ (m.vote_average or "") | tojson }},
+    genre: {{ (m.genre or "") | tojson }},
+    director: {{ (m.director or "") | tojson }},
+    actors: {{ (m.actors or "") | tojson }},
+    writer: {{ (m.writer or "") | tojson }},
+    runtime: {{ (m.runtime or "") | tojson }},
+    language: {{ (m.language or "") | tojson }},
+    country: {{ (m.country or "") | tojson }},
+    rated: {{ (m.rated or "") | tojson }},
+    awards: {{ (m.awards or "") | tojson }}
+  }{{ "," if not loop.last }}
+  {% endfor %}
+];
+
+function openDetail(idx){
+  var m = MOVIES[idx];
+  if(!m) return;
+
+  var modal = document.getElementById('movie-modal');
+  var poster = document.getElementById('modal-poster');
+  var noPoster = document.getElementById('modal-no-poster');
+
+  // Title
+  document.getElementById('modal-title').textContent = m.title;
+
+  // Poster
+  if(m.poster_url && m.poster_url !== 'N/A'){
+    poster.src = m.poster_url;
+    poster.alt = m.title;
+    poster.style.display = 'block';
+    noPoster.style.display = 'none';
+  } else {
+    poster.style.display = 'none';
+    noPoster.style.display = 'flex';
+  }
+
+  // Badges row (rating, year, runtime, rated)
+  var badges = '';
+  if(m.vote_average) badges += '<span class="modal-badge rating-badge">★ '+m.vote_average+'</span>';
+  if(m.year) badges += '<span class="modal-badge">'+m.year+'</span>';
+  if(m.runtime) badges += '<span class="modal-badge">'+m.runtime+'</span>';
+  if(m.rated) badges += '<span class="modal-badge rated-badge">'+m.rated+'</span>';
+  document.getElementById('modal-badges').innerHTML = badges;
+
+  // Meta grid (director, actors, genre, etc.)
+  var meta = '';
+  if(m.director) meta += '<div class="modal-meta-item"><span class="meta-label">Director</span><span class="meta-value">'+m.director+'</span></div>';
+  if(m.actors) meta += '<div class="modal-meta-item"><span class="meta-label">Cast</span><span class="meta-value">'+m.actors+'</span></div>';
+  if(m.writer) meta += '<div class="modal-meta-item"><span class="meta-label">Writer</span><span class="meta-value">'+m.writer+'</span></div>';
+  if(m.genre) meta += '<div class="modal-meta-item"><span class="meta-label">Genre</span><span class="meta-value">'+m.genre+'</span></div>';
+  if(m.language) meta += '<div class="modal-meta-item"><span class="meta-label">Language</span><span class="meta-value">'+m.language+'</span></div>';
+  if(m.country) meta += '<div class="modal-meta-item"><span class="meta-label">Country</span><span class="meta-value">'+m.country+'</span></div>';
+  if(m.awards) meta += '<div class="modal-meta-item"><span class="meta-label">Awards</span><span class="meta-value">'+m.awards+'</span></div>';
+  document.getElementById('modal-meta').innerHTML = meta;
+
+  // Plot
+  document.getElementById('modal-plot').textContent = m.overview || 'No plot available.';
+
+  // Actions (IMDb link)
+  var actions = '';
+  if(m.imdb_id){
+    actions += '<a href="https://www.imdb.com/title/'+m.imdb_id+'/" target="_blank" rel="noopener" class="btn btn-imdb">';
+    actions += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 0 0-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-4a.75.75 0 0 1 1.5 0v4A2.25 2.25 0 0 1 12.75 17h-8.5A2.25 2.25 0 0 1 2 14.75v-8.5A2.25 2.25 0 0 1 4.25 4h5a.75.75 0 0 1 0 1.5h-5Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M6.194 12.753a.75.75 0 0 0 1.06.053L16.5 4.44v2.81a.75.75 0 0 0 1.5 0v-4.5a.75.75 0 0 0-.75-.75h-4.5a.75.75 0 0 0 0 1.5h2.553l-9.056 8.194a.75.75 0 0 0-.053 1.06Z" clip-rule="evenodd"/></svg>';
+    actions += 'View on IMDb</a>';
+  }
+  document.getElementById('modal-actions').innerHTML = actions;
+
+  // Show modal
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail(e){
+  if(e && e.target !== document.getElementById('movie-modal')) return;
+  document.getElementById('movie-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeDetail();
+});
+</script>
 {% endblock %}

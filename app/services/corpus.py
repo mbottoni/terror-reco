@@ -167,18 +167,32 @@ async def build_corpus(
         poster_url = poster if poster and poster != "N/A" else None
         rating_str = d.get("imdbRating") or ""
 
+        def _na(val: Any) -> str | None:
+            """Return None for OMDb 'N/A' sentinel values."""
+            if val is None or val == "N/A":
+                return None
+            return str(val)
+
         corpus.append(
             {
                 "imdb_id": imdb_id,
                 "title": title,
                 "overview": d.get("Plot") or "",
                 "poster_url": poster_url,
-                "release_date": d.get("Released"),
+                "release_date": _na(d.get("Released")),
                 "year": d.get("Year"),
                 "vote_average": (
                     float(rating_str) if rating_str and rating_str != "N/A" else None
                 ),
                 "genre": d.get("Genre"),
+                "director": _na(d.get("Director")),
+                "actors": _na(d.get("Actors")),
+                "writer": _na(d.get("Writer")),
+                "runtime": _na(d.get("Runtime")),
+                "language": _na(d.get("Language")),
+                "country": _na(d.get("Country")),
+                "rated": _na(d.get("Rated")),
+                "awards": _na(d.get("Awards")),
                 "imdbVotes": d.get("imdbVotes"),
                 "Metascore": d.get("Metascore"),
             }
