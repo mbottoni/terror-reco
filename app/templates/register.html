@@ -1,26 +1,28 @@
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Register</title>
-	<link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-	<main class="container">
-		<h1>Create your account</h1>
-		{% if flash %}
-		<div class="flash">{{ flash }}</div>
-		{% endif %}
-		<form action="/auth/register" method="post" class="search-form">
-			<input type="hidden" name="csrf" value="{{ csrf }}">
-			<label for="email">Email</label>
-			<input id="email" type="email" name="email" required>
-			<label for="password">Password</label>
-			<input id="password" type="password" name="password" required>
-			<button type="submit">Create account</button>
-		</form>
-		<p class="footer"><a href="/auth/login">Have an account? Sign in</a></p>
-	</main>
-</body>
-</html>
+{% extends "_base.html" %}
+
+{% block title %}Sign up — TerrorReco{% endblock %}
+
+{% block nav_right %}
+<a href="/auth/login" class="btn btn-ghost btn-sm">Log in</a>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h1 class="auth-title">Create account</h1>
+    <form action="/auth/register" method="post" class="auth-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="Choose a password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Create account</button>
+    </form>
+  </div>
+  <p class="auth-footer">Already have an account? <a href="/auth/login">Sign in</a></p>
+</div>
+{% endblock %}

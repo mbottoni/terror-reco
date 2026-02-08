@@ -1,46 +1,42 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Summoning recommendations…</title>
-	<link rel="stylesheet" href="/static/styles.css">
-	<style>
-		.loading-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
-		.loading-inner{text-align:center}
-		.loading-inner img{max-width:360px;width:80%;height:auto;border-radius:8px;box-shadow:0 4px 30px rgba(0,0,0,.5)}
-		.loading-caption{color:#9aa0a6;margin-top:12px}
-	</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Summoning horrors…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0b0b0f;color:#e8e8ec;min-height:100vh}
+.loading-screen{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:24px;
+}
+.loading-screen img{max-width:340px;width:80%;border-radius:16px;box-shadow:0 16px 60px rgba(0,0,0,.7)}
+.loading-text{color:#555566;font-size:.95rem;font-weight:600}
+.loading-dots::after{content:'';animation:ldots 1.4s steps(4,end) infinite}
+@keyframes ldots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+</style>
 </head>
 <body>
-	<div class="loading-wrap">
-		<div class="loading-inner">
-			<img src="/static/assets/spooky.gif" alt="Summoning horrors…" onerror="this.style.display='none'">
-			<p class="loading-caption">Summoning horrors…</p>
-		</div>
-	</div>
-	<script>
-		(function(){
-			const params = new URLSearchParams(window.location.search);
-			const mood = params.get('mood') || '';
-			const delayMs = 600; // brief pause to display the GIF
-			setTimeout(function(){
-				const min_year = params.get('min_year');
-				const max_year = params.get('max_year');
-				const limit = params.get('limit');
-				const kind = params.get('kind');
-				const english = params.get('english');
-				const usp = new URLSearchParams();
-				usp.set('mood', mood);
-				if(min_year) usp.set('min_year', min_year);
-				if(max_year) usp.set('max_year', max_year);
-				if(limit) usp.set('limit', limit);
-				if(kind) usp.set('kind', kind);
-				if(english) usp.set('english', english);
-				const url = '/recommend?' + usp.toString();
-				window.location.replace(url);
-			}, delayMs);
-		})();
-	</script>
+<div class="loading-screen">
+  <img src="/static/assets/spooky.gif" alt="Summoning horrors…" onerror="this.style.display='none'">
+  <p class="loading-text">Summoning horrors<span class="loading-dots"></span></p>
+</div>
+<script>
+(function(){
+  var p=new URLSearchParams(window.location.search);
+  setTimeout(function(){
+    var u=new URLSearchParams();
+    u.set('mood',p.get('mood')||'');
+    ['min_year','max_year','limit','kind','english'].forEach(function(k){
+      var v=p.get(k);if(v)u.set(k,v);
+    });
+    window.location.replace('/recommend?'+u.toString());
+  },600);
+})();
+</script>
 </body>
 </html>

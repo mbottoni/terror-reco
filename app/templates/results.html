@@ -1,27 +1,46 @@
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>TerrorReco - Results</title>
-	<link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-	<main class="container">
-		<h1>Recommendations for "{{ mood }}"</h1>
-		<a href="/">← Back</a>
-		<ul class="grid">
-			{% for m in movies %}
-			<li class="card">
-				{% if m.poster_url %}
-				<img src="{{ m.poster_url }}" alt="{{ m.title }} poster">
-				{% endif %}
-				<h2>{{ m.title }}</h2>
-				<p class="meta">⭐ {{ m.vote_average }} • {{ m.release_date }}</p>
-				<p>{{ m.overview }}</p>
-			</li>
-			{% endfor %}
-		</ul>
-	</main>
-</body>
-</html>
+{% extends "_base.html" %}
+
+{% block title %}Results — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px">
+  <a href="/" class="back-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
+    Back
+  </a>
+
+  <div class="results-header">
+    <h1 class="page-title">Recommendations</h1>
+    <p class="results-mood">for <em>"{{ mood }}"</em></p>
+  </div>
+
+  {% if movies %}
+  <ul class="grid">
+    {% for m in movies %}
+    <li class="card">
+      {% if m.poster_url and m.poster_url != 'N/A' %}
+      <img class="card-poster" src="{{ m.poster_url }}" alt="{{ m.title }}" loading="lazy">
+      {% else %}
+      <div class="card-no-poster">🎬</div>
+      {% endif %}
+      <div class="card-body">
+        <h2 class="card-title">{{ m.title }}</h2>
+        <p class="card-meta">
+          {% if m.vote_average %}<span class="rating">★ {{ m.vote_average }}</span>{% endif %}
+          {% if m.release_date %}<span>{{ m.release_date }}</span>{% endif %}
+        </p>
+        {% if m.overview %}
+        <p class="card-overview">{{ m.overview }}</p>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">👻</div>
+    <p>No movies found for that mood. Try a different vibe!</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

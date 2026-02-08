@@ -1,22 +1,31 @@
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Your History</title>
-	<link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-	<main class="container">
-		<h1>Your search history</h1>
-		<ul class="grid">
-			{% for item in items %}
-			<li class="card">
-				<p><strong>Mood:</strong> {{ item.mood }}</p>
-				<p class="meta">{{ item.created_at }}</p>
-			</li>
-			{% endfor %}
-		</ul>
-	</main>
-</body>
-</html>
+{% extends "_base.html" %}
+
+{% block title %}History — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px">
+  <a href="/" class="back-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
+    Back
+  </a>
+
+  <h1 class="page-title">Search history</h1>
+  <p class="page-subtitle">Your recent mood searches.</p>
+
+  {% if items %}
+  <ul class="history-list">
+    {% for item in items %}
+    <li class="history-item">
+      <span class="history-mood">{{ item.mood }}</span>
+      <span class="history-date">{{ item.created_at.strftime('%b %d, %Y at %H:%M') if item.created_at else '' }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📜</div>
+    <p>No searches yet. Go find some horror movies!</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

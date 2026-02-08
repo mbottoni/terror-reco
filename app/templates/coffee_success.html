@@ -1,74 +1,16 @@
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Thank you! ☕ - TerrorReco</title>
-	<link rel="stylesheet" href="/static/styles.css">
-	<style>
-		.success-container {
-			max-width: 500px;
-			margin: 2rem auto;
-			padding: 2rem;
-			text-align: center;
-			background: #1a1a1a;
-			border-radius: 12px;
-			border: 1px solid #333;
-		}
-		.success-title {
-			font-size: 2rem;
-			margin-bottom: 1rem;
-			color: #4CAF50;
-		}
-		.success-message {
-			color: #ccc;
-			margin-bottom: 2rem;
-			line-height: 1.6;
-		}
-		.amount {
-			font-size: 1.5rem;
-			color: #fff;
-			margin: 1rem 0;
-		}
-		.back-button {
-			background: #333;
-			color: white;
-			border: none;
-			padding: 0.8rem 1.5rem;
-			font-size: 1rem;
-			border-radius: 6px;
-			cursor: pointer;
-			text-decoration: none;
-			display: inline-block;
-		}
-		.back-button:hover {
-			background: #444;
-		}
-	</style>
-</head>
-<body>
-	<main class="container">
-		<nav class="topbar">
-			<a href="/">← Back to TerrorReco</a>
-		</nav>
-		
-		<div class="success-container">
-			<h1 class="success-title">☕ Thank you!</h1>
-			<p class="success-message">
-				Your coffee purchase was successful! Your support means the world to me 
-				and helps keep TerrorReco running with fresh horror movie recommendations.
-			</p>
-			
-			<div class="amount">
-				Amount: ${{ "%.2f"|format(amount) }}
-			</div>
-			
-			<p class="success-message">
-				Now go enjoy some terrifying movie recommendations! 👻🎬
-			</p>
-			
-			<a href="/" class="back-button">Find Horror Movies</a>
-		</div>
-	</main>
-</body>
-</html>
+{% extends "_base.html" %}
+
+{% block title %}Thank you! — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="status-card">
+  <div class="status-icon">🎉</div>
+  <h1 class="status-title success">Thank you!</h1>
+  <p class="status-desc">
+    Your support means a lot and helps keep TerrorReco running
+    with fresh horror recommendations.
+  </p>
+  <div class="status-amount">${{ "%.2f"|format(amount) }}</div>
+  <a href="/" class="btn btn-primary">Back to recommendations</a>
+</div>
+{% endblock %}

@@ -1,105 +1,95 @@
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>TerrorReco</title>
-	<link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-	<main class="container">
-		<nav class="topbar">
-			<a href="/">Home</a> · <a href="/history/">History</a>
-			<span style="float:right">
-			{% if user %}
-				<span class="meta">Signed in as {{ user.email }}</span>
-				<form action="/auth/logout" method="post" style="display:inline">
-					<button type="submit" class="tag" style="margin-left:8px">Sign out</button>
-				</form>
-			{% else %}
-				<a href="/auth/login">Login</a> · <a href="/auth/register">Register</a>
-			{% endif %}
-			</span>
-		</nav>
-		{% if flash %}
-		<div class="flash">{{ flash }}</div>
-		{% endif %}
-		<h1>Find a horror movie by your mood 👻🎬</h1>
-		<p class="tagline">Type a vibe and get terrifying picks.</p>
+{% extends "_base.html" %}
 
-		<ul class="examples">
-			<li><button class="example" onclick="pickMood('A fun movie with a lot of blood')"><span class="icon">🩸</span><span class="label">A fun movie with a lot of blood</span></button></li>
-			<li><button class="example" onclick="pickMood('Supernatural hauntings with ghosts')"><span class="icon">👻</span><span class="label">Supernatural hauntings with ghosts</span></button></li>
-			<li><button class="example" onclick="pickMood('Mind-bending psychological horror')"><span class="icon">🧠</span><span class="label">Mind-bending psychological horror</span></button></li>
-			<li><button class="example" onclick="pickMood('Zombie apocalypse survival')"><span class="icon">🧟</span><span class="label">Zombie apocalypse survival</span></button></li>
-			<li><button class="example" onclick="pickMood('Classic slasher with suspense')"><span class="icon">🔪</span><span class="label">Classic slasher with suspense</span></button></li>
-		</ul>
+{% block title %}TerrorReco — Horror Movie Recommendations{% endblock %}
 
-		<form action="/loading" method="get" class="search-form">
-			<label for="mood">Mood</label>
-			<input id="mood" name="mood" type="text" placeholder="Describe the vibe… e.g., haunted house with ghosts" required>
+{% block nav_right %}
+{% if user %}
+  <span class="user-email">{{ user.email }}</span>
+  <form action="/auth/logout" method="post" style="display:inline">
+    <button type="submit" class="btn-signout">Sign out</button>
+  </form>
+{% else %}
+  <a href="/auth/login" class="btn btn-ghost btn-sm">Log in</a>
+  <a href="/auth/register" class="btn btn-sm">Sign up</a>
+{% endif %}
+{% endblock %}
 
-			<div class="controls" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px">
-				<div>
-					<label for="min_year">Min year</label>
-					<input id="min_year" name="min_year" type="number" min="1900" max="2100" placeholder="e.g., 2005">
-				</div>
-				<div>
-					<label for="max_year">Max year</label>
-					<input id="max_year" name="max_year" type="number" min="1900" max="2100" placeholder="e.g., 2024">
-				</div>
-				<div>
-					<label for="limit">How many</label>
-					<input id="limit" name="limit" type="number" min="1" max="20" value="6">
-				</div>
-				<div>
-					<label for="kind">Type</label>
-					<select id="kind" name="kind">
-						<option value="movie" selected>Movies</option>
-						<option value="series">Series</option>
-						<option value="both">Both</option>
-					</select>
-				</div>
-				<div style="display:flex;align-items:end;gap:6px">
-					<label for="english" style="margin:0">English only</label>
-					<input id="english" name="english" type="checkbox" value="1">
-				</div>
-			</div>
+{% block content %}
+<div class="container">
+  <section class="hero">
+    <h1 class="hero-title">Find your next<br><span class="accent">horror</span> movie</h1>
+    <p class="hero-sub">Describe a mood and we'll summon terrifying picks.</p>
 
-			<button type="submit" style="margin-top:12px">Recommend</button>
-		</form>
+    <div class="mood-chips">
+      <button type="button" class="mood-chip" onclick="pickMood('A fun movie with a lot of blood')"><span class="chip-icon">🩸</span> Bloody fun</button>
+      <button type="button" class="mood-chip" onclick="pickMood('Supernatural hauntings with ghosts')"><span class="chip-icon">👻</span> Ghost hauntings</button>
+      <button type="button" class="mood-chip" onclick="pickMood('Mind-bending psychological horror')"><span class="chip-icon">🧠</span> Psychological</button>
+      <button type="button" class="mood-chip" onclick="pickMood('Zombie apocalypse survival')"><span class="chip-icon">🧟</span> Zombie survival</button>
+      <button type="button" class="mood-chip" onclick="pickMood('Classic slasher with suspense')"><span class="chip-icon">🔪</span> Slasher</button>
+    </div>
 
-		<p class="footer">Have fun and stay spooky 🎃</p>
-		
-		<!-- Buy me a coffee button -->
-		<div style="text-align: center; margin-top: 2rem;">
-			<a href="/stripe/coffee" style="
-				background: linear-gradient(45deg, #ff6b35, #f7931e);
-				color: white;
-				text-decoration: none;
-				padding: 0.8rem 1.5rem;
-				border-radius: 8px;
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-				font-size: 1rem;
-				transition: transform 0.2s;
-			" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-				☕ Buy me a coffee
-			</a>
-		</div>
-	</main>
-	<script>
-		function pickMood(v){
-			var i = document.getElementById('mood');
-			i.value = v;
-			document.querySelector('.search-form').submit();
-		}
-		// auto-hide flash messages
-		setTimeout(function(){
-			var f = document.querySelector('.flash');
-			if(f){ f.style.display = 'none'; }
-		}, 3000);
-	</script>
-</body>
-</html>
+    <form action="/loading" method="get" id="search-form">
+      <div class="search-wrap">
+        <div class="search-bar">
+          <input id="mood" name="mood" type="text" placeholder="Describe a vibe... e.g. haunted house with a dark secret" required autocomplete="off">
+          <button type="submit" class="btn btn-primary">Recommend</button>
+        </div>
+      </div>
+
+      <div class="filters-row">
+        <button type="button" class="filters-toggle" id="filters-btn" aria-expanded="false" onclick="toggleFilters()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+          Advanced filters
+        </button>
+        <div class="filters-panel collapsed" id="filters-panel">
+          <div class="filter-group">
+            <label for="min_year">Min year</label>
+            <input id="min_year" name="min_year" type="number" min="1900" max="2100" placeholder="1970">
+          </div>
+          <div class="filter-group">
+            <label for="max_year">Max year</label>
+            <input id="max_year" name="max_year" type="number" min="1900" max="2100" placeholder="2025">
+          </div>
+          <div class="filter-group">
+            <label for="limit">Results</label>
+            <input id="limit" name="limit" type="number" min="1" max="20" value="6">
+          </div>
+          <div class="filter-group">
+            <label for="kind">Type</label>
+            <select id="kind" name="kind">
+              <option value="movie" selected>Movies</option>
+              <option value="series">Series</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div class="filter-checkbox">
+            <input id="english" name="english" type="checkbox" value="1">
+            <label for="english">English only</label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <hr class="divider">
+  <p style="text-align:center;padding-bottom:20px">
+    <a href="/stripe/coffee" class="coffee-link">☕ Buy me a coffee</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function pickMood(v){
+  document.getElementById('mood').value=v;
+  document.getElementById('search-form').submit();
+}
+function toggleFilters(){
+  var p=document.getElementById('filters-panel');
+  var b=document.getElementById('filters-btn');
+  var open=b.getAttribute('aria-expanded')==='true';
+  p.classList.toggle('collapsed');
+  b.setAttribute('aria-expanded',String(!open));
+}
+</script>
+{% endblock %}
