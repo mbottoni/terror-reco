@@ -21,14 +21,6 @@ with app.setup:
 
     load_dotenv(PROJECT_ROOT / ".env")
 
-    from app.services.corpus import (
-        CORPUS_FILE,
-        build_corpus,
-        get_corpus_embeddings,
-        load_corpus,
-        semantic_search,
-    )
-
     mo.md("## 1 - Evaluation Framework for TerrorReco Recommendations")
 
 
@@ -159,52 +151,33 @@ def gold_test_set():
 
 
 @app.cell
-async def load_or_fetch_cache(CACHE_FILE, TEST_SET):
-    """Load cached candidate pools or fetch from OMDb if missing."""
+async def load_corpus_cell():
+    """Load (or build) the horror movie corpus.
 
-    def _load_cache():
-        if CACHE_FILE.exists():
-            with open(CACHE_FILE) as f:
-                return json.load(f)
-        return None
+    The corpus is a broad, pre-built set of horror movies from OMDb.
+    All matching is done at query time via sentence-transformer
+    embeddings -- no hardcoded mood-to-movie mappings.
+    """
+    from app.services.corpus import (
+        build_corpus,
+        get_corpus_embeddings,
+        load_corpus,
+    )
 
-    def _save_cache(data):
-        with open(CACHE_FILE, "w") as f:
-            json.dump(data, f, indent=2)
+    corpus = load_corpus()
+    if not corpus:
+        print("Corpus not found. Building from OMDb (first run)...")
+        corpus = await build_corpus(pages=2)
 
-    cached = _load_cache()
-    if cached and len(cached) >= len(TEST_SET):
-        pools = cached
-        mo.md(
-            f"Loaded **{len(pools)}** cached candidate pools from disk.  \n"
-            f"Delete `{CACHE_FILE.relative_to(PROJECT_ROOT)}` to re-fetch."
-        )
-    else:
-        from app.services.recommender import recommend_movies_advanced
+    corpus_embeddings = get_corpus_embeddings(corpus)
 
-        pools = {}
-        t0 = time.time()
-        print(f"Fetching {len(TEST_SET)} candidate pools from OMDb API...")
-
-        for idx, entry in enumerate(TEST_SET, 1):
-            mood_str = entry["mood"]
-            lap = time.time()
-            pools[mood_str] = await recommend_movies_advanced(
-                mood=mood_str, limit=60, pages=3, kind="movie", english_only=False,
-            )
-            n = len(pools[mood_str])
-            print(f"  [{idx}/{len(TEST_SET)}] {mood_str} -> {n} movies ({time.time() - lap:.1f}s)")
-
-        elapsed = time.time() - t0
-        _save_cache(pools)
-
-        total_movies = sum(len(v) for v in pools.values())
-        print(f"Done in {elapsed:.1f}s. {total_movies} total movies cached.")
-        mo.md(
-            f"Fetched **{len(pools)}** pools in **{elapsed:.1f}s** "
-            f"({total_movies} total movies). Saved to cache."
-        )
-    return (pools,)
+    mo.md(
+        f"### Horror Movie Corpus\n\n"
+        f"**{len(corpus)}** horror movies loaded.  \n"
+        f"Embeddings shape: `{corpus_embeddings.shape}`.  \n\n"
+        f"All moods are ranked against this shared corpus via semantic search."
+    )
+    return corpus, corpus_embeddings
 
 
 @app.cell
@@ -271,7 +244,10 @@ def define_metrics():
             all_scores.append(score_pipeline(titles, gold, k))
         if not all_scores:
             return {"hit_rate@k": 0, "precision@k": 0, "ndcg@k": 0, "mrr": 0}
-        return {key: float(np.mean([s[key] for s in all_scores])) for key in all_scores[0]}
+        return {
+            key: float(np.mean([s[key] for s in all_scores]))
+            for key in all_scores[0]
+        }
 
     mo.md(
         "### Evaluation Metrics\n\n"
@@ -282,14 +258,30 @@ def define_metrics():
 
 
 @app.cell
-def baseline_eval(TEST_SET, evaluate_ranker, pools):
-    """Measure the current unified recommender as a baseline."""
+def baseline_eval(TEST_SET, corpus, corpus_embeddings, evaluate_ranker):
+    """Measure the current unified recommender as a baseline.
+
+    Uses the full corpus as the candidate pool for every mood.
+    """
+    from app.services.corpus import semantic_search
     from app.services.unified_recommender import recommend_unified_semantic
 
     def baseline_ranker(mood, items):
         return recommend_unified_semantic(mood=mood, items=items, limit=6)
 
-    baseline_scores = evaluate_ranker(baseline_ranker, pools, TEST_SET, k=6)
+    # Build per-mood pools via semantic search over the corpus
+    _pools = {}
+    for _entry in TEST_SET:
+        _mood = _entry["mood"]
+        _candidates = semantic_search(
+            _mood, corpus, corpus_embeddings, top_k=60,
+        )
+        _pools[_mood] = [
+            {k: v for k, v in m.items() if not k.startswith("_")}
+            for m in _candidates
+        ]
+
+    baseline_scores = evaluate_ranker(baseline_ranker, _pools, TEST_SET, k=6)
 
     rows = "| Metric | Score |\n|--------|-------|\n"
     for metric, val in baseline_scores.items():
@@ -304,32 +296,41 @@ def baseline_eval(TEST_SET, evaluate_ranker, pools):
 
 
 @app.cell
-def per_mood_breakdown(TEST_SET, pools, score_pipeline):
-    def per_mood_breakdown(pools, TEST_SET):
+def per_mood_breakdown(TEST_SET, corpus, corpus_embeddings, score_pipeline):
+    def _per_mood_breakdown():
         """Show per-mood evaluation for the baseline."""
+        from app.services.corpus import semantic_search
         from app.services.unified_recommender import recommend_unified_semantic
 
         rows = "| Mood | Hit@6 | P@6 | NDCG@6 | MRR | Top-3 Titles |\n"
         rows += "|------|-------|-----|--------|-----|---------------|\n"
 
-        for entry in TEST_SET:
-            mood, gold = entry["mood"], entry["gold"]
-            items = pools.get(mood, [])
-            if not items:
+        for _entry in TEST_SET:
+            _mood, _gold = _entry["mood"], _entry["gold"]
+            _candidates = semantic_search(
+                _mood, corpus, corpus_embeddings, top_k=60,
+            )
+            _items = [
+                {k: v for k, v in m.items() if not k.startswith("_")}
+                for m in _candidates
+            ]
+            if not _items:
                 continue
-            ranked = recommend_unified_semantic(mood=mood, items=items, limit=6)
-            titles = [it.get("title", "") for it in ranked]
-            scores = score_pipeline(titles, gold, k=6)
-            top3 = ", ".join(titles[:3])
+            _ranked = recommend_unified_semantic(
+                mood=_mood, items=_items, limit=6,
+            )
+            _titles = [it.get("title", "") for it in _ranked]
+            _scores = score_pipeline(_titles, _gold, k=6)
+            _top3 = ", ".join(_titles[:3])
             rows += (
-                f"| {mood[:40]} | {scores['hit_rate@k']:.2f} | "
-                f"{scores['precision@k']:.2f} | {scores['ndcg@k']:.2f} | "
-                f"{scores['mrr']:.2f} | {top3} |\n"
+                f"| {_mood[:40]} | {_scores['hit_rate@k']:.2f} | "
+                f"{_scores['precision@k']:.2f} | {_scores['ndcg@k']:.2f} | "
+                f"{_scores['mrr']:.2f} | {_top3} |\n"
             )
 
         return mo.md("### Per-Mood Breakdown (Baseline)\n\n" + rows)
 
-    per_mood_breakdown(pools, TEST_SET)
+    _per_mood_breakdown()
     return
 
 
@@ -342,7 +343,7 @@ def summary(baseline_scores):
         "### Summary\n\n"
         "This notebook provides:\n\n"
         "1. A **gold test set** of 15 horror mood descriptions with curated movie lists\n"
-        "2. **Cached OMDb pools** so subsequent notebooks skip API calls\n"
+        "2. A **corpus-based pipeline** using sentence-transformer embeddings\n"
         "3. **Metric functions** (`evaluate_ranker`) reusable in notebooks 2-4\n"
         "4. **Baseline scores** to beat:\n\n"
         f"   - NDCG@6 = **{ndcg:.4f}**\n"

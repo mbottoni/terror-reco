@@ -29,14 +29,14 @@ with app.setup:
 
     load_dotenv(PROJECT_ROOT / ".env")
 
-    from app.services.corpus import load_corpus
-
     mo.md("## 4 - Weight Optimization")
 
 
 @app.cell
 def load_data():
     """Load the horror movie corpus and gold test set."""
+    from app.services.corpus import load_corpus
+
     corpus = load_corpus()
 
     if not corpus:
