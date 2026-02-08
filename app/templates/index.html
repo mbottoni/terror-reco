@@ -51,6 +51,19 @@
         </div>
       </div>
 
+      <div class="strategy-row">
+        <label class="strategy-label" for="strategy">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H4.598a.75.75 0 0 0-.75.75v3.634a.75.75 0 0 0 1.5 0v-2.033l.312.311a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm-10.624-2.85a5.5 5.5 0 0 1 9.201-2.465l.312.31H11.77a.75.75 0 0 0 0 1.5h3.634a.75.75 0 0 0 .75-.75V3.535a.75.75 0 0 0-1.5 0v2.033l-.311-.311A7 7 0 0 0 2.63 8.395a.75.75 0 0 0 1.45.39Z" clip-rule="evenodd"/></svg>
+          Strategy
+        </label>
+        <select id="strategy" name="strategy" class="strategy-select">
+          <option value="semantic" selected>Semantic Search</option>
+          <option value="unified">Unified (AI + Diversity)</option>
+          <option value="embedding">TF-IDF Similarity</option>
+          <option value="keyword">Keyword Match</option>
+        </select>
+      </div>
+
       <div class="filters-row">
         <button type="button" class="filters-toggle" id="filters-btn" aria-expanded="false" onclick="toggleFilters()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>

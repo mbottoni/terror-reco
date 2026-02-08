@@ -78,10 +78,20 @@ async def loading(request: Request, mood: str = "") -> HTMLResponse:
     return templates.TemplateResponse("loading.html", {"request": request, "mood": mood})
 
 
+# Valid strategy values accepted by the UI.
+STRATEGY_LABELS: dict[str, str] = {
+    "keyword": "Keyword Match",
+    "embedding": "TF-IDF Similarity",
+    "semantic": "Semantic Search",
+    "unified": "Unified (AI + Diversity)",
+}
+
+
 @app.get("/recommend", response_class=HTMLResponse)
 async def ui_recommendations(
     request: Request,
     mood: str = Query(..., min_length=1),
+    strategy: str = Query(default="semantic"),
     min_year: int | None = Query(default=None, ge=1900, le=2100),
     max_year: int | None = Query(default=None, ge=1900, le=2100),
     limit: int = Query(default=6, ge=1, le=20),
@@ -90,17 +100,10 @@ async def ui_recommendations(
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
-    # Use advanced recommender if any advanced filters provided, else fallback
-    use_advanced = any(
-        [
-            min_year is not None,
-            max_year is not None,
-            kind in ("series", "both"),
-            english is not None,
-            limit != 6,
-        ]
-    )
-    if settings.USE_UNIFIED_RECOMMENDER:
+    strategy_key = strategy if strategy in STRATEGY_LABELS else "semantic"
+
+    if strategy_key == "unified":
+        # Full pipeline: corpus semantic search → unified re-ranking with MMR
         pool = await recommend_movies_advanced(
             mood=mood,
             limit=max(limit * 10, 60),
@@ -116,28 +119,39 @@ async def ui_recommendations(
             limit=limit,
             diversity_lambda=settings.UNIFIED_DIVERSITY_LAMBDA,
         )
+    elif strategy_key == "semantic":
+        # Corpus-based sentence-transformer semantic search
+        movies = await recommend_movies_advanced(
+            mood=mood,
+            limit=limit,
+            min_year=min_year,
+            max_year=max_year,
+            kind=kind,
+            english_only=bool(english),
+            pages=3,
+        )
+    elif strategy_key == "embedding":
+        # TF-IDF cosine similarity on OMDb plot descriptions
+        movies = await recommend_movies(
+            mood=mood, limit=limit, strategy="embedding"
+        )
     else:
-        if use_advanced:
-            movies = await recommend_movies_advanced(
-                mood=mood,
-                limit=limit,
-                min_year=min_year,
-                max_year=max_year,
-                kind=kind,
-                english_only=bool(english),
-                pages=3,
-            )
-        else:
-            movies = await recommend_movies(mood=mood, limit=limit)
+        # Keyword: OMDb title search ranked by IMDb rating
+        movies = await recommend_movies(
+            mood=mood, limit=limit, strategy="keyword"
+        )
+
     # Save history if logged in
     if user:
-        save_history(db, user.id, mood, None, movies)
+        save_history(db, user.id, mood, strategy_key, movies)
     return templates.TemplateResponse(
         "results.html",
         {
             "request": request,
             "mood": mood,
             "movies": movies,
+            "strategy": strategy_key,
+            "strategy_label": STRATEGY_LABELS[strategy_key],
         },
     )
 

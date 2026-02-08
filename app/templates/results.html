@@ -11,7 +11,7 @@
 
   <div class="results-header">
     <h1 class="page-title">Recommendations</h1>
-    <p class="results-mood">for <em>"{{ mood }}"</em></p>
+    <p class="results-mood">for <em>"{{ mood }}"</em> {% if strategy_label %}<span class="results-strategy">via {{ strategy_label }}</span>{% endif %}</p>
   </div>
 
   {% if movies %}
