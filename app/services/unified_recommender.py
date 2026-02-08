@@ -171,10 +171,20 @@ def recommend_unified_semantic(
         w["semantic"] * sem + w["keyword"] * kw + w["popularity"] * pop + w["recency"] * rec
     ).astype(np.float32)
 
-    order = np.argsort(-blended)
+    # Add controlled noise to blended scores so results vary per request.
+    # Noise scale is proportional to score spread, keeping top picks near
+    # the top while shuffling the mid-band.
+    rng = np.random.default_rng()
+    spread = float(blended.max() - blended.min()) if len(blended) > 1 else 0.0
+    noise = rng.normal(0, spread * 0.06, size=len(blended)).astype(np.float32)
+    blended_noisy = blended + noise
+
+    order = np.argsort(-blended_noisy)
     pool_idx = order[: max(10, limit * 5)]
     pool = [items[i] for i in pool_idx]
-    pool_scores = blended[pool_idx]
+    pool_scores = blended_noisy[pool_idx]
 
-    selected = _mmr(pool, sims=pool_scores, k=limit, lambda_=diversity_lambda)
+    # Slightly jitter diversity lambda (±0.08) so MMR selection also varies
+    jittered_lambda = max(0.3, min(1.0, diversity_lambda + rng.uniform(-0.08, 0.08)))
+    selected = _mmr(pool, sims=pool_scores, k=limit, lambda_=jittered_lambda)
     return selected

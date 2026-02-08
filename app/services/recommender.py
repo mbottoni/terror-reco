@@ -68,11 +68,14 @@ async def recommend_movies_advanced(
     # Get pre-computed plot embeddings
     embeddings = get_corpus_embeddings(corpus)
 
-    # Semantic search: rank entire corpus by similarity to the user text
-    candidates = semantic_search(mood, corpus, embeddings, top_k=max(limit * 10, 60))
+    # Semantic search: rank entire corpus by similarity to the user text.
+    # Temperature > 0 adds controlled noise so results vary per request.
+    candidates = semantic_search(
+        mood, corpus, embeddings, top_k=max(limit * 10, 60), temperature=1.0,
+    )
 
     # Apply optional filters (year range, language)
-    results: list[dict[str, Any]] = []
+    filtered: list[dict[str, Any]] = []
     for movie in candidates:
         year_str = movie.get("year") or ""
         try:
@@ -89,6 +92,24 @@ async def recommend_movies_advanced(
                 continue
 
         # Strip internal scoring field
-        results.append({k: v for k, v in movie.items() if not k.startswith("_")})
+        filtered.append({k: v for k, v in movie.items() if not k.startswith("_")})
 
-    return results[:limit]
+    # Weighted random sampling from the top pool so that the final
+    # selection varies between requests while remaining relevant.
+    pool_size = min(len(filtered), max(limit * 3, 18))
+    pool = filtered[:pool_size]
+    if len(pool) <= limit:
+        return pool
+
+    # Scores decay linearly from 1.0 (best) to 0.3 (end of pool)
+    weights = [1.0 - 0.7 * i / (len(pool) - 1) for i in range(len(pool))]
+    total = sum(weights)
+    probs = [w / total for w in weights]
+
+    # numpy weighted choice without replacement
+    import numpy as np
+
+    rng = np.random.default_rng()
+    chosen_idx = rng.choice(len(pool), size=limit, replace=False, p=probs)
+    chosen_idx.sort()  # preserve rough relevance order
+    return [pool[int(i)] for i in chosen_idx]

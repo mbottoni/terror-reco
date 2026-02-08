@@ -304,10 +304,13 @@ def semantic_search(
     corpus: list[dict[str, Any]],
     corpus_embeddings: np.ndarray,
     top_k: int = 60,
+    temperature: float = 1.0,
 ) -> list[dict[str, Any]]:
     """Rank corpus movies by semantic similarity to *any* arbitrary text.
 
-    Uses sentence-transformer cosine similarity.  No hardcoded keywords.
+    Uses sentence-transformer cosine similarity with controlled
+    stochasticity so results vary between requests while remaining
+    relevant.
 
     Parameters
     ----------
@@ -319,11 +322,16 @@ def semantic_search(
         Pre-computed plot embeddings (from :func:`get_corpus_embeddings`).
     top_k:
         How many results to return.
+    temperature:
+        Controls randomness.  0 = fully deterministic (old behaviour).
+        1 = default variety.  Higher = more random.  The noise added
+        is proportional to the score spread in the top candidates, so
+        irrelevant movies never leak in.
 
     Returns
     -------
     list[dict]
-        Movies sorted by descending semantic similarity, each dict
+        Movies sorted by descending (perturbed) similarity, each dict
         augmented with ``_semantic_score``.
     """
     from .unified_recommender import _embed_sbert, _normalize_text
@@ -331,7 +339,24 @@ def semantic_search(
     q_emb = _embed_sbert([_normalize_text(query)])  # (1, dim)
     sims = (q_emb @ corpus_embeddings.T).ravel()  # (n_corpus,)
 
-    top_idx = np.argsort(-sims)[:top_k]
+    if temperature > 0:
+        # Fetch a wider pool, then perturb scores within the relevant band
+        pool_k = min(len(sims), top_k * 3)
+        pool_idx = np.argsort(-sims)[:pool_k]
+        pool_sims = sims[pool_idx]
+
+        # Noise proportional to the score spread in the pool (keeps
+        # high-relevance movies near the top, shuffles the mid-band)
+        spread = float(pool_sims.max() - pool_sims.min()) if len(pool_sims) > 1 else 0.0
+        noise_scale = spread * 0.08 * temperature
+        noise = np.random.default_rng().normal(0, noise_scale, size=len(pool_sims))
+        perturbed = pool_sims + noise.astype(np.float32)
+
+        # Re-rank the pool by perturbed scores and take top_k
+        reranked = np.argsort(-perturbed)[:top_k]
+        top_idx = pool_idx[reranked]
+    else:
+        top_idx = np.argsort(-sims)[:top_k]
 
     results: list[dict[str, Any]] = []
     for idx in top_idx:
