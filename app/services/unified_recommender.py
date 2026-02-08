@@ -7,10 +7,11 @@ from typing import Any
 import numpy as np
 
 try:
-    from sentence_transformers import SentenceTransformer
+    from sentence_transformers import SentenceTransformer as _SentenceTransformer
 except Exception:  # pragma: no cover - optional in prod
-    SentenceTransformer = None  # type: ignore
+    _SentenceTransformer = None  # type: ignore[assignment,misc]
 
+SentenceTransformer = _SentenceTransformer  # re-export for notebook imports
 
 _MODEL_CACHE: dict[str, Any] = {}
 
@@ -24,11 +25,11 @@ def _normalize_text(s: str | None) -> str:
 
 
 def _get_sbert(model_name: str = "sentence-transformers/all-mpnet-base-v2") -> Any:
-    if SentenceTransformer is None:
+    if _SentenceTransformer is None:
         return None
     if model_name not in _MODEL_CACHE:
         cache_folder = str(_MODELS_DIR) if _MODELS_DIR.is_dir() else None
-        _MODEL_CACHE[model_name] = SentenceTransformer(
+        _MODEL_CACHE[model_name] = _SentenceTransformer(
             model_name, cache_folder=cache_folder,
         )
     return _MODEL_CACHE[model_name]
@@ -39,7 +40,7 @@ def _embed_sbert(texts: list[str]) -> np.ndarray:
     if model is None:
         # Fallback: zeros; caller should handle low-signal gracefully
         return np.zeros((len(texts), 1), dtype=np.float32)
-    vecs = model.encode(texts, normalize_embeddings=True)
+    vecs: np.ndarray = model.encode(texts, normalize_embeddings=True)
     return np.asarray(vecs, dtype=np.float32)
 
 
