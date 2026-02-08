@@ -94,6 +94,7 @@ async def ui_recommendations(
     strategy: str = Query(default="semantic"),
     min_year: int | None = Query(default=None, ge=1900, le=2100),
     max_year: int | None = Query(default=None, ge=1900, le=2100),
+    min_rating: float | None = Query(default=None, ge=0, le=10),
     limit: int = Query(default=6, ge=1, le=20),
     kind: str = Query(default="movie"),  # movie | series | both
     english: int | None = Query(default=None),
@@ -109,6 +110,7 @@ async def ui_recommendations(
             limit=max(limit * 10, 60),
             min_year=min_year,
             max_year=max_year,
+            min_rating=min_rating,
             kind=kind,
             english_only=bool(english),
             pages=3,
@@ -126,6 +128,7 @@ async def ui_recommendations(
             limit=limit,
             min_year=min_year,
             max_year=max_year,
+            min_rating=min_rating,
             kind=kind,
             english_only=bool(english),
             pages=3,

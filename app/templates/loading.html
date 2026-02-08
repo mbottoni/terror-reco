@@ -31,7 +31,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0b0b0f;c
   setTimeout(function(){
     var u=new URLSearchParams();
     u.set('mood',p.get('mood')||'');
-    ['strategy','min_year','max_year','limit','kind','english'].forEach(function(k){
+    ['strategy','min_year','max_year','min_rating','limit','kind','english'].forEach(function(k){
       var v=p.get(k);if(v)u.set(k,v);
     });
     window.location.replace('/recommend?'+u.toString());

@@ -44,6 +44,7 @@ async def recommend_movies_advanced(
     limit: int = 6,
     min_year: int | None = None,
     max_year: int | None = None,
+    min_rating: float | None = None,
     kind: str = "movie",  # "movie" | "series" | "both"  (corpus is movies only)
     english_only: bool = False,
     pages: int = 2,
@@ -86,6 +87,10 @@ async def recommend_movies_advanced(
             continue
         if max_year is not None and (year_int is None or year_int > max_year):
             continue
+        if min_rating is not None:
+            rating_val = movie.get("vote_average")
+            if rating_val is None or float(rating_val) < min_rating:
+                continue
         if english_only:
             lang = (movie.get("language") or "").lower()
             if "english" not in lang:
