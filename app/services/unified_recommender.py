@@ -65,14 +65,18 @@ def _popularity(detail: dict[str, Any]) -> float:
 
 def _facet_proxy(mood: str, item: dict[str, Any]) -> float:
     q = set(_normalize_text(mood).split())
-    t = set((_normalize_text(item.get("title")) + " " + _normalize_text(item.get("overview"))).split())
+    t = set(
+        (_normalize_text(item.get("title")) + " " + _normalize_text(item.get("overview"))).split()
+    )
     if not q or not t:
         return 0.0
     inter = len(q & t)
     return inter / max(1, len(q))
 
 
-def _mmr(items: list[dict[str, Any]], sims: np.ndarray, k: int, lambda_: float) -> list[dict[str, Any]]:
+def _mmr(
+    items: list[dict[str, Any]], sims: np.ndarray, k: int, lambda_: float
+) -> list[dict[str, Any]]:
     n = len(items)
     if n <= k:
         return items
@@ -83,8 +87,12 @@ def _mmr(items: list[dict[str, Any]], sims: np.ndarray, k: int, lambda_: float) 
     candidates.remove(first)
 
     def _item_sim(i: int, j: int) -> float:
-        ti = _normalize_text(items[i].get("title")) + " " + _normalize_text(items[i].get("overview"))
-        tj = _normalize_text(items[j].get("title")) + " " + _normalize_text(items[j].get("overview"))
+        ti = (
+            _normalize_text(items[i].get("title")) + " " + _normalize_text(items[i].get("overview"))
+        )
+        tj = (
+            _normalize_text(items[j].get("title")) + " " + _normalize_text(items[j].get("overview"))
+        )
         si, sj = set(ti.split()), set(tj.split())
         if not si or not sj:
             return 0.0
@@ -148,9 +156,9 @@ def recommend_unified_semantic(
     w = {"semantic": 0.45, "keyword": 0.20, "popularity": 0.20, "recency": 0.05}
     if weights:
         w.update(weights)
-    blended = (w["semantic"] * sem + w["keyword"] * kw + w["popularity"] * pop + w["recency"] * rec).astype(
-        np.float32
-    )
+    blended = (
+        w["semantic"] * sem + w["keyword"] * kw + w["popularity"] * pop + w["recency"] * rec
+    ).astype(np.float32)
 
     order = np.argsort(-blended)
     pool_idx = order[: max(10, limit * 5)]
@@ -159,5 +167,3 @@ def recommend_unified_semantic(
 
     selected = _mmr(pool, sims=pool_scores, k=limit, lambda_=diversity_lambda)
     return selected
-
-

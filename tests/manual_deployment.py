@@ -153,9 +153,9 @@ def test_database_configuration():
         # Test SQLAlchemy compatibility
         from sqlalchemy.engine.url import make_url
 
-        for original, expected in test_cases:
+        for _original, expected in test_cases:
             try:
-                parsed = make_url(expected)
+                make_url(expected)
                 print_success(f"SQLAlchemy can parse: {expected}")
             except Exception as e:
                 print_error(f"SQLAlchemy cannot parse {expected}: {e}")
@@ -233,7 +233,7 @@ def test_database_operations():
         print_success("Database initialization successful")
 
         # Test database session
-        with db.get_db_session() as session:
+        with db.get_db_session():
             print_success("Database session created successfully")
 
         print_success("Database operations working correctly")
@@ -355,7 +355,7 @@ def test_docker_configuration():
             # Basic syntax check
             try:
                 with open(docker_file) as f:
-                    content = f.read()
+                    f.read()
                 print_success(f"Docker file {docker_file} is readable")
             except Exception as e:
                 print_error(f"Docker file {docker_file} has issues: {e}")
@@ -428,7 +428,8 @@ def run_uvicorn_test():
             [
                 sys.executable,
                 "-c",
-                "import sys; sys.path.insert(0, 'app'); from main import app; print('✅ App can be imported by uvicorn')",
+                "import sys; sys.path.insert(0, 'app');"
+                " from main import app; print('App can be imported by uvicorn')",
             ],
             capture_output=True,
             text=True,

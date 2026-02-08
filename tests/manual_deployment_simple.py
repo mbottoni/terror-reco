@@ -193,7 +193,7 @@ def test_docker_configuration():
             # Basic syntax check
             try:
                 with open(docker_file) as f:
-                    content = f.read()
+                    f.read()
                 print_success(f"Docker file {docker_file} is readable")
             except Exception as e:
                 print_error(f"Docker file {docker_file} has issues: {e}")

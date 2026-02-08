@@ -135,7 +135,7 @@ async def api_recommendations(
     except HTTPException:
         raise
     except Exception as exc:  # pragma: no cover
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {"mood": mood, "count": len(movies), "results": movies}
 

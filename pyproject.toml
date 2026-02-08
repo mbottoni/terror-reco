@@ -50,10 +50,13 @@ include = ["app*"]
 
 [tool.ruff]
 line-length = 100
-exclude = [".venv", "build", "dist"]
+exclude = [".venv", "build", "dist", "notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+ignore = [
+  "B008",  # Depends() / Form() / Query() in function defaults — standard FastAPI pattern
+]
 
 [tool.black]
 line-length = 100

@@ -108,10 +108,10 @@ async def create_checkout_session(request: Request):
 
     except stripe.StripeError as e:
         print(f"❌ Stripe error: {e}")
-        raise HTTPException(status_code=400, detail=f"Payment error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Payment error: {str(e)}") from e
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
 
 
 @router.get("/success", response_class=HTMLResponse)
@@ -133,7 +133,7 @@ async def stripe_success(request: Request, session_id: str = None):
             },
         )
     except stripe.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/cancel", response_class=HTMLResponse)
@@ -154,10 +154,10 @@ async def stripe_webhook(request: Request):
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid signature")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail="Invalid payload") from e
+    except stripe.SignatureVerificationError as e:
+        raise HTTPException(status_code=400, detail="Invalid signature") from e
 
     # Handle the event
     if event["type"] == "checkout.session.completed":

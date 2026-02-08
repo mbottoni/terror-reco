@@ -37,8 +37,8 @@ test:
 	pytest -q
 
 deployment:
-	python tests/test_deployment.py
-	python tests/test_deployment_simple.py || true
-	python deployment_checklist.py || true
+	python tests/manual_deployment.py
+	python tests/manual_deployment_simple.py || true
+	python tests/deployment_checklist.py || true
 
 ci: lint typecheck test

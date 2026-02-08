@@ -33,9 +33,7 @@ router = APIRouter(prefix="/auth")
 
 
 @router.get("/login", response_class=HTMLResponse, response_model=None)
-async def login_form(
-    request: Request, db: Session = Depends(get_db)
-):
+async def login_form(request: Request, db: Session = Depends(get_db)):
     # Redirect if already logged in
     user_id = request.session.get("user_id")
     if user_id and db.get(User, user_id):
@@ -95,9 +93,7 @@ async def login(
 
 
 @router.get("/register", response_class=HTMLResponse, response_model=None)
-async def register_form(
-    request: Request, db: Session = Depends(get_db)
-):
+async def register_form(request: Request, db: Session = Depends(get_db)):
     # Redirect if already logged in
     user_id = request.session.get("user_id")
     if user_id and db.get(User, user_id):
@@ -130,7 +126,12 @@ async def register(
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     request.session["auth_email"] = email
-    logger.info("REGISTER attempt: email=%s, pw_len=%d, confirm_len=%d", email, len(password), len(confirm_password))
+    logger.info(
+        "REGISTER attempt: email=%s, pw_len=%d, confirm_len=%d",
+        email,
+        len(password),
+        len(confirm_password),
+    )
 
     if not validate_csrf_token(csrf):
         logger.warning("REGISTER FAIL: CSRF invalid for %s", email)
