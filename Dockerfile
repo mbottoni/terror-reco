@@ -14,9 +14,15 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install app deps (production only — no dev/test tools)
+# Install PyTorch CPU-only FIRST to avoid the massive CUDA packages (~6 GB).
+# sentence-transformers depends on torch; pre-installing the CPU wheel means
+# pip will skip the default (CUDA) build when resolving later.
+RUN pip install --upgrade pip && \
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install app deps (production only — no dev/notebook tools)
 COPY pyproject.toml README.md /app/
-RUN pip install --upgrade pip && pip install .
+RUN pip install .
 
 # Pre-download the sentence-transformer model so the container starts fast
 # (no HuggingFace download at runtime)
@@ -29,4 +35,4 @@ COPY app /app/app
 EXPOSE 10000
 
 # Run with uvicorn and respect $PORT (default 10000)
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]

@@ -16,7 +16,6 @@ dependencies = [
   "httpx>=0.27.0",
   "jinja2>=3.1.3",
   "pydantic>=2.7.0",
-  "ipykernel>=6.29.0",
   "pydantic-settings>=2.3.4",
   "tenacity>=9.0.0",
   "scikit-learn>=1.4.0",
@@ -27,10 +26,13 @@ dependencies = [
   "python-multipart>=0.0.9",
   "itsdangerous>=2.1.2",
   "stripe>=7.0.0",
-  "marimo>=0.19.9",
 ]
 
 [project.optional-dependencies]
+notebooks = [
+  "ipykernel>=6.29.0",
+  "marimo>=0.19.9",
+]
 dev = [
   "pytest>=8.2.0",
   "pytest-asyncio>=0.23.0",
@@ -39,6 +41,8 @@ dev = [
   "ruff>=0.6.0",
   "black>=24.8.0",
   "types-Jinja2>=2.11.9",
+  "ipykernel>=6.29.0",
+  "marimo>=0.19.9",
 ]
 
 [tool.setuptools]
