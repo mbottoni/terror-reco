@@ -4,7 +4,7 @@ import random
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -71,7 +71,7 @@ class EmbeddingOMDbStrategy:
             d = await client.get_by_id(imdb_id)
             if not d:
                 continue
-            genre = _normalize(d.get("Genre"))
+            genre = _normalize(str(d.get("Genre") or ""))
             if "horror" not in genre:
                 continue
             poster = d.get("Poster")

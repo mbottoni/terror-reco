@@ -19,7 +19,7 @@ class OMDbClient:
         merged.update(params)
         resp = await self._client.get(self._base_url, params=merged)
         resp.raise_for_status()
-        data = resp.json()
+        data: dict[str, Any] = resp.json()
         # OMDb returns { Response: 'False', Error: '...' }
         if isinstance(data, dict) and data.get("Response") == "False":
             return {}

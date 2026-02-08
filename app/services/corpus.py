@@ -207,7 +207,8 @@ def load_corpus() -> list[dict[str, Any]]:
     if not CORPUS_FILE.exists():
         return []
     with open(CORPUS_FILE) as f:
-        return json.load(f)
+        data: list[dict[str, Any]] = json.load(f)
+    return data
 
 
 # ----------------------------------------------------------------- embeddings
@@ -218,7 +219,7 @@ def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
     are a fast numpy load.
     """
     if EMBEDDINGS_FILE.exists():
-        embs = np.load(EMBEDDINGS_FILE)
+        embs: np.ndarray = np.load(EMBEDDINGS_FILE)
         if embs.shape[0] == len(corpus):
             return embs
 

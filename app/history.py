@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from .auth import get_current_user
 from .db import get_db
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/history")
 @router.get("/", response_class=HTMLResponse)
 async def history_page(
     request: Request, user: User | None = Depends(get_current_user), db: Session = Depends(get_db)
-) -> HTMLResponse:
+) -> Response:
     if not user:
         return RedirectResponse(url="/auth/login", status_code=303)
     items = (
@@ -26,9 +27,10 @@ async def history_page(
         .limit(50)
         .all()
     )
-    return request.app.state.templates.TemplateResponse(
+    resp: Response = request.app.state.templates.TemplateResponse(
         "history.html", {"request": request, "items": items}
     )
+    return resp
 
 
 def save_history(

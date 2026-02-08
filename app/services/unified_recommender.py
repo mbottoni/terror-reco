@@ -7,11 +7,11 @@ from typing import Any
 import numpy as np
 
 try:
-    from sentence_transformers import SentenceTransformer as _SentenceTransformer
+    from sentence_transformers import SentenceTransformer
 except Exception:  # pragma: no cover - optional in prod
-    _SentenceTransformer = None  # type: ignore[assignment,misc]
+    SentenceTransformer = None  # type: ignore[assignment,misc]
 
-SentenceTransformer = _SentenceTransformer  # re-export for notebook imports
+_SentenceTransformer: Any = SentenceTransformer  # keep as Any to avoid unreachable
 
 _MODEL_CACHE: dict[str, Any] = {}
 
@@ -40,12 +40,13 @@ def _embed_sbert(texts: list[str]) -> np.ndarray:
     if model is None:
         # Fallback: zeros; caller should handle low-signal gracefully
         return np.zeros((len(texts), 1), dtype=np.float32)
-    vecs: np.ndarray = model.encode(texts, normalize_embeddings=True)
+    vecs = model.encode(texts, normalize_embeddings=True)
     return np.asarray(vecs, dtype=np.float32)
 
 
 def _cosine(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    return (a @ b.T).astype(np.float32)
+    result: np.ndarray = (a @ b.T).astype(np.float32)
+    return result
 
 
 def _minmax(x: np.ndarray) -> np.ndarray:

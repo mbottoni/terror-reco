@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from .auth import get_current_user
@@ -12,6 +13,7 @@ from .auth import router as auth_router
 from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
+from .models import User
 from .services.recommender import recommend_movies, recommend_movies_advanced
 from .services.unified_recommender import recommend_unified_semantic
 from .settings import get_settings
@@ -44,14 +46,24 @@ app.state.templates = templates
 @app.on_event("startup")
 async def _startup() -> None:
     init_db()
-    # Pre-load the sentence-transformer model so the first request is fast
-    from .services.unified_recommender import _get_sbert
+    # Pre-load the sentence-transformer model so the first request is fast.
+    # Wrapped in try/except so the app still starts when the model isn't
+    # available (e.g. CI, offline environments).
+    try:
+        from .services.unified_recommender import _get_sbert
 
-    _get_sbert()
+        _get_sbert()
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "Could not pre-load sentence-transformer model at startup; "
+            "it will be loaded lazily on the first request."
+        )
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, user=Depends(get_current_user)) -> HTMLResponse:
+async def index(request: Request, user: User | None = Depends(get_current_user)) -> HTMLResponse:
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
     print(f"[HOME] user_id_in_session={request.session.get('user_id')}, user={user}, flash={flash}")
@@ -75,8 +87,8 @@ async def ui_recommendations(
     limit: int = Query(default=6, ge=1, le=20),
     kind: str = Query(default="movie"),  # movie | series | both
     english: int | None = Query(default=None),
-    user=Depends(get_current_user),
-    db=Depends(get_db),
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> HTMLResponse:
     # Use advanced recommender if any advanced filters provided, else fallback
     use_advanced = any(

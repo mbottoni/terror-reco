@@ -33,7 +33,7 @@ router = APIRouter(prefix="/auth")
 
 
 @router.get("/login", response_class=HTMLResponse, response_model=None)
-async def login_form(request: Request, db: Session = Depends(get_db)):
+async def login_form(request: Request, db: Session = Depends(get_db)) -> Response:
     # Redirect if already logged in
     user_id = request.session.get("user_id")
     if user_id and db.get(User, user_id):
@@ -44,7 +44,7 @@ async def login_form(request: Request, db: Session = Depends(get_db)):
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
     email = request.session.pop("auth_email", "")
-    return request.app.state.templates.TemplateResponse(
+    resp: Response = request.app.state.templates.TemplateResponse(
         "login.html",
         {
             "request": request,
@@ -54,6 +54,7 @@ async def login_form(request: Request, db: Session = Depends(get_db)):
             "email": email,
         },
     )
+    return resp
 
 
 @router.post("/login")
@@ -93,7 +94,7 @@ async def login(
 
 
 @router.get("/register", response_class=HTMLResponse, response_model=None)
-async def register_form(request: Request, db: Session = Depends(get_db)):
+async def register_form(request: Request, db: Session = Depends(get_db)) -> Response:
     # Redirect if already logged in
     user_id = request.session.get("user_id")
     if user_id and db.get(User, user_id):
@@ -104,7 +105,7 @@ async def register_form(request: Request, db: Session = Depends(get_db)):
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
     email = request.session.pop("auth_email", "")
-    return request.app.state.templates.TemplateResponse(
+    resp: Response = request.app.state.templates.TemplateResponse(
         "register.html",
         {
             "request": request,
@@ -114,6 +115,7 @@ async def register_form(request: Request, db: Session = Depends(get_db)):
             "email": email,
         },
     )
+    return resp
 
 
 @router.post("/register")
