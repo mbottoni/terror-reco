@@ -160,7 +160,7 @@ terror_reco/
 ├── notebooks/                  # Marimo & Jupyter evaluation notebooks
 ├── tests/                      # Pytest test suite
 ├── docs/                       # Project documentation
-├── scripts/                    # build_corpus.py (offline corpus build), download_model.py
+├── scripts/                    # build_corpus.py, run_eval.py, download_model.py
 ├── Dockerfile                  # Production container
 ├── docker-compose.yml          # Local Docker setup
 ├── Makefile                    # Common commands
@@ -176,6 +176,7 @@ terror_reco/
 | [API Reference](docs/api-reference.md) | All HTTP endpoints with parameters and responses |
 | [Database](docs/database.md) | Schema, models, relationships, migrations |
 | [Deployment](docs/deployment.md) | Docker, Render, CI/CD, environment variables |
+| [Evaluation Baseline](docs/evaluation-baseline.md) | Current recommender scores and the gold-set diagnosis |
 | [Research Notebooks](docs/notebooks.md) | Evaluation framework, model comparison, weight tuning |
 | [Development Guide](docs/development.md) | Local setup, testing, linting, contributing |
 | [Stripe Setup](docs/STRIPE_SETUP.md) | Payment integration configuration |
@@ -192,6 +193,7 @@ make typecheck   # Run mypy strict type checking
 make test        # Run pytest suite
 make corpus      # Build/refresh the horror corpus (resumable)
 make corpus-validate  # Check the existing corpus against quality gates
+make eval        # Score the recommender against the gold test set
 make ci          # Run full CI pipeline (lint + typecheck + test)
 make format      # Auto-fix linting issues
 make clean       # Remove venv and caches

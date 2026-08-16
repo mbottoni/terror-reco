@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval
 
 
 setup:
@@ -43,6 +43,10 @@ corpus:
 
 corpus-validate:
 	.venv/bin/python scripts/build_corpus.py --validate-only
+
+# Score the recommender against the gold test set (see docs/evaluation-baseline.md)
+eval:
+	.venv/bin/python scripts/run_eval.py --runs 10
 
 deployment:
 	python tests/manual_deployment.py
