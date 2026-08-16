@@ -11,6 +11,12 @@
 
   <div class="results-header">
     <h1 class="page-title">Recommendations</h1>
+    <noscript>
+      <p class="noscript-note">
+        JavaScript is off, so film details and like/dislike are unavailable.
+        Each card links straight to IMDb instead.
+      </p>
+    </noscript>
     {% if movies %}
     {# Results are stochastic by default, so a plain URL would show the next
        visitor something different. Adding a seed pins this exact set. #}
@@ -33,6 +39,13 @@
       {% endif %}
       <div class="card-body">
         <h2 class="card-title">{{ m.title }}</h2>
+        {# Without JS the card's onclick never fires, leaving no way to reach
+           the film. This link is hidden when JS is available (the modal is
+           nicer) but keeps the page usable when it is not. #}
+        <noscript>
+          <a class="card-noscript-link" rel="noopener" target="_blank"
+             href="https://www.imdb.com/title/{{ m.imdb_id }}/">View on IMDb</a>
+        </noscript>
         <p class="card-meta">
           {% if m.vote_average %}<span class="rating">★ {{ m.vote_average }}</span>{% endif %}
           {% if m.release_date %}<span>{{ m.release_date }}</span>{% endif %}
@@ -43,7 +56,10 @@
         {% if m.match_terms %}
         {# Why this film matched, in the user's own words #}
         <p class="card-match" title="Keywords your search matched">
-          {% for term in m.match_terms %}<span class="match-chip">{{ term }}</span>{% endfor %}
+          {% for term in m.match_terms %}<a class="match-chip"
+             href="/recommend?mood={{ term | urlencode }}&strategy={{ strategy }}"
+             onclick="event.stopPropagation()"
+             title="Search for {{ term }}">{{ term }}</a>{% endfor %}
         </p>
         {% endif %}
       </div>

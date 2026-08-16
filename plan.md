@@ -42,14 +42,14 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
 
 ## P2 — Structural
 
-- [ ] **7. Normalize `SearchHistory.results_json`.** Currently stores full
-  denormalized movie dicts (~6 KB/row), so the data cannot answer "which films do
-  we recommend most", "which moods return nothing", "does strategy X beat Y".
-  Safe to do now that Alembic exists.
-- [ ] **8. Build the Docker image from `uv.lock`.** It still `pip install`s and
-  re-resolves, so the image ships different versions than CI tests. Care needed:
-  the CPU-only torch ordering exists to avoid a ~6 GB CUDA wheel.
-- [ ] **9. Replace `datetime.utcnow`** (4 uses, deprecated and naive).
+- [x] **7. Normalize `SearchHistory.results_json`.** New `search_results` table storing
+  film *references* in rank order. The migration backfills existing blobs (verified
+  against seeded legacy rows) so no history is lost.
+- [x] **8. Build the Docker image from `uv.lock`.** Verified: image now ships
+  starlette 0.52.1 / fastapi 0.128.4 (the tested versions) and torch 2.10.0**+cpu**
+  with CUDA `None`, so the CPU-only trick survives. `make requirements` regenerates.
+- [x] **9. Replace `datetime.utcnow`.** Now `_utcnow()` returning aware UTC, with
+  `DateTime(timezone=True)` columns.
 
 ## Frontend
 
@@ -60,9 +60,10 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
 - [x] **12. Explain *why* a film matched.** Keyword chips on each card showing the
   terms the query actually hit. Plural folding is display-only -- applying it to
   `_tokenize` would change BM25 and invalidate the recorded eval numbers.
-- [ ] **13. Keyword chips as filters.** 500 films × ~12 keywords is a browsable
-  subgenre taxonomy already paid for.
-- [ ] **14. No-JS fallback** for the detail modal and feedback buttons.
+- [x] **13. Keyword chips as filters.** The match chips are now links that re-run
+  the term as a search.
+- [x] **14. No-JS fallback.** `<noscript>` IMDb link per card plus a banner; without
+  JS the cards were dead divs with no way to reach the film.
 
 ## New features
 

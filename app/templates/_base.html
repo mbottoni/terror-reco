@@ -572,13 +572,24 @@ select{cursor:pointer}
   .history-item{flex-direction:column;align-items:flex-start;gap:6px}
 }
 
+/* ---- NO-JS FALLBACK ---- */
+.card-noscript-link{
+  display:inline-block;margin-bottom:6px;font-size:.75rem;
+  color:#d98a8a;text-decoration:underline;
+}
+.noscript-note{
+  margin:12px 0;padding:10px 14px;border-radius:8px;font-size:.8rem;
+  background:rgba(200,60,60,.10);border:1px solid rgba(200,60,60,.25);color:#d98a8a;
+}
+
 /* ---- MATCH CHIPS / SIMILAR / SHARE ---- */
 .card-match{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
 .match-chip{
   font-size:.66rem;letter-spacing:.02em;padding:2px 7px;border-radius:999px;
   background:rgba(200,60,60,.12);color:#d98a8a;border:1px solid rgba(200,60,60,.28);
-  white-space:nowrap;
+  white-space:nowrap;text-decoration:none;cursor:pointer;
 }
+.match-chip:hover{background:rgba(200,60,60,.22);color:#f0a5a5}
 .share-btn{
   margin-top:10px;font-size:.78rem;background:transparent;
   border:1px solid #2c2c36;color:#9c9caa;padding:6px 12px;

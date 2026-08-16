@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval tune migrate migration migrate-check
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval tune requirements migrate migration migrate-check
 
 
 setup:
@@ -43,6 +43,11 @@ corpus:
 
 corpus-validate:
 	.venv/bin/python scripts/build_corpus.py --validate-only
+
+# Regenerate the pinned requirements the Docker image installs from.
+# Keep in sync with uv.lock; CI verifies the lock, this keeps the image honest.
+requirements:
+	uv export --frozen --no-hashes --no-dev --no-emit-project --format requirements-txt -o requirements.txt
 
 # Database migrations
 migrate:

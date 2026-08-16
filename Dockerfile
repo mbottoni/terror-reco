@@ -16,13 +16,17 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 
 # Install PyTorch CPU-only FIRST to avoid the massive CUDA packages (~6 GB).
 # sentence-transformers depends on torch; pre-installing the CPU wheel means
-# pip will skip the default (CUDA) build when resolving later.
+# the resolver below finds it already satisfied and skips the CUDA build.
+# The version is pinned to the lockfile so this cannot silently drift.
+ARG TORCH_VERSION=2.10.0
 RUN pip install --upgrade pip && \
-    pip install torch --index-url https://download.pytorch.org/whl/cpu
+    pip install "torch==${TORCH_VERSION}" --index-url https://download.pytorch.org/whl/cpu
 
-# Install app deps (production only — no dev/notebook tools)
-COPY pyproject.toml README.md /app/
-RUN pip install .
+# Install app deps from the LOCKFILE rather than re-resolving. Re-resolving
+# meant the image shipped different versions than CI tested against; the
+# requirements file is generated from uv.lock by `make requirements`.
+COPY pyproject.toml README.md requirements.txt /app/
+RUN pip install --no-deps -r requirements.txt
 
 # Pre-download the sentence-transformer model so the container starts fast
 # (no HuggingFace download at runtime)
