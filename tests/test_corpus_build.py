@@ -177,3 +177,39 @@ class TestCorpusFingerprint:
     def test_stable_for_identical_content(self) -> None:
         a = [{"imdb_id": "tt1", "overview": "one"}]
         assert corpus_fingerprint(a) == corpus_fingerprint(list(a))
+
+
+class TestCorpusIntegrity:
+    """Guards against the corpus silently losing data.
+
+    A `--resume` run once overwrote every keyword in the corpus with stale
+    checkpoint records. Nothing failed: not a test, not the build validator,
+    not CI. These assert on the shipped corpus so that regression is loud.
+    """
+
+    def test_shipped_corpus_has_keywords(self) -> None:
+        from app.services.corpus import load_corpus
+
+        corpus = load_corpus()
+        if not corpus:
+            import pytest
+
+            pytest.skip("corpus not built in this environment")
+        with_keywords = sum(1 for m in corpus if (m.get("keywords") or "").strip())
+        # Keywords carry the tone/subgenre vocabulary worth +0.19 NDCG; losing
+        # them is invisible without an explicit check.
+        assert with_keywords >= len(corpus) * 0.95, (
+            f"only {with_keywords}/{len(corpus)} films have keywords - "
+            "the corpus may have been overwritten from a stale build checkpoint"
+        )
+
+    def test_embedding_text_is_richer_than_the_plot(self) -> None:
+        from app.services.corpus import embedding_text, load_corpus
+
+        corpus = load_corpus()
+        if not corpus:
+            import pytest
+
+            pytest.skip("corpus not built in this environment")
+        sample = corpus[0]
+        assert len(embedding_text(sample)) > len(sample.get("overview") or "")

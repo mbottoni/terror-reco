@@ -73,10 +73,17 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
   button in the modal. Kept separate from feedback on purpose: a like is a taste
   signal about a film seen, a save is only an intent to watch, and mixing them
   would poison the taste vector with unwatched films.
-- [ ] **17. Grow the corpus to ~2,000.** The builder is resumable and validated;
-  500 was a deliberate first pass and real queries range well outside the 15
-  gold moods.
-- [ ] **18. Fix the two broken moods.** *body horror and grotesque
+- [-] **17. Grow the corpus.** Tried at 1,200 films and **measured worse** on every
+  metric (ndcg 0.4997 -> 0.3437): the extra films are obscure and compete for the
+  same six slots. Reverted to 500. The gold set is canon-biased, so this is not
+  proof that a bigger corpus is worse for real users -- it is proof we cannot
+  currently show it is better, which is the argument for item 19. Discovery work
+  for 1,200 films is preserved in the checkpoint.
+- [~] **18. Fix the two broken moods.** Root-caused, not yet fixed: the gold films
+  for both (*Hereditary*, *The Fly*, *The Thing*, *Videodrome*) are present with
+  keywords, so this is a ranking problem in an already-enriched corpus rather than
+  missing vocabulary. Needs its own investigation.
+  ORIGINAL: *body horror and grotesque
   transformation* and *slow-burn psychological dread* both score 0.000 with their
   gold films present in the corpus.
 - [ ] **19. Harvest a real eval set from feedback.** 15 synthetic moods is what

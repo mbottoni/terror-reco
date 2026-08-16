@@ -221,6 +221,38 @@ async def stage_hydrate(client: TMDBClient, state: dict[str, Any], target: int) 
     print(f"    {len(state['records'])} records ({dropped} dropped: no imdb_id or no overview)")
 
 
+def _merge_with_existing(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Fill empty fields in *records* from the corpus already on disk.
+
+    The checkpoint is a parallel copy of the corpus, and it goes stale: records
+    hydrated before a field existed keep lacking it, so writing the checkpoint
+    straight out silently *deletes* anything added to the corpus afterwards.
+    That is exactly how a ``--resume`` run wiped the TMDB keywords behind the
+    +61% NDCG gain -- the corpus regressed with no error and no failing test.
+
+    Merging by imdb_id makes the write additive: the checkpoint can add films
+    and fields, but never remove a value the corpus already had.
+    """
+    existing = {m.get("imdb_id"): m for m in load_corpus() if m.get("imdb_id")}
+    if not existing:
+        return records
+
+    restored = 0
+    for record in records:
+        prior = existing.get(record.get("imdb_id"))
+        if not prior:
+            continue
+        for key, value in prior.items():
+            if value in (None, "", [], {}):
+                continue
+            if record.get(key) in (None, "", [], {}):
+                record[key] = value
+                restored += 1
+    if restored:
+        print(f"  merged {restored} field(s) preserved from the existing corpus")
+    return records
+
+
 async def refresh_keywords() -> int:
     """Backfill TMDB keywords onto an already-built corpus.
 
@@ -251,6 +283,18 @@ async def refresh_keywords() -> int:
         await client.aclose()
 
     save_corpus(corpus)
+
+    # Write the keywords back into the checkpoint too. Updating only the corpus
+    # left the checkpoint stale, so the next --resume run overwrote them.
+    state = load_state()
+    if state.get("records"):
+        by_id = {m.get("imdb_id"): m for m in corpus}
+        for record in state["records"].values():
+            prior = by_id.get(record.get("imdb_id"))
+            if prior and prior.get("keywords"):
+                record["keywords"] = prior["keywords"]
+        save_state(state)
+
     covered = sum(1 for m in corpus if m.get("keywords"))
     print(f"  keywords on {covered}/{len(corpus)} films ({missing} lacked a tmdb_id)")
 
@@ -389,7 +433,7 @@ async def build(target: int, resume: bool, canon_pages: int, skip_embed: bool) -
     if not stages.get("enrich"):
         await stage_enrich(state)
 
-    corpus = list(state["records"].values())
+    corpus = _merge_with_existing(list(state["records"].values()))
     corpus.sort(key=lambda m: (m.get("title") or "").lower())
     save_corpus(corpus)
     print(f"\n[F] Wrote {len(corpus)} films to data/horror_corpus.json")

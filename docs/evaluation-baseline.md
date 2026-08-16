@@ -53,6 +53,49 @@ Turning MMR off scores highest, but diversity is the entire point of the "AI + D
 strategy and the metric gives no credit for it, so the default stays at 0.7. Do not tune
 lambda upward to chase this number.
 
+## Corpus size: 1,200 films measured WORSE than 500
+
+Growing the corpus from 500 to 1,200 films (decade-stratified fill) regressed every
+metric:
+
+| Metric | 500 films | 1,200 films | Change |
+|--------|----------:|------------:|-------:|
+| ndcg@6 (semantic) | 0.4997 | 0.3437 | **-0.156** |
+| ndcg@6 (unified) | 0.4896 | 0.3983 | -0.091 |
+| hit_rate@6 | 0.8667 | 0.7333 | -0.133 |
+| precision@6 | 0.4667 | 0.3444 | -0.122 |
+
+The 500-film corpus is canon-heavy by construction (`vote_count.desc` plus gold
+seeding). The extra 700 films are more obscure, and they compete for the same six
+slots: they can match a mood semantically while not being the answer the gold set
+expects. **Reverted to 500 films.**
+
+**Important caveat, and the reason this is not a verdict on corpus size:** the gold
+set is 15 synthetic moods whose expected answers are famous films, so it is
+structurally biased toward a small canon-heavy corpus. A larger corpus may well
+serve real users better while scoring worse here. What this measurement actually
+shows is that *we currently have no way to demonstrate a larger corpus helps* --
+which is the argument for harvesting a real evaluation set from user feedback.
+
+The 1,200-film discovery work is preserved in `data/.corpus_build_state.json`, so
+this is cheap to revisit once a less biased benchmark exists.
+
+## A corpus regression that shipped
+
+Between commits `5b77ae6` and `8fabc85`, the corpus lost all 500 keyword fields and
+NDCG would have fallen back to roughly the pre-keyword baseline. Nothing failed: no
+test, no validation gate, no CI step.
+
+Cause: `build_corpus.py` wrote `list(state["records"].values())` straight to disk.
+Those checkpoint records were hydrated *before* the keyword field existed, and
+`--refresh-keywords` had updated only the corpus file, not the checkpoint. Any later
+`--resume` run therefore resurrected stale records and silently deleted the
+enrichment behind the +61% gain.
+
+Fixed in two places: the final write now merges with the corpus already on disk so
+it can only add fields, never remove them; and `--refresh-keywords` writes back into
+the checkpoint so the two cannot drift apart again.
+
 ## Two things measured and deliberately NOT shipped
 
 Both were on the roadmap as expected wins. Both were measured and rejected.
