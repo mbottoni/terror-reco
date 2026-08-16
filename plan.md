@@ -69,8 +69,10 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
 
 - [x] **15. Shareable result permalinks.** "Share these results" pins a seed into
   the URL so the link reproduces that exact set instead of a fresh draw.
-- [ ] **16. Watchlist.** The obvious missing verb — you can rate a film but not
-  save one. Natural extension of the `MovieFeedback` schema.
+- [x] **16. Watchlist.** `watchlist` table, `/watchlist/` page, toggle API, Save
+  button in the modal. Kept separate from feedback on purpose: a like is a taste
+  signal about a film seen, a save is only an intent to watch, and mixing them
+  would poison the taste vector with unwatched films.
 - [ ] **17. Grow the corpus to ~2,000.** The builder is resumable and validated;
   500 was a deliberate first pass and real queries range well outside the 15
   gold moods.

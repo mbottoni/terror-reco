@@ -14,7 +14,7 @@ from .auth import router as auth_router
 from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
-from .models import MovieFeedback, User
+from .models import MovieFeedback, User, WatchlistItem
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
@@ -26,6 +26,7 @@ from .services.recommender import (
 from .services.unified_recommender import DEFAULT_WEIGHTS, recommend_unified_semantic
 from .settings import get_settings
 from .stripe_payments import router as stripe_router
+from .watchlist import router as watchlist_router
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -218,11 +219,19 @@ async def ui_recommendations(
         )
         user_feedback = {r.imdb_id: r.rating for r in rows}
 
+    saved_ids: list[str] = []
+    if user:
+        saved_ids = [
+            row.imdb_id
+            for row in db.query(WatchlistItem.imdb_id).filter(WatchlistItem.user_id == user.id)
+        ]
+
     return templates.TemplateResponse(
         request,
         "results.html",
         {
             "mood": mood,
+            "saved_ids": saved_ids,
             "movies": movies,
             "strategy": strategy_key,
             "strategy_label": STRATEGY_LABELS[strategy_key],
@@ -329,3 +338,4 @@ async def submit_feedback(
 app.include_router(auth_router)
 app.include_router(history_router)
 app.include_router(stripe_router)
+app.include_router(watchlist_router)

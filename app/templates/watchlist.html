@@ -1,0 +1,67 @@
+{% extends "_base.html" %}
+
+{% block title %}Watchlist — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px">
+  <a href="/" class="back-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
+    Back
+  </a>
+
+  <h1 class="page-title">Watchlist</h1>
+  <p class="page-subtitle">Films you saved for later.</p>
+
+  {% if items %}
+  <ul class="card-grid">
+    {% for item in items %}
+    <li class="card">
+      {% if item.poster_url %}
+      <img class="card-poster" src="{{ item.poster_url }}" alt="{{ item.title }}" loading="lazy">
+      {% else %}
+      <div class="card-no-poster">🎬</div>
+      {% endif %}
+      <div class="card-body">
+        <h2 class="card-title">{{ item.title }}</h2>
+        <p class="card-meta">
+          <span>Saved {{ item.created_at.strftime('%b %d, %Y') if item.created_at else '' }}</span>
+        </p>
+        <div class="watchlist-actions">
+          <a class="card-noscript-link" rel="noopener" target="_blank"
+             href="https://www.imdb.com/title/{{ item.imdb_id }}/">IMDb</a>
+          <button type="button" class="share-btn"
+                  onclick="removeSaved(this, '{{ item.imdb_id }}')">Remove</button>
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">🔖</div>
+    <p>Nothing saved yet. Open a film and hit Save to watch later.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function removeSaved(btn, imdbId){
+  btn.disabled = true;
+  fetch('/watchlist/toggle', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({imdb_id: imdbId})
+  }).then(function(r){
+    if(!r.ok) throw new Error(r.status);
+    // Drop the card rather than reloading, so the page does not jump.
+    var card = btn.closest('.card');
+    if(card) card.remove();
+  }).catch(function(){
+    btn.disabled = false;
+    btn.textContent = 'Failed';
+  });
+}
+</script>
+{% endblock %}

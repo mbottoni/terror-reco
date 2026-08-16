@@ -32,6 +32,9 @@ class User(Base):
     feedback: Mapped[list[MovieFeedback]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    watchlist: Mapped[list[WatchlistItem]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class SearchHistory(Base):
@@ -79,6 +82,27 @@ class SearchResult(Base):
     title: Mapped[str] = mapped_column(String(512))
 
     search: Mapped[SearchHistory] = relationship(back_populates="results")
+
+
+class WatchlistItem(Base):
+    """A film a user saved to watch later.
+
+    Distinct from :class:`MovieFeedback`: a like is a *taste* signal about a
+    film already seen, whereas saving is an intent to watch. Conflating them
+    would poison the taste vector with films the user has no opinion on yet.
+    """
+
+    __tablename__ = "watchlist"
+    __table_args__ = (UniqueConstraint("user_id", "imdb_id", name="uq_watchlist_user_movie"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    imdb_id: Mapped[str] = mapped_column(String(20), index=True)
+    title: Mapped[str] = mapped_column(String(512))
+    poster_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    user: Mapped[User] = relationship(back_populates="watchlist")
 
 
 class MovieFeedback(Base):

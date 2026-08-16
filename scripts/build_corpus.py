@@ -358,6 +358,20 @@ async def build(target: int, resume: bool, canon_pages: int, skip_embed: bool) -
         }
     )
     stages = state["stages"]
+
+    # Raising --target on an already-complete build used to do nothing: every
+    # stage was flagged done, so the run skipped straight to writing the same
+    # corpus back out. Re-open the stages that gather films when the target
+    # has grown.
+    if len(state["records"]) < target and stages.get("hydrate"):
+        print(
+            f"  target {target} exceeds the {len(state['records'])} cached records; "
+            "re-opening discovery and hydration"
+        )
+        stages.pop("decades", None)
+        stages.pop("hydrate", None)
+        stages.pop("enrich", None)
+
     client = TMDBClient()
 
     try:
