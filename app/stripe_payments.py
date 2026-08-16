@@ -59,9 +59,9 @@ async def buy_coffee_page(request: Request) -> HTMLResponse:
     templates = get_templates()
     return HTMLResponse(
         templates.TemplateResponse(
+            request,
             "coffee.html",
             {
-                "request": request,
                 "stripe_publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
                 "price_id": settings.COFFEE_PRICE_ID,
             },
@@ -131,9 +131,9 @@ async def stripe_success(request: Request, session_id: str | None = None) -> HTM
         amount_total = session.amount_total or 0
         return HTMLResponse(
             templates.TemplateResponse(
+                request,
                 "coffee_success.html",
                 {
-                    "request": request,
                     "session": session,
                     "amount": amount_total / 100,  # Convert from cents
                 },
@@ -148,7 +148,7 @@ async def stripe_cancel(request: Request) -> HTMLResponse:
     """Handle cancelled payment."""
     templates = get_templates()
     return HTMLResponse(
-        templates.TemplateResponse("coffee_cancel.html", {"request": request}).body,
+        templates.TemplateResponse(request, "coffee_cancel.html").body,
     )
 
 
@@ -160,6 +160,10 @@ async def stripe_webhook(request: Request) -> dict[str, str]:
 
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
+    if not sig_header:
+        # Without a signature there is nothing to verify against, so reject
+        # rather than handing None to construct_event.
+        raise HTTPException(status_code=400, detail="Missing stripe-signature header")
 
     try:
         event = stripe.Webhook.construct_event(  # type: ignore[no-untyped-call]

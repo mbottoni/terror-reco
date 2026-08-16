@@ -70,10 +70,14 @@ target-version = ["py311"]
 python_version = "3.11"
 warn_unused_configs = true
 warn_redundant_casts = true
-warn_unused_ignores = true
 warn_unreachable = true
 strict = true
 ignore_missing_imports = true
+# strict=true turns this on; we explicitly turn it back off. Whether a
+# `type: ignore` is "unused" depends on the third-party stubs installed, so
+# leaving it on makes the build fail on dependency upgrades over a purely
+# cosmetic issue (e.g. stripe/sentence-transformers gaining type hints).
+warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 addopts = "-q"

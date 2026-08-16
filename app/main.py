@@ -68,14 +68,15 @@ async def index(request: Request, user: User | None = Depends(get_current_user))
     flash_type = request.session.pop("flash_type", "success")
     print(f"[HOME] user_id_in_session={request.session.get('user_id')}, user={user}, flash={flash}")
     return templates.TemplateResponse(
+        request,
         "index.html",
-        {"request": request, "flash": flash, "flash_type": flash_type, "user": user},
+        {"flash": flash, "flash_type": flash_type, "user": user},
     )
 
 
 @app.get("/loading", response_class=HTMLResponse)
 async def loading(request: Request, mood: str = "") -> HTMLResponse:
-    return templates.TemplateResponse("loading.html", {"request": request, "mood": mood})
+    return templates.TemplateResponse(request, "loading.html", {"mood": mood})
 
 
 # Valid strategy values accepted by the UI.
@@ -152,9 +153,9 @@ async def ui_recommendations(
         user_feedback = {r.imdb_id: r.rating for r in rows}
 
     return templates.TemplateResponse(
+        request,
         "results.html",
         {
-            "request": request,
             "mood": mood,
             "movies": movies,
             "strategy": strategy_key,

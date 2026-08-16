@@ -45,9 +45,9 @@ async def login_form(request: Request, db: Session = Depends(get_db)) -> Respons
     flash_type = request.session.pop("flash_type", "success")
     email = request.session.pop("auth_email", "")
     resp: Response = request.app.state.templates.TemplateResponse(
+        request,
         "login.html",
         {
-            "request": request,
             "csrf": csrf,
             "flash": flash,
             "flash_type": flash_type,
@@ -106,9 +106,9 @@ async def register_form(request: Request, db: Session = Depends(get_db)) -> Resp
     flash_type = request.session.pop("flash_type", "success")
     email = request.session.pop("auth_email", "")
     resp: Response = request.app.state.templates.TemplateResponse(
+        request,
         "register.html",
         {
-            "request": request,
             "csrf": csrf,
             "flash": flash,
             "flash_type": flash_type,
