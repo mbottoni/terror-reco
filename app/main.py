@@ -17,7 +17,12 @@ from .history import save_history
 from .models import MovieFeedback, User
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
-from .services.recommender import recommend_movies, recommend_movies_advanced
+from .services.recommender import (
+    explain_match,
+    recommend_movies,
+    recommend_movies_advanced,
+    similar_movies,
+)
 from .services.unified_recommender import DEFAULT_WEIGHTS, recommend_unified_semantic
 from .settings import get_settings
 from .stripe_payments import router as stripe_router
@@ -195,6 +200,11 @@ async def ui_recommendations(
         # Keyword: OMDb title search ranked by IMDb rating
         movies = await recommend_movies(mood=mood, limit=limit, strategy="keyword")
 
+    # Explain each result in the user's own words: which of the film's
+    # keywords the query actually hit.
+    for movie in movies:
+        movie["match_terms"] = explain_match(mood, movie)
+
     # Save history if logged in
     if user:
         save_history(db, user.id, mood, strategy_key, movies)
@@ -242,6 +252,19 @@ async def api_recommendations(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {"mood": mood, "count": len(movies), "results": movies}
+
+
+@app.get("/api/similar/{imdb_id}")
+async def api_similar(imdb_id: str, limit: int = Query(default=6, ge=1, le=20)) -> dict[str, Any]:
+    """Films most like a given one ("more like this").
+
+    Pure item-to-item cosine over cached embeddings -- no query encoding, so
+    this is a single dot product rather than a model forward pass.
+    """
+    movies = await similar_movies(imdb_id=imdb_id, limit=limit)
+    if not movies:
+        raise HTTPException(status_code=404, detail="Unknown film, or corpus not built")
+    return {"imdb_id": imdb_id, "count": len(movies), "results": movies}
 
 
 @app.post("/api/feedback")

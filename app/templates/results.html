@@ -11,6 +11,14 @@
 
   <div class="results-header">
     <h1 class="page-title">Recommendations</h1>
+    {% if movies %}
+    {# Results are stochastic by default, so a plain URL would show the next
+       visitor something different. Adding a seed pins this exact set. #}
+    <button type="button" class="share-btn" id="share-btn"
+            onclick="shareResults()" title="Copy a link that reproduces exactly these results">
+      Share these results
+    </button>
+    {% endif %}
     <p class="results-mood">for <em>"{{ mood }}"</em> {% if strategy_label %}<span class="results-strategy">via {{ strategy_label }}</span>{% endif %}</p>
   </div>
 
@@ -31,6 +39,12 @@
         </p>
         {% if m.overview %}
         <p class="card-overview">{{ m.overview }}</p>
+        {% endif %}
+        {% if m.match_terms %}
+        {# Why this film matched, in the user's own words #}
+        <p class="card-match" title="Keywords your search matched">
+          {% for term in m.match_terms %}<span class="match-chip">{{ term }}</span>{% endfor %}
+        </p>
         {% endif %}
       </div>
     </li>
@@ -65,6 +79,8 @@
         <div class="modal-feedback" id="modal-feedback"></div>
 
         <div class="modal-actions" id="modal-actions"></div>
+
+        <div class="modal-similar" id="modal-similar"></div>
       </div>
     </div>
   </div>
@@ -73,6 +89,29 @@
 
 {% block scripts %}
 <script>
+function shareResults(){
+  var url = new URL(window.location.href);
+  // Pin the seed so the link reproduces this exact set rather than a fresh
+  // stochastic draw. Any stable integer works; the current one is reused if
+  // the page was already loaded from a shared link.
+  if(!url.searchParams.get('seed')){
+    url.searchParams.set('seed', String(Math.floor(Math.random() * 1e9)));
+  }
+  var btn = document.getElementById('share-btn');
+  var done = function(ok){
+    if(!btn) return;
+    var original = btn.textContent;
+    btn.textContent = ok ? 'Link copied' : url.toString();
+    setTimeout(function(){ btn.textContent = original; }, 2000);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url.toString()).then(function(){ done(true); },
+                                                       function(){ done(false); });
+  } else {
+    done(false);  // no clipboard API: show the URL so it can be copied manually
+  }
+}
+
 var MOVIES = [
   {% for m in movies %}
   {
@@ -91,7 +130,9 @@ var MOVIES = [
     language: {{ (m.language or "") | tojson }},
     country: {{ (m.country or "") | tojson }},
     rated: {{ (m.rated or "") | tojson }},
-    awards: {{ (m.awards or "") | tojson }}
+    awards: {{ (m.awards or "") | tojson }},
+    keywords: {{ (m.keywords or "") | tojson }},
+    match_terms: {{ (m.match_terms or []) | tojson }}
   }{{ "," if not loop.last }}
   {% endfor %}
 ];
@@ -104,10 +145,36 @@ var STRATEGY = {{ strategy | tojson }};
 var feedbackState = {{ user_feedback | tojson }};
 var _currentIdx = null;
 
+function renderSimilar(imdbId){
+  var box = document.getElementById('modal-similar');
+  if(!box) return;
+  box.innerHTML = '';
+  if(!imdbId) return;
+  box.innerHTML = '<h3 class="similar-heading">More like this</h3>' +
+                  '<p class="similar-loading">Finding similar films...</p>';
+  fetch('/api/similar/' + encodeURIComponent(imdbId) + '?limit=6')
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(data){
+      var items = (data.results || []).map(function(f){
+        var poster = f.poster_url
+          ? '<img src="' + f.poster_url + '" alt="" loading="lazy">'
+          : '<span class="similar-no-poster">\uD83C\uDFAC</span>';
+        // Reuse the search flow rather than inventing a second detail route.
+        return '<a class="similar-item" href="/recommend?mood=' +
+               encodeURIComponent(f.title) + '&strategy=semantic">' +
+               poster + '<span class="similar-title">' + f.title + '</span></a>';
+      }).join('');
+      box.innerHTML = '<h3 class="similar-heading">More like this</h3>' +
+                      '<div class="similar-row">' + items + '</div>';
+    })
+    .catch(function(){ box.innerHTML = ''; });
+}
+
 function openDetail(idx){
   _currentIdx = idx;
   var m = MOVIES[idx];
   if(!m) return;
+  renderSimilar(m.imdb_id);
 
   var modal = document.getElementById('movie-modal');
   var poster = document.getElementById('modal-poster');

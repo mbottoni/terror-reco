@@ -10,7 +10,8 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
 
 ## P0 — Performance bug
 
-- [x] **1. Stop re-embedding items that are already cached.** — DONE: 2,475 ms -> 49 ms
+- [x] **1. Stop re-embedding items that are already cached.** DONE — **2,475 ms -> 49 ms**,
+  NDCG unchanged. Also added a process-level corpus/embedding cache.
   `compute_signals()` calls `_embed_sbert()` on the mood plus all 60 candidate
   items. Those 60 came *from the corpus*, whose embeddings are already cached in
   `corpus_embeddings.npy` — so every unified request pays a full mpnet forward
@@ -28,18 +29,16 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
 
 ## P1 — Correctness, security, and dead weight
 
-- [x] **2. Bind CSRF tokens to the session.** — DONE `validate_csrf_token()` verifies the
-  HMAC but never compares `request.session["csrf"]`, so a token minted in an
-  attacker's own session validates in a victim's. Real vulnerability, small fix.
-- [x] **3. Add a health endpoint.** — DONE: `/healthz`, reports corpus readiness None exists; Render wants one for deploys.
-- [x] **4. Point `/api/recommendations` at the corpus path.** — DONE `main.py` calls
-  `recommend_movies()`, which defaults to the **keyword** strategy — the JSON API
-  returns materially worse results than the UI for the same query.
-- [x] **5. Retire the TF-IDF `embedding` strategy.** — DONE: also removed the undeclared PyYAML need Fits a fresh vectorizer on
-  30–120 documents per request (IDF over ~100 docs is meaningless), makes live
-  OMDb calls, is strictly worse than semantic, and is the only reason the
-  undeclared PyYAML dependency is needed.
-- [x] **6. Remove `print()` session leakage** — DONE: now `logger.info` (`main.py`) — logs user/session state.
+- [x] **2. Bind CSRF tokens to the session.** Signature-only validation meant a token
+  minted in an attacker's own session verified in a victim's. Now compared against
+  the session copy. Regression test confirmed to fail against the old code.
+- [x] **3. Add a health endpoint.** `/healthz` reports corpus + embedding readiness.
+- [x] **4. Point `/api/recommendations` at the corpus path.** It defaulted to the
+  keyword strategy, so the JSON API returned worse results than the UI.
+- [x] **5. Retire the TF-IDF `embedding` strategy.** Meaningless IDF at 30-120 docs,
+  live OMDb on the request path, worse than semantic. Also removed the only
+  reason the undeclared PyYAML dependency existed.
+- [x] **6. Remove `print()` session leakage.** Now `logger.info`.
 
 ## P2 — Structural
 
@@ -54,22 +53,21 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
 
 ## Frontend
 
-- [x] **10. Drop `/loading` for corpus strategies.** — DONE: only `keyword` still uses it A leftover from when a
-  recommendation meant a live OMDb crawl. Semantic is 21 ms; after item 1 unified
-  is too. The animation currently outlasts the work it is hiding.
-- [ ] **11. "More like this" on each card.** Cosine against one cached embedding
-  row. The most natural interaction for a recommender, currently absent.
-- [ ] **12. Explain *why* a film matched.** Per-signal scores are computed and
-  thrown away, and every film now carries TMDB keywords — surface "matched on:
-  isolation, paranoia" instead of presenting results as magic.
+- [x] **10. Drop `/loading` for corpus strategies.** Its hardcoded 600 ms setTimeout
+  was 92% of the wait for a 49 ms request. Only `keyword` still routes through it.
+- [x] **11. "More like this".** `/api/similar/{imdb_id}` + a row in the detail modal.
+  Pure item-to-item cosine on cached vectors -- no query encoding at all.
+- [x] **12. Explain *why* a film matched.** Keyword chips on each card showing the
+  terms the query actually hit. Plural folding is display-only -- applying it to
+  `_tokenize` would change BM25 and invalidate the recorded eval numbers.
 - [ ] **13. Keyword chips as filters.** 500 films × ~12 keywords is a browsable
   subgenre taxonomy already paid for.
 - [ ] **14. No-JS fallback** for the detail modal and feedback buttons.
 
 ## New features
 
-- [ ] **15. Shareable result permalinks.** Unlocked by the seeded determinism
-  work: a URL can now reproduce exactly what someone saw. Impossible before.
+- [x] **15. Shareable result permalinks.** "Share these results" pins a seed into
+  the URL so the link reproduces that exact set instead of a fresh draw.
 - [ ] **16. Watchlist.** The obvious missing verb — you can rate a film but not
   save one. Natural extension of the `MovieFeedback` schema.
 - [ ] **17. Grow the corpus to ~2,000.** The builder is resumable and validated;

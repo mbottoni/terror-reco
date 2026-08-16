@@ -43,6 +43,65 @@ def _score_popularity(detail: dict[str, Any]) -> float:
     return rating * (1 + log(1 + votes)) + 0.02 * metascore
 
 
+async def similar_movies(*, imdb_id: str, limit: int = 6) -> list[dict[str, Any]]:
+    """Films most like *imdb_id*, by cosine on the cached corpus embeddings.
+
+    Item-to-item similarity needs no query encoding at all -- the seed film's
+    vector is already in the cached matrix -- so this is a single dot product
+    against 500 rows.
+    """
+    from .corpus import get_corpus_and_embeddings
+
+    corpus, embeddings = get_corpus_and_embeddings()
+    if not corpus or not embeddings.size:
+        return []
+
+    seed_idx = next((i for i, m in enumerate(corpus) if m.get("imdb_id") == imdb_id), None)
+    if seed_idx is None:
+        return []
+
+    sims = (embeddings[seed_idx : seed_idx + 1] @ embeddings.T).ravel()
+    sims[seed_idx] = -np.inf  # never recommend the film itself
+    top = np.argsort(-sims)[:limit]
+    return [
+        {k: v for k, v in corpus[int(i)].items() if not k.startswith("_")}
+        for i in top
+        if np.isfinite(sims[i])
+    ]
+
+
+def explain_match(mood: str, movie: dict[str, Any], max_terms: int = 4) -> list[str]:
+    """Which of the film's keywords the query actually hit.
+
+    The tone/subgenre vocabulary in `keywords` is what makes mood queries work
+    at all, so showing the overlap explains a recommendation in the user's own
+    words rather than presenting it as magic.
+    """
+    from .unified_recommender import _tokenize
+
+    def fold(tokens: list[str]) -> set[str]:
+        # Crude plural folding so "rituals" matches the keyword "ritual".
+        # Deliberately NOT applied inside _tokenize: that feeds BM25, and
+        # changing it would shift ranking and invalidate the recorded
+        # evaluation numbers. This is display-only.
+        return {t[:-1] if len(t) > 3 and t.endswith("s") else t for t in tokens}
+
+    query_terms = fold(_tokenize(mood))
+    if not query_terms:
+        return []
+
+    matched: list[str] = []
+    for keyword in (movie.get("keywords") or "").split(","):
+        keyword = keyword.strip()
+        if not keyword:
+            continue
+        if query_terms & fold(_tokenize(keyword)):
+            matched.append(keyword)
+        if len(matched) >= max_terms:
+            break
+    return matched
+
+
 def _movie_year(movie: dict[str, Any]) -> int | None:
     year_str = movie.get("year") or ""
     try:
