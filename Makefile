@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval tune requirements migrate migration migrate-check
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval eval-export tune requirements migrate migration migrate-check
 
 
 setup:
@@ -48,6 +48,10 @@ corpus-validate:
 # Keep in sync with uv.lock; CI verifies the lock, this keeps the image honest.
 requirements:
 	uv export --frozen --no-hashes --no-dev --no-emit-project --format requirements-txt -o requirements.txt
+
+# Export an evaluation set from real user feedback (see docs/evaluation-baseline.md)
+eval-export:
+	.venv/bin/python scripts/export_eval_set.py
 
 # Database migrations
 migrate:

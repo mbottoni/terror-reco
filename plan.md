@@ -79,15 +79,24 @@ Status: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` deliberately not 
   proof that a bigger corpus is worse for real users -- it is proof we cannot
   currently show it is better, which is the argument for item 19. Discovery work
   for 1,200 films is preserved in the checkpoint.
-- [~] **18. Fix the two broken moods.** Root-caused, not yet fixed: the gold films
-  for both (*Hereditary*, *The Fly*, *The Thing*, *Videodrome*) are present with
-  keywords, so this is a ranking problem in an already-enriched corpus rather than
-  missing vocabulary. Needs its own investigation.
-  ORIGINAL: *body horror and grotesque
-  transformation* and *slow-burn psychological dread* both score 0.000 with their
-  gold films present in the corpus.
-- [ ] **19. Harvest a real eval set from feedback.** 15 synthetic moods is what
-  starves the current tuning; real ratings are ground truth.
+- [~] **18. The two 0.000 moods — investigated, not fixed, and partly not a bug.**
+  Two findings:
+  - **TMDB keywords are mostly plot *objects*, not tone.** *The Thing* carries
+    "spacecraft, helicopter, space marine"; *Tusk* carries "walrus". The tone
+    vocabulary that made other moods work is largely absent for these two.
+  - **The gold set has false negatives.** The body-horror query returns *The Brood*,
+    *Re-Animator* and *The Void* — all canonically body horror, none in the gold
+    list. Part of that 0.000 is the benchmark being wrong, not the ranker.
+
+  Tested the obvious lever, weighting keywords more heavily in the composed
+  document, and it **made things worse** (ndcg 0.4997 at x1, 0.4829 at x2, 0.4851
+  at x3), so the dilution hypothesis is wrong. Further tuning against a benchmark
+  with known false negatives would be fitting to noise — item 19 first.
+- [x] **19. Harvest a real eval set from feedback.** `scripts/export_eval_set.py`
+  (`make eval-export`) turns like/dislike rows into gold cases, keeping dislikes as
+  explicit negatives — a ranker surfacing them is wrong in a way a gold list alone
+  cannot express. Tool is ready; currently exports 0 cases because there is no real
+  usage yet, which is the honest state rather than a failure.
 
 ## Deliberately not doing
 
