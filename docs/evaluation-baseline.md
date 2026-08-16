@@ -1,5 +1,62 @@
 # Evaluation Baseline
 
+Two measurements, both **2026-08-16**, both against the 500-film TMDB corpus.
+
+## Result summary
+
+| Metric | v1 baseline | v2 (composed embeddings) | Change |
+|--------|------------:|-------------------------:|-------:|
+| ndcg@6 (semantic, deterministic) | 0.3111 | **0.4997** | **+61%** |
+| ndcg@6 (unified, n=10) | 0.3724 | **0.4896** | **+31%** |
+| hit_rate@6 (semantic) | 0.6667 | **0.8667** | +0.200 |
+| precision@6 (semantic) | 0.2778 | **0.4667** | +0.189 |
+| moods scoring 0.000 | 5 of 15 | **2 of 15** | -3 |
+
+**What changed in v2:** the embedded document went from `overview` alone to
+`title + genre + keywords + overview`, where `keywords` are TMDB tags carrying the
+tone/subgenre vocabulary ("isolation", "paranoia", "transformation") that plot summaries
+lack. Also: BM25 replaced the stopword-dominated overlap ratio, and MMR diversity moved
+from Jaccard-on-word-sets to cosine on embeddings.
+
+The moods that were broken are the ones that moved:
+
+| Mood | v1 | v2 |
+|------|---:|---:|
+| cosmic Lovecraftian isolation | 0.000 | 0.645 |
+| eerie folk horror pagan rituals | 0.000 | 0.321 |
+| home invasion and paranoia | 0.000 | 0.247 |
+| campy fun with lots of blood | 0.000 | 0.108 |
+| slasher with a masked killer | 0.454 | 0.870 |
+| zombie apocalypse survival | 0.454 | 0.892 |
+
+Not everything improved. `slow-burn psychological dread` regressed 0.151 -> 0.000 and
+`body horror and grotesque transformation` stayed at 0.000, so two moods remain unsolved.
+
+### A bug this measurement caught
+
+`recommend_unified_semantic` re-embedded items from `overview` alone, so the unified
+strategy silently reverted to the *old* weak semantic signal while the retrieval step
+used the enriched one. Symptom: unified scored **worse** than the plain semantic search
+feeding it (0.4103 vs 0.4997), and forcing `semantic=1.0` scored 0.3059 -- almost exactly
+the v1 baseline. Fixed by embedding the same composed document; unified now leads again.
+
+Ablation after the fix (deterministic, seed=0):
+
+| Configuration | ndcg@6 |
+|---|---:|
+| semantic only | 0.4997 |
+| unified, lambda=0.7 (default) | 0.5070 |
+| unified, lambda=0.85 | 0.5365 |
+| unified, lambda=1.0 (MMR off) | 0.5419 |
+
+Turning MMR off scores highest, but diversity is the entire point of the "AI + Diversity"
+strategy and the metric gives no credit for it, so the default stays at 0.7. Do not tune
+lambda upward to chase this number.
+
+---
+
+## v1 baseline (pre-composed-embeddings)
+
 Recorded **2026-08-16**, against the 500-film TMDB corpus.
 
 Reproduce with:

@@ -180,8 +180,18 @@ class TMDBClient:
         """
         return await self._get(
             f"/movie/{tmdb_id}",
-            {"append_to_response": "credits,external_ids,release_dates"},
+            {"append_to_response": "credits,external_ids,release_dates,keywords"},
         )
+
+    async def get_keywords(self, tmdb_id: int) -> list[str]:
+        """Fetch a film's keyword tags.
+
+        These carry the tone/subgenre vocabulary ("isolation", "paranoia",
+        "transformation") that plot summaries lack, which is what the
+        evaluation baseline identified as the retrieval gap.
+        """
+        data = await self._get(f"/movie/{tmdb_id}/keywords")
+        return [k.get("name", "") for k in (data.get("keywords") or []) if k.get("name")]
 
     async def aclose(self) -> None:
         await self._client.aclose()

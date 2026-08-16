@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval migrate migration migrate-check
 
 
 setup:
@@ -43,6 +43,17 @@ corpus:
 
 corpus-validate:
 	.venv/bin/python scripts/build_corpus.py --validate-only
+
+# Database migrations
+migrate:
+	.venv/bin/python -m alembic upgrade head
+
+migration:
+	@test -n "$(m)" || (echo 'usage: make migration m="describe the change"'; exit 1)
+	.venv/bin/python -m alembic revision --autogenerate -m "$(m)"
+
+migrate-check:
+	.venv/bin/python -m alembic check
 
 # Score the recommender against the gold test set (see docs/evaluation-baseline.md)
 eval:

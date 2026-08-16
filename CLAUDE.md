@@ -13,6 +13,9 @@ make typecheck   # mypy app  (strict mode)
 make test        # pytest -q
 make format      # ruff --fix + black, never fails
 make docker      # build + run container
+make corpus      # build/refresh the corpus (resumable)
+make eval        # score against the gold set
+make migrate     # alembic upgrade head
 ```
 
 Single test: `pytest tests/test_auth.py::test_register_success -v`
@@ -36,6 +39,7 @@ Because `/loading` sits between the form and the results, **any new query parame
 
 **Corpus-based (offline, fast)** — `semantic` and `unified` search a local cached corpus and do **no network I/O at request time**:
 - `services/corpus.py` — load/save, the TMDB→corpus field mapping, embedding cache, and `semantic_search()` (query-time cosine ranking).
+- **`embedding_text()` defines what gets embedded**: `title + genre + keywords + overview`, *not* the plot alone. Plot summaries are narrative prose and contain almost none of the tone/subgenre vocabulary users actually type ("campy", "folk horror"); TMDB keywords supply it. This one change moved NDCG@6 from 0.3111 to 0.4997 — see `docs/evaluation-baseline.md`. **Anything computing a semantic score must use `embedding_text()`**; `recommend_unified_semantic` once embedded `overview` alone and silently scored worse than the search feeding it.
 - `services/recommender.py` → `recommend_movies_advanced()` — semantic search, then year/rating/language filters, then weighted random sampling.
 - `services/unified_recommender.py` → `recommend_unified_semantic()` — takes a 60-item pool from the above and re-ranks by a blend (semantic .45 / keyword overlap .20 / popularity .20 / recency .05), then applies MMR for diversity.
 
@@ -56,7 +60,7 @@ The build checkpoints to `data/.corpus_build_state.json` after every stage and e
 
 ### Everything is deliberately non-deterministic
 
-Three independent randomness sources, all intentional: Gaussian score perturbation scaled to the pool's score spread (`corpus.py`, `unified_recommender.py`), weighted sampling without replacement over the top pool (`recommender.py`), and a ±0.08 jitter on the MMR lambda. **Never write a test asserting a specific movie ordering** — assert on shape, count, and membership instead. `temperature=0` in `semantic_search()` is the deterministic escape hatch.
+Three independent randomness sources, all intentional: Gaussian score perturbation scaled to the pool's score spread (`corpus.py`, `unified_recommender.py`), weighted sampling without replacement over the top pool (`recommender.py`), and a ±0.08 jitter on the MMR lambda. **Never write a test asserting a specific movie ordering** — assert on shape, count, and membership instead. `temperature=0` is the deterministic escape hatch and is now threaded through `semantic_search()`, `recommend_movies_advanced()` and `recommend_unified_semantic()` — all three take `seed`/`temperature`, and `temperature=0` disables sampling and MMR jitter as well as score noise. `make eval` relies on this.
 
 ### Config and DB
 
@@ -66,11 +70,28 @@ Three independent randomness sources, all intentional: Gaussian score perturbati
 
 ## Repo state worth knowing
 
-- `data/` and `models/` are gitignored and **not** copied into the Docker image. Since the lazy in-request build was removed, a fresh container has no corpus and will raise `CorpusNotBuiltError` until one is built or mounted — deployment needs to run `make corpus` or ship `data/` in as a volume.
+- `data/horror_corpus.json` **is committed** (626 KB) and copied into the Docker image, so deploys need no TMDB/OMDb keys at build time. Embeddings (`.npy`) and the build checkpoint stay gitignored and are regenerated from the corpus on first use.
+- Filters are applied to the corpus **before** ranking (`_passes_filters` in `recommender.py`), keeping corpus rows and embedding rows aligned. Filtering the top-K afterwards used to starve restrictive queries.
 - `PyYAML` is imported by `strategies/embedding_omdb.py` but not declared in `pyproject.toml` — it only resolves transitively via transformers.
 - CSRF tokens are HMAC-verified but not bound to the session: `validate_csrf_token()` never compares against `request.session["csrf"]`, so a token from any session validates in any other.
 - `tests/` mixes pytest files (`test_*.py`) with manual scripts (`manual_*.py`, `debug_stripe.py`, `deployment_checklist.py`) that hit real services and are not collected by pytest.
 - OMDb is always mocked in tests via `respx`; `conftest.py` forces `DEBUG=true` so session cookies aren't `Secure` (TestClient speaks plain HTTP) and swaps the DB for in-memory SQLite.
+
+## Database migrations
+
+Schema changes go through **Alembic**, not `create_all`. `init_db()` runs `alembic upgrade head`
+at startup (falling back to `create_all` only when `alembic.ini` is absent, e.g. in tests), so a
+deploy migrates itself.
+
+```bash
+make migration m="what changed"   # autogenerate from the models
+make migrate                      # upgrade to head
+make migrate-check                # fail if models and migrations have drifted
+```
+
+`migrations/env.py` takes the URL from app settings, not `alembic.ini` — the ini's
+`sqlalchemy.url` is deliberately blank. Generated migrations are auto-formatted by
+alembic post-write hooks so they pass `make lint` without a manual pass.
 
 ## Adding a strategy
 

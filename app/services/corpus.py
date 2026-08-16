@@ -118,6 +118,10 @@ def map_tmdb_to_corpus(detail: dict[str, Any], *, image_base: str) -> dict[str, 
         "vote_average": float(detail["vote_average"]) if detail.get("vote_average") else None,
         "rating_source": "tmdb",
         "genre": _first([g.get("name", "") for g in detail.get("genres") or []]),
+        # Tone/subgenre vocabulary absent from plot summaries; see embedding_text()
+        "keywords": _first(
+            [k.get("name", "") for k in (detail.get("keywords") or {}).get("keywords") or []]
+        ),
         "director": _first(directors),
         "actors": _first(actors, limit=4),
         "writer": _first(writers, limit=3),
@@ -168,17 +172,40 @@ def apply_omdb_enrichment(record: dict[str, Any], omdb: dict[str, Any]) -> dict[
 
 
 # ----------------------------------------------------------------- embeddings
+def embedding_text(movie: dict[str, Any]) -> str:
+    """Compose the text that represents a film in embedding space.
+
+    Deliberately more than the plot.  Users describe *tone and subgenre*
+    ("campy", "folk horror", "body horror"), but plot summaries are written
+    in *narrative* language and contain almost none of that vocabulary --
+    measured in docs/evaluation-baseline.md, where every mood scoring 0.000
+    NDCG was a tone/subgenre query whose gold films were present in the
+    corpus but unreachable.
+
+    TMDB keywords supply exactly that missing register ("isolation",
+    "paranoia", "transformation"), so they lead the composed document.
+    """
+    parts = [
+        movie.get("title") or "",
+        movie.get("genre") or "",
+        movie.get("keywords") or "",
+        movie.get("overview") or "",
+    ]
+    return " ".join(p.strip() for p in parts if p and p.strip())
+
+
 def corpus_fingerprint(corpus: list[dict[str, Any]]) -> str:
     """Content hash of the exact text that gets embedded.
 
-    Keyed on content rather than ``len(corpus)`` so that editing plot text
-    without changing the film count still invalidates the cache.
+    Keyed on the composed embedding text rather than ``len(corpus)``, so both
+    editing a plot and changing how the document is composed invalidate the
+    cache automatically.
     """
     h = hashlib.sha256()
     for movie in corpus:
         h.update((movie.get("imdb_id") or "").encode())
         h.update(b"\x00")
-        h.update((movie.get("overview") or "").encode())
+        h.update(embedding_text(movie).encode())
         h.update(b"\x00")
     return h.hexdigest()
 
@@ -200,7 +227,7 @@ def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
 
     from .unified_recommender import _embed_sbert, _normalize_text
 
-    texts = [_normalize_text(m.get("overview") or "") for m in corpus]
+    texts = [_normalize_text(embedding_text(m)) for m in corpus]
     print(f"  Computing embeddings for {len(texts)} movies...")
     embs = _embed_sbert(texts)
 

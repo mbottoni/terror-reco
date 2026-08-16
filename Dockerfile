@@ -36,6 +36,10 @@ COPY app /app/app
 # not committed; they are computed from this corpus on first use.
 COPY data /app/data
 
+# Migrations run at startup via init_db(), so they must ship with the image
+COPY alembic.ini /app/alembic.ini
+COPY migrations /app/migrations
+
 # Render expects Docker services to listen on port 10000
 EXPOSE 10000
 

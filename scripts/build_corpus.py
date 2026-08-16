@@ -221,6 +221,46 @@ async def stage_hydrate(client: TMDBClient, state: dict[str, Any], target: int) 
     print(f"    {len(state['records'])} records ({dropped} dropped: no imdb_id or no overview)")
 
 
+async def refresh_keywords() -> int:
+    """Backfill TMDB keywords onto an already-built corpus.
+
+    Corpora built before keywords were added to the pipeline have no tone or
+    subgenre vocabulary, which the evaluation baseline showed is what makes
+    mood queries fail. This tops them up without a full rebuild.
+    """
+    corpus = load_corpus()
+    if not corpus:
+        print("Corpus is empty; nothing to refresh.")
+        return 1
+
+    client = TMDBClient()
+    updated = missing = 0
+    try:
+        for n, movie in enumerate(corpus, 1):
+            tmdb_id = movie.get("tmdb_id")
+            if not tmdb_id:
+                missing += 1
+                continue
+            keywords = await client.get_keywords(int(tmdb_id))
+            if keywords:
+                movie["keywords"] = ", ".join(keywords)
+                updated += 1
+            if n % 100 == 0:
+                print(f"    {n}/{len(corpus)} refreshed ({updated} with keywords)")
+    finally:
+        await client.aclose()
+
+    save_corpus(corpus)
+    covered = sum(1 for m in corpus if m.get("keywords"))
+    print(f"  keywords on {covered}/{len(corpus)} films ({missing} lacked a tmdb_id)")
+
+    from app.services.corpus import get_corpus_embeddings
+
+    embs = get_corpus_embeddings(corpus)
+    print(f"  re-embedded with composed text: {embs.shape}")
+    return 0
+
+
 async def stage_enrich(state: dict[str, Any]) -> None:
     """Overlay OMDb fields.  Best-effort -- failures leave TMDB data intact."""
     from app.services.omdb_client import get_omdb_client
@@ -358,10 +398,17 @@ def main() -> int:
     parser.add_argument("--canon-pages", type=int, default=15, help="pages of vote_count.desc")
     parser.add_argument("--validate-only", action="store_true", help="validate existing corpus")
     parser.add_argument("--skip-embed", action="store_true", help="skip embedding generation")
+    parser.add_argument(
+        "--refresh-keywords",
+        action="store_true",
+        help="backfill TMDB keywords onto an existing corpus and re-embed",
+    )
     args = parser.parse_args()
 
     if args.validate_only:
         return 0 if validate(load_corpus()) else 1
+    if args.refresh_keywords:
+        return asyncio.run(refresh_keywords())
     return asyncio.run(build(args.target, args.resume, args.canon_pages, args.skip_embed))
 
 

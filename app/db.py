@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Generator, Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -87,8 +88,31 @@ def _create_tables() -> None:
     Base.metadata.create_all(bind=_engine)
 
 
+def _run_migrations() -> bool:
+    """Bring the database up to the latest Alembic revision.
+
+    Returns False when Alembic is unavailable or unconfigured, so the caller
+    can fall back to ``create_all`` (e.g. in a test environment).
+    """
+    alembic_ini = Path(__file__).resolve().parent.parent / "alembic.ini"
+    if not alembic_ini.exists():
+        return False
+
+    from alembic import command
+    from alembic.config import Config
+
+    cfg = Config(str(alembic_ini))
+    cfg.set_main_option("script_location", str(alembic_ini.parent / "migrations"))
+    command.upgrade(cfg, "head")
+    return True
+
+
 def init_db() -> None:
-    """Create tables, retrying transient connection failures.
+    """Migrate the database to head, retrying transient connection failures.
+
+    Uses Alembic rather than ``create_all`` so that *schema changes* reach an
+    existing database -- ``create_all`` only ever creates missing tables and
+    silently ignores added or altered columns.
 
     If the database is still unreachable after all retries the error is
     logged but the application is **not** killed — this lets the web
@@ -96,11 +120,14 @@ def init_db() -> None:
     database comes online.
     """
     try:
-        _create_tables()
-        logger.info("Database tables verified / created.")
+        if _run_migrations():
+            logger.info("Database migrated to head.")
+        else:
+            _create_tables()
+            logger.info("Alembic not configured; created tables directly.")
     except Exception:
         logger.warning(
-            "Could not connect to the database after retries. "
+            "Could not migrate the database after retries. "
             "The app will start, but DB-dependent routes may fail until "
             "the database becomes reachable.",
             exc_info=True,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, ForeignKey, String, UniqueConstraint
+from sqlalchemy import JSON, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -27,6 +27,9 @@ class User(Base):
 
 class SearchHistory(Base):
     __tablename__ = "search_history"
+    # The history page filters by user_id and orders by created_at desc; the
+    # two single-column indexes cannot serve that as well as one composite.
+    __table_args__ = (Index("ix_search_history_user_created", "user_id", "created_at"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
