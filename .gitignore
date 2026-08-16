@@ -29,8 +29,11 @@ app.db
 # Notebook experiment caches
 notebooks/cache/
 
-# Corpus & embeddings cache (built from OMDb at runtime)
-data/
+# Corpus build artifacts. The corpus JSON itself IS committed so deployments
+# work without TMDB/OMDb keys at build time; embeddings and the resume
+# checkpoint are regenerable and stay out of git.
+data/*
+!data/horror_corpus.json
 
 # Local sentence-transformer model weights (downloaded via scripts/download_model.py)
 models/

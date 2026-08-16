@@ -6,6 +6,7 @@ This document explains how TerrorReco matches user text to horror movies. It cov
 
 - **No hardcoded keywords** -- matching is purely ML-based. The system understands meaning, not just words.
 - **Corpus-first** -- a pre-built collection of horror movies is searched, not the live API (except for keyword/embedding fallback strategies).
+- **Corpus built offline** -- discovery runs in `scripts/build_corpus.py`, never inside a user request. See [Architecture](architecture.md) for the stage breakdown.
 - **Non-deterministic by design** -- controlled randomness ensures users see different relevant movies each time.
 - **Multiple strategies** -- users can choose the approach that best fits their needs.
 
@@ -18,7 +19,7 @@ This document explains how TerrorReco matches user text to horror movies. It cov
 
 How it works:
 
-1. Load the pre-built horror corpus (`data/horror_corpus.json`).
+1. Load the pre-built horror corpus (`data/horror_corpus.json`; build it with `make corpus`).
 2. Load or compute sentence-transformer embeddings for all corpus plots (`data/corpus_embeddings.npy`).
 3. Embed the user's query text with the same model (`all-mpnet-base-v2`).
 4. Compute cosine similarity between the query embedding and all corpus embeddings.

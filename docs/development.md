@@ -7,7 +7,7 @@ This guide covers local setup, code organisation, testing, linting, and contribu
 - Python 3.11+
 - Git
 - (Optional) Docker & Docker Compose
-- An OMDb API key for integration testing
+- A TMDB API Read Access Token (corpus discovery) and an OMDb API key (rating enrichment)
 
 ## Local Setup
 
@@ -38,7 +38,18 @@ cp .env.example .env
 # Edit .env with your OMDB_API_KEY
 ```
 
-### 4. (Optional) Pre-download the ML model
+### 4. Build the horror corpus
+
+```bash
+make corpus              # ~500 films; resumable, safe to re-run after any interruption
+make corpus-validate     # re-check an existing corpus against the quality gates
+```
+
+Requires `TMDB_BEARER_TOKEN` (discovery) and `OMDB_API_KEY` (rating enrichment). Corpus-based
+strategies raise `CorpusNotBuiltError` until this has run -- the build deliberately never
+happens inside a user request.
+
+### 5. (Optional) Pre-download the ML model
 
 ```bash
 python scripts/download_model.py
@@ -46,7 +57,7 @@ python scripts/download_model.py
 
 This caches the `all-mpnet-base-v2` sentence-transformer model locally in `models/`, avoiding a download on first request.
 
-### 5. Start the development server
+### 6. Start the development server
 
 ```bash
 make run
@@ -71,9 +82,10 @@ app/
 ├── settings.py          # Pydantic Settings (env var config)
 ├── stripe_payments.py   # Stripe Checkout integration
 ├── services/
-│   ├── corpus.py             # Corpus builder + semantic search
+│   ├── corpus.py             # Corpus load/save, TMDB mapping, semantic search
 │   ├── recommender.py        # Strategy orchestrator
-│   ├── omdb_client.py        # Async OMDb HTTP client
+│   ├── tmdb_client.py        # Async TMDB HTTP client (discovery)
+│   ├── omdb_client.py        # Async OMDb HTTP client (enrichment)
 │   ├── unified_recommender.py  # Blended scorer + MMR
 │   └── strategies/
 │       ├── base.py           # Strategy protocol
@@ -101,6 +113,7 @@ pytest -q
 | `tests/test_auth.py` | Registration, login, logout, validation, CSRF, flash messages |
 | `tests/test_recommender_omdb.py` | Recommendation endpoint with mocked OMDb API |
 | `tests/test_strategies.py` | Strategy implementations (keyword expansion, TF-IDF ranking) |
+| `tests/test_corpus_build.py` | TMDB -> corpus field mapping, OMDb enrichment overlay, embedding cache key |
 
 ### Key testing patterns
 
@@ -230,6 +243,8 @@ make lint        # Check ruff + black
 make typecheck   # Run mypy
 make ci          # Full CI: lint + typecheck + test
 make format      # Auto-fix linting issues
+make corpus      # Build/refresh the horror corpus (resumable)
+make corpus-validate  # Validate the existing corpus
 make docker      # Build and run Docker
 make clean       # Remove .venv and caches
 ```

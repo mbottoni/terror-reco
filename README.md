@@ -68,7 +68,8 @@ See [docs/architecture.md](docs/architecture.md) for the full system design.
 ### Prerequisites
 
 - Python 3.11+
-- An OMDb API key (free at [omdbapi.com/apikey.aspx](https://www.omdbapi.com/apikey.aspx))
+- A TMDB API Read Access Token (free at [themoviedb.org](https://www.themoviedb.org/settings/api)) — corpus discovery
+- An OMDb API key (free at [omdbapi.com/apikey.aspx](https://www.omdbapi.com/apikey.aspx)) — IMDb rating enrichment
 
 ### 1. Clone and install
 
@@ -91,13 +92,26 @@ Required variables:
 
 | Variable | Description |
 |----------|-------------|
-| `OMDB_API_KEY` | Your OMDb API key |
+| `TMDB_BEARER_TOKEN` | TMDB API Read Access Token — used to discover films for the corpus |
+| `OMDB_API_KEY` | Your OMDb API key — used to enrich films with IMDb rating/votes |
 | `DEBUG` | Set to `1` for local development |
 | `SECRET_KEY` | Session encryption key (auto-generated if missing) |
 
 See [docs/deployment.md](docs/deployment.md) for all environment variables.
 
-### 3. Run the server
+### 3. Build the horror corpus
+
+```bash
+make corpus
+```
+
+Discovers ~500 horror films via TMDB, enriches them with OMDb ratings, and computes
+sentence-transformer embeddings. Takes a few minutes and is **resumable** — re-run the
+same command after any interruption and it picks up where it stopped.
+
+The app will not serve corpus-based recommendations until this has run.
+
+### 4. Run the server
 
 ```bash
 make run
@@ -109,7 +123,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Open [http://localhost:8000](http://localhost:8000) and start describing your horror mood.
 
-### 4. Run with Docker
+### 5. Run with Docker
 
 ```bash
 docker compose up --build
@@ -132,9 +146,10 @@ terror_reco/
 │   ├── settings.py             # Pydantic Settings configuration
 │   ├── stripe_payments.py      # Stripe "Buy me a coffee" integration
 │   ├── services/
-│   │   ├── corpus.py           # Horror movie corpus builder & semantic search
+│   │   ├── corpus.py           # Corpus load/save, TMDB mapping, semantic search
 │   │   ├── recommender.py      # Recommendation orchestrator (strategy routing)
-│   │   ├── omdb_client.py      # Async OMDb API client
+│   │   ├── tmdb_client.py      # Async TMDB API client (corpus discovery)
+│   │   ├── omdb_client.py      # Async OMDb API client (rating enrichment)
 │   │   ├── unified_recommender.py  # Unified blended scorer with MMR
 │   │   └── strategies/
 │   │       ├── base.py         # Strategy protocol/interface
@@ -145,7 +160,7 @@ terror_reco/
 ├── notebooks/                  # Marimo & Jupyter evaluation notebooks
 ├── tests/                      # Pytest test suite
 ├── docs/                       # Project documentation
-├── scripts/                    # Utility scripts (model download)
+├── scripts/                    # build_corpus.py (offline corpus build), download_model.py
 ├── Dockerfile                  # Production container
 ├── docker-compose.yml          # Local Docker setup
 ├── Makefile                    # Common commands
@@ -175,6 +190,8 @@ make docker      # Build and run Docker container
 make lint        # Run ruff + black checks
 make typecheck   # Run mypy strict type checking
 make test        # Run pytest suite
+make corpus      # Build/refresh the horror corpus (resumable)
+make corpus-validate  # Check the existing corpus against quality gates
 make ci          # Run full CI pipeline (lint + typecheck + test)
 make format      # Auto-fix linting issues
 make clean       # Remove venv and caches

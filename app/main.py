@@ -113,7 +113,6 @@ async def ui_recommendations(
             min_rating=min_rating,
             kind=kind,
             english_only=bool(english),
-            pages=3,
         )
         movies = recommend_unified_semantic(
             mood=mood,
@@ -131,7 +130,6 @@ async def ui_recommendations(
             min_rating=min_rating,
             kind=kind,
             english_only=bool(english),
-            pages=3,
         )
     elif strategy_key == "embedding":
         # TF-IDF cosine similarity on OMDb plot descriptions

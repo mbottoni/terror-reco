@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate
 
 
 setup:
@@ -35,6 +35,14 @@ typecheck:
 
 test:
 	pytest -q
+
+# Build the horror corpus offline (resumable; safe to re-run after a failure)
+corpus:
+	set -a; source .env; set +a; \
+	.venv/bin/python scripts/build_corpus.py --target 500 --resume
+
+corpus-validate:
+	.venv/bin/python scripts/build_corpus.py --validate-only
 
 deployment:
 	python tests/manual_deployment.py

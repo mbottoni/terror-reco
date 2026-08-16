@@ -1,271 +1,41 @@
 """Horror movie corpus for semantic recommendation.
 
-Maintains a local cache of horror movies fetched broadly from OMDb.
-All matching is done via sentence-transformer embeddings at query time --
-no hardcoded mood-to-movie mappings.
+The corpus is built **offline** by ``scripts/build_corpus.py`` (discovery via
+TMDB, enrichment via OMDb) and cached to disk.  At request time this module
+only loads it and runs vector search -- it never performs network I/O.
 
 Workflow
 --------
-1. ``build_corpus()``          -- fetch broadly from OMDb  (run once, cached to disk)
-2. ``load_corpus()``           -- load cached corpus
-3. ``get_corpus_embeddings()`` -- compute / load plot embeddings
-4. ``semantic_search()``       -- embed arbitrary user text, cosine-rank against corpus
+1. ``scripts/build_corpus.py``   -- build/refresh the corpus (offline, resumable)
+2. ``load_corpus()``             -- load cached corpus
+3. ``get_corpus_embeddings()``   -- compute / load plot embeddings
+4. ``semantic_search()``         -- embed arbitrary user text, cosine-rank against corpus
 """
 
 from __future__ import annotations
 
-import asyncio
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-# ---------------------------------------------------------------------------
-# Broad discovery terms for OMDb title search.
-#
-# These are NOT mood keywords.  They simply cast a wide net to build a
-# diverse corpus of horror movies.  OMDb's ``s=`` parameter searches
-# by *title*, so we use words that commonly appear in horror movie titles.
-# ---------------------------------------------------------------------------
-DISCOVERY_TERMS: list[str] = [
-    # Common title words
-    "horror",
-    "dead",
-    "evil",
-    "night",
-    "blood",
-    "dark",
-    "ghost",
-    "devil",
-    "hell",
-    "curse",
-    "haunted",
-    "terror",
-    "scream",
-    "nightmare",
-    "death",
-    "kill",
-    "fear",
-    "fright",
-    "tomb",
-    "grave",
-    "shadow",
-    # Creatures & archetypes
-    "zombie",
-    "vampire",
-    "demon",
-    "witch",
-    "alien",
-    "werewolf",
-    "creature",
-    "monster",
-    "dracula",
-    "frankenstein",
-    "mummy",
-    # Iconic franchises & well-known titles
-    "halloween",
-    "saw",
-    "conjuring",
-    "exorcist",
-    "friday 13",
-    "omen",
-    "purge",
-    "insidious",
-    "paranormal",
-    "sinister",
-    "hereditary",
-    "babadook",
-    "poltergeist",
-    "candyman",
-    "hellraiser",
-    "chucky",
-    "jaws",
-    "cloverfield",
-    "psycho",
-    "ring",
-    "grudge",
-    "it",
-    "us",
-    # Subgenre & thematic
-    "slasher",
-    "possession",
-    "haunting",
-    "survival",
-    "massacre",
-    "cannibal",
-    "asylum",
-    "cabin",
-    "ritual",
-    "annihilation",
-    "midsommar",
-    "descent",
-]
-
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CORPUS_DIR = _PROJECT_ROOT / "data"
 CORPUS_FILE = CORPUS_DIR / "horror_corpus.json"
 EMBEDDINGS_FILE = CORPUS_DIR / "corpus_embeddings.npy"
+EMBEDDINGS_META_FILE = CORPUS_DIR / "corpus_embeddings.meta.json"
+
+# Fields every corpus record must carry (consumed by templates and scorers).
+REQUIRED_FIELDS = ("imdb_id", "title", "overview")
 
 
-# ---------------------------------------------------------------------- build
-def _save_corpus(corpus: list[dict[str, Any]]) -> None:
-    """Persist corpus to disk and invalidate stale embeddings."""
-    CORPUS_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CORPUS_FILE, "w") as f:
-        json.dump(corpus, f, indent=2)
-    if EMBEDDINGS_FILE.exists():
-        EMBEDDINGS_FILE.unlink()
+class CorpusNotBuiltError(RuntimeError):
+    """Raised when a recommendation is requested before the corpus exists."""
 
 
-async def build_corpus(
-    pages: int = 2,
-    max_details: int = 800,
-    delay: float = 0.12,
-) -> list[dict[str, Any]]:
-    """Fetch a broad, diverse set of horror movies from OMDb.
-
-    Searches OMDb with each *DISCOVERY_TERMS* entry, fetches full plot
-    details, filters to the horror genre, and deduplicates by title.
-    Results are cached to :data:`CORPUS_FILE` for reuse.
-
-    Parameters
-    ----------
-    pages:
-        How many search-result pages to fetch per discovery term.
-    max_details:
-        Cap on the number of detail requests (to stay within OMDb daily limits).
-    delay:
-        Seconds to wait between detail requests (rate-limit courtesy).
-    """
-    from .omdb_client import get_omdb_client
-
-    client = await get_omdb_client()
-
-    # Load any previously-built corpus so we can extend it
-    existing = load_corpus()
-    existing_ids: set[str] = {m["imdb_id"] for m in existing if "imdb_id" in m}
-
-    # 1. Collect unique IMDb IDs via broad title searches
-    raw_ids: list[str] = []
-    total_queries = len(DISCOVERY_TERMS) * pages
-    done = 0
-
-    for term in DISCOVERY_TERMS:
-        for page in range(1, pages + 1):
-            done += 1
-            try:
-                results = await client.search_titles(term, page=page, type_="movie")
-            except Exception as exc:
-                print(f"  Search error ({term} p{page}): {exc}")
-                continue
-            for item in results or []:
-                imdb_id = item.get("imdbID")
-                if isinstance(imdb_id, str):
-                    raw_ids.append(imdb_id)
-            if done % 20 == 0:
-                print(
-                    f"  Corpus search: {done}/{total_queries} queries, " f"{len(raw_ids)} raw IDs"
-                )
-
-    unique_ids = list(dict.fromkeys(raw_ids))
-    # Skip IDs we already have
-    new_ids = [i for i in unique_ids if i not in existing_ids]
-    print(
-        f"  {len(unique_ids)} unique IDs ({len(new_ids)} new, "
-        f"{len(existing_ids)} already cached). Fetching details..."
-    )
-
-    # 2. Fetch full details, filtering to horror genre
-    corpus: list[dict[str, Any]] = list(existing)
-    seen_titles: set[str] = {m.get("title", "").lower().strip() for m in existing}
-    consecutive_errors = 0
-    fetched = 0
-
-    for _i, imdb_id in enumerate(new_ids):
-        if fetched >= max_details:
-            print(f"  Reached max_details cap ({max_details}). Stopping.")
-            break
-
-        try:
-            d = await client.get_by_id(imdb_id, plot_full=True)
-            consecutive_errors = 0
-        except Exception as exc:
-            consecutive_errors += 1
-            if consecutive_errors >= 5:
-                print(
-                    f"  {consecutive_errors} consecutive errors -- "
-                    f"likely rate-limited. Stopping. Last error: {exc}"
-                )
-                break
-            print(f"  Detail error ({imdb_id}): {exc}")
-            continue
-
-        fetched += 1
-
-        if not d:
-            continue
-        genre = (d.get("Genre") or "").lower()
-        if "horror" not in genre:
-            continue
-
-        title = d.get("Title") or ""
-        key = title.lower().strip()
-        if key in seen_titles:
-            continue
-        seen_titles.add(key)
-
-        poster = d.get("Poster")
-        poster_url = poster if poster and poster != "N/A" else None
-        rating_str = d.get("imdbRating") or ""
-
-        def _na(val: Any) -> str | None:
-            """Return None for OMDb 'N/A' sentinel values."""
-            if val is None or val == "N/A":
-                return None
-            return str(val)
-
-        corpus.append(
-            {
-                "imdb_id": imdb_id,
-                "title": title,
-                "overview": d.get("Plot") or "",
-                "poster_url": poster_url,
-                "release_date": _na(d.get("Released")),
-                "year": d.get("Year"),
-                "vote_average": (float(rating_str) if rating_str and rating_str != "N/A" else None),
-                "genre": d.get("Genre"),
-                "director": _na(d.get("Director")),
-                "actors": _na(d.get("Actors")),
-                "writer": _na(d.get("Writer")),
-                "runtime": _na(d.get("Runtime")),
-                "language": _na(d.get("Language")),
-                "country": _na(d.get("Country")),
-                "rated": _na(d.get("Rated")),
-                "awards": _na(d.get("Awards")),
-                "imdbVotes": d.get("imdbVotes"),
-                "Metascore": d.get("Metascore"),
-            }
-        )
-
-        if (fetched) % 50 == 0:
-            print(
-                f"  Detail progress: {fetched}/{len(new_ids)} fetched, "
-                f"{len(corpus)} horror movies so far"
-            )
-            # Save periodically in case we get interrupted
-            _save_corpus(corpus)
-
-        # Small delay to be polite to the API
-        if delay > 0:
-            await asyncio.sleep(delay)
-
-    print(f"  Corpus complete: {len(corpus)} horror movies")
-    _save_corpus(corpus)
-    return corpus
-
-
-# ----------------------------------------------------------------------- load
+# ----------------------------------------------------------------- load/save
 def load_corpus() -> list[dict[str, Any]]:
     """Load the cached corpus from disk.  Returns ``[]`` if not built yet."""
     if not CORPUS_FILE.exists():
@@ -275,17 +45,158 @@ def load_corpus() -> list[dict[str, Any]]:
     return data
 
 
-# ----------------------------------------------------------------- embeddings
-def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
-    """Load or compute sentence-transformer embeddings for corpus plots.
+def save_corpus(corpus: list[dict[str, Any]]) -> None:
+    """Persist corpus to disk and invalidate stale embeddings."""
+    CORPUS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(CORPUS_FILE, "w") as f:
+        json.dump(corpus, f, indent=2, ensure_ascii=False)
+    for stale in (EMBEDDINGS_FILE, EMBEDDINGS_META_FILE):
+        if stale.exists():
+            stale.unlink()
 
-    Embeddings are cached to :data:`EMBEDDINGS_FILE` so subsequent calls
-    are a fast numpy load.
+
+# ------------------------------------------------------------------- mapping
+def _first(values: list[str], limit: int | None = None) -> str | None:
+    """Join non-empty strings, or return None when there are none."""
+    cleaned = [v for v in values if v]
+    if not cleaned:
+        return None
+    if limit is not None:
+        cleaned = cleaned[:limit]
+    return ", ".join(cleaned)
+
+
+def _us_certification(detail: dict[str, Any]) -> str | None:
+    """Extract the US certification (the analogue of OMDb's ``Rated``)."""
+    blocks = (detail.get("release_dates") or {}).get("results") or []
+    for block in blocks:
+        if block.get("iso_3166_1") != "US":
+            continue
+        for release in block.get("release_dates") or []:
+            cert = (release.get("certification") or "").strip()
+            if cert:
+                return cert
+    return None
+
+
+def map_tmdb_to_corpus(detail: dict[str, Any], *, image_base: str) -> dict[str, Any] | None:
+    """Map a TMDB movie-detail payload onto the corpus record schema.
+
+    Returns ``None`` when the film lacks the fields the pipeline depends on
+    (an IMDb id to key feedback/dedup on, and an overview to embed).
+
+    The output schema is byte-for-byte the one the previous OMDb-built corpus
+    produced, so templates and scorers need no changes.
     """
-    if EMBEDDINGS_FILE.exists():
-        embs: np.ndarray = np.load(EMBEDDINGS_FILE)
-        if embs.shape[0] == len(corpus):
-            return embs
+    external = detail.get("external_ids") or {}
+    imdb_id = external.get("imdb_id") or detail.get("imdb_id")
+    overview = (detail.get("overview") or "").strip()
+    if not imdb_id or not overview:
+        return None
+
+    credits = detail.get("credits") or {}
+    crew = credits.get("crew") or []
+    cast = credits.get("cast") or []
+
+    directors = [c.get("name", "") for c in crew if c.get("job") == "Director"]
+    writers = [c.get("name", "") for c in crew if c.get("job") in ("Writer", "Screenplay", "Story")]
+    actors = [c.get("name", "") for c in cast]
+
+    poster_path = detail.get("poster_path")
+    release_date = (detail.get("release_date") or "").strip()
+    runtime = detail.get("runtime")
+
+    return {
+        "imdb_id": imdb_id,
+        "tmdb_id": detail.get("id"),
+        "title": detail.get("title") or detail.get("original_title") or "",
+        "overview": overview,
+        "poster_url": f"{image_base.rstrip('/')}{poster_path}" if poster_path else None,
+        "release_date": release_date or None,
+        "year": release_date[:4] if release_date else None,
+        # Placeholder on the IMDb scale; overwritten by OMDb enrichment below.
+        "vote_average": float(detail["vote_average"]) if detail.get("vote_average") else None,
+        "rating_source": "tmdb",
+        "genre": _first([g.get("name", "") for g in detail.get("genres") or []]),
+        "director": _first(directors),
+        "actors": _first(actors, limit=4),
+        "writer": _first(writers, limit=3),
+        # OMDb rendered runtime as "121 min"; keep that so templates are unchanged.
+        "runtime": f"{runtime} min" if runtime else None,
+        "language": _first(
+            [lang.get("english_name", "") for lang in detail.get("spoken_languages") or []]
+        ),
+        "country": _first([c.get("name", "") for c in detail.get("production_countries") or []]),
+        "rated": _us_certification(detail),
+        "awards": None,
+        "imdbVotes": None,
+        "Metascore": None,
+    }
+
+
+def apply_omdb_enrichment(record: dict[str, Any], omdb: dict[str, Any]) -> dict[str, Any]:
+    """Overlay OMDb-only fields onto a TMDB-derived corpus record.
+
+    ``vote_average`` is deliberately sourced from OMDb's ``imdbRating``: the
+    ``min_rating`` filter and the popularity scorer (``rating * log(votes)``)
+    both assume IMDb semantics, and the vote count comes from OMDb.  Blending
+    TMDB ratings with IMDb vote counts would silently corrupt that signal.
+    """
+    if not omdb:
+        return record
+
+    rating_str = omdb.get("imdbRating") or ""
+    if rating_str and rating_str != "N/A":
+        try:
+            record["vote_average"] = float(rating_str)
+            record["rating_source"] = "imdb"
+        except ValueError:
+            pass
+
+    for src, dst in (("imdbVotes", "imdbVotes"), ("Metascore", "Metascore"), ("Awards", "awards")):
+        val = omdb.get(src)
+        if val and val != "N/A":
+            record[dst] = val
+
+    # OMDb full plots are often longer than TMDB overviews; longer text gives
+    # the embedding model more to work with.
+    plot = (omdb.get("Plot") or "").strip()
+    if plot and plot != "N/A" and len(plot) > len(record.get("overview") or ""):
+        record["overview"] = plot
+
+    return record
+
+
+# ----------------------------------------------------------------- embeddings
+def corpus_fingerprint(corpus: list[dict[str, Any]]) -> str:
+    """Content hash of the exact text that gets embedded.
+
+    Keyed on content rather than ``len(corpus)`` so that editing plot text
+    without changing the film count still invalidates the cache.
+    """
+    h = hashlib.sha256()
+    for movie in corpus:
+        h.update((movie.get("imdb_id") or "").encode())
+        h.update(b"\x00")
+        h.update((movie.get("overview") or "").encode())
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
+def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
+    """Load or compute sentence-transformer embeddings for corpus plots."""
+    fingerprint = corpus_fingerprint(corpus)
+
+    if EMBEDDINGS_FILE.exists() and EMBEDDINGS_META_FILE.exists():
+        try:
+            with open(EMBEDDINGS_META_FILE) as f:
+                meta = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            meta = {}
+        if meta.get("fingerprint") == fingerprint:
+            cached: np.ndarray = np.load(EMBEDDINGS_FILE)
+            if cached.shape[0] == len(corpus):
+                return cached
 
     from .unified_recommender import _embed_sbert, _normalize_text
 
@@ -295,6 +206,8 @@ def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
 
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
     np.save(EMBEDDINGS_FILE, embs)
+    with open(EMBEDDINGS_META_FILE, "w") as f:
+        json.dump({"fingerprint": fingerprint, "count": len(corpus)}, f)
     return embs
 
 
@@ -305,12 +218,9 @@ def semantic_search(
     corpus_embeddings: np.ndarray,
     top_k: int = 60,
     temperature: float = 1.0,
+    seed: int | None = None,
 ) -> list[dict[str, Any]]:
     """Rank corpus movies by semantic similarity to *any* arbitrary text.
-
-    Uses sentence-transformer cosine similarity with controlled
-    stochasticity so results vary between requests while remaining
-    relevant.
 
     Parameters
     ----------
@@ -323,16 +233,12 @@ def semantic_search(
     top_k:
         How many results to return.
     temperature:
-        Controls randomness.  0 = fully deterministic (old behaviour).
-        1 = default variety.  Higher = more random.  The noise added
-        is proportional to the score spread in the top candidates, so
+        Controls randomness.  0 = fully deterministic.  1 = default variety.
+        Noise is proportional to the score spread in the top candidates, so
         irrelevant movies never leak in.
-
-    Returns
-    -------
-    list[dict]
-        Movies sorted by descending (perturbed) similarity, each dict
-        augmented with ``_semantic_score``.
+    seed:
+        Optional RNG seed.  Together with ``temperature=0`` this makes the
+        search reproducible, which offline evaluation depends on.
     """
     from .unified_recommender import _embed_sbert, _normalize_text
 
@@ -345,14 +251,11 @@ def semantic_search(
         pool_idx = np.argsort(-sims)[:pool_k]
         pool_sims = sims[pool_idx]
 
-        # Noise proportional to the score spread in the pool (keeps
-        # high-relevance movies near the top, shuffles the mid-band)
         spread = float(pool_sims.max() - pool_sims.min()) if len(pool_sims) > 1 else 0.0
         noise_scale = spread * 0.08 * temperature
-        noise = np.random.default_rng().normal(0, noise_scale, size=len(pool_sims))
+        noise = np.random.default_rng(seed).normal(0, noise_scale, size=len(pool_sims))
         perturbed = pool_sims + noise.astype(np.float32)
 
-        # Re-rank the pool by perturbed scores and take top_k
         reranked = np.argsort(-perturbed)[:top_k]
         top_idx = pool_idx[reranked]
     else:

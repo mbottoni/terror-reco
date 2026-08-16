@@ -31,6 +31,11 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 # Copy source
 COPY app /app/app
 
+# Ship the pre-built horror corpus so the container serves recommendations
+# immediately, without needing TMDB/OMDb keys at build time. Embeddings are
+# not committed; they are computed from this corpus on first use.
+COPY data /app/data
+
 # Render expects Docker services to listen on port 10000
 EXPOSE 10000
 

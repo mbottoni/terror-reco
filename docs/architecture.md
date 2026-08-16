@@ -61,12 +61,32 @@ Pydantic Settings class that reads from environment variables. Centralises all c
 
 ### `app/services/corpus.py` -- Corpus & Semantic Search
 
-The heart of the ML pipeline:
+The heart of the ML pipeline. Performs **no network I/O** -- the corpus is built offline by `scripts/build_corpus.py`.
 
-1. **`build_corpus()`** -- fetches horror movies from OMDb via paginated search, deduplicates by IMDb ID, extracts full details (plot, director, actors, etc.), and persists to `data/horror_corpus.json`.
-2. **`load_corpus()`** -- loads the cached corpus from disk.
-3. **`get_corpus_embeddings()`** -- computes or loads sentence-transformer embeddings for all corpus plots, cached to `data/corpus_embeddings.npy`.
-4. **`semantic_search()`** -- embeds the user query, computes cosine similarity against the corpus, optionally adds temperature-controlled noise, and returns the top-K results.
+1. **`load_corpus()`** / **`save_corpus()`** -- read/write `data/horror_corpus.json`; saving invalidates stale embeddings.
+2. **`map_tmdb_to_corpus()`** -- maps a TMDB movie-detail payload onto the corpus record schema.
+3. **`apply_omdb_enrichment()`** -- overlays OMDb-only fields (IMDb rating/votes, Metascore, awards).
+4. **`get_corpus_embeddings()`** -- computes or loads sentence-transformer embeddings, cached to `data/corpus_embeddings.npy` and keyed on a content hash of the embedded text.
+5. **`semantic_search()`** -- embeds the user query, computes cosine similarity against the corpus, optionally adds temperature-controlled noise, and returns the top-K results.
+
+### `scripts/build_corpus.py` -- Offline Corpus Builder
+
+Discovery runs against **TMDB** (`/discover/movie?with_genres=27`) because OMDb's `s=` parameter searches titles only and cannot browse by genre. Six resumable stages:
+
+| Stage | Purpose |
+|-------|---------|
+| A `gold` | Force-seed the evaluation gold set, parsed from `notebooks/1-evaluation.py` by AST |
+| B `canon` | Most-voted horror films (`vote_count.desc` -- stable, unlike `popularity.desc`) |
+| C `decades` | Decade-stratified fill, so the corpus is not overwhelmingly modern |
+| D `hydrate` | TMDB detail fetch (`append_to_response=credits,external_ids,release_dates`) |
+| E `enrich` | OMDb overlay for IMDb rating/votes, Metascore, awards |
+| F `finalize` | Write corpus, then validate size / duplicates / decade spread / gold coverage |
+
+Progress is checkpointed to `data/.corpus_build_state.json` after every stage and every 50 records, so an interrupted run resumes with `--resume` instead of restarting.
+
+### `app/services/tmdb_client.py` -- TMDB API Client
+
+Async httpx client with bearer auth, request throttling (10 req/s against TMDB's ~40 req/s ceiling), and exponential backoff on 429/5xx. Deliberately has no "give up after N consecutive errors" rule -- that behaviour in the previous OMDb builder is what silently truncated the corpus at 21 films.
 
 ### `app/services/recommender.py` -- Recommendation Orchestrator
 
@@ -130,6 +150,10 @@ Server-rendered Jinja2 templates with a shared `_base.html` that contains the da
 | Store | Format | Purpose |
 |-------|--------|---------|
 | SQLite / PostgreSQL | Relational DB | Users, search history, movie feedback |
-| `data/horror_corpus.json` | JSON file | Cached horror movie corpus from OMDb |
+| `data/horror_corpus.json` | JSON file | Horror movie corpus (TMDB discovery + OMDb enrichment) |
 | `data/corpus_embeddings.npy` | NumPy binary | Pre-computed sentence-transformer embeddings |
+| `data/corpus_embeddings.meta.json` | JSON file | Content hash of the embedded text, for cache invalidation |
+| `data/.corpus_build_state.json` | JSON file | Resumable build checkpoint |
 | `models/` | HuggingFace cache | Locally cached sentence-transformer model weights |
+
+`data/` is gitignored and is not copied into the Docker image. Because the corpus is no longer built lazily during a request, a fresh deployment must either run `make corpus` or mount an existing `data/` directory -- otherwise corpus-based strategies raise `CorpusNotBuiltError`.

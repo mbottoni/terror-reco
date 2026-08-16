@@ -34,14 +34,25 @@ Because `/loading` sits between the form and the results, **any new query parame
 
 `ui_recommendations()` in `app/main.py` dispatches on `strategy`, validated against `STRATEGY_LABELS`. Two families with very different data sources:
 
-**Corpus-based (offline, fast)** — `semantic` and `unified` search a local cached corpus:
-- `services/corpus.py` — `build_corpus()` sweeps ~65 broad OMDb title terms, keeps horror-genre hits, caches to `data/horror_corpus.json`; `get_corpus_embeddings()` caches SBERT vectors to `data/corpus_embeddings.npy`; `semantic_search()` does the query-time cosine ranking.
+**Corpus-based (offline, fast)** — `semantic` and `unified` search a local cached corpus and do **no network I/O at request time**:
+- `services/corpus.py` — load/save, the TMDB→corpus field mapping, embedding cache, and `semantic_search()` (query-time cosine ranking).
 - `services/recommender.py` → `recommend_movies_advanced()` — semantic search, then year/rating/language filters, then weighted random sampling.
 - `services/unified_recommender.py` → `recommend_unified_semantic()` — takes a 60-item pool from the above and re-ranks by a blend (semantic .45 / keyword overlap .20 / popularity .20 / recency .05), then applies MMR for diversity.
 
 **Live-OMDb (slow, network-bound)** — `keyword` and `embedding` in `services/strategies/`, both fetching from OMDb per request. `embedding_omdb.py` uses sklearn TF-IDF, *not* the neural model, despite the name.
 
-The embedding cache is keyed only on `len(corpus)` (`corpus.py:287`). Changing plot text without changing the movie count silently reuses stale vectors — delete `data/corpus_embeddings.npy` when in doubt. `_save_corpus()` already unlinks it on write.
+### Corpus building
+
+Built **offline** by `scripts/build_corpus.py` (`make corpus`), never during a request. Requesting a recommendation with no corpus raises `CorpusNotBuiltError` rather than silently crawling — an in-request crawl that got rate-limited is what previously froze the corpus at 21 films.
+
+Discovery uses **TMDB** (`with_genres=27`), because OMDb's `s=` searches *titles only* and cannot browse a genre. OMDb is still used to enrich each film with `imdbRating`/`imdbVotes`/`Metascore`/`Awards`.
+
+Three things about this pipeline are load-bearing:
+- **`vote_average` must stay on the IMDb scale.** The `min_rating` filter and `_popularity()` (`rating × log(1+votes)`) assume IMDb semantics and the votes come from OMDb. `apply_omdb_enrichment()` overwrites the TMDB rating for this reason; `rating_source` records which scale a record ended up on.
+- **Sort by `vote_count.desc`, not `popularity.desc`.** TMDB popularity is a live trending metric — sorting by it makes the corpus non-reproducible and skews it modern.
+- **The eval gold set is force-seeded** (stage A), parsed out of `notebooks/1-evaluation.py` by AST so it can't drift. Without those ~112 titles in the corpus, every metric the notebook computes is measuring an empty intersection.
+
+The build checkpoints to `data/.corpus_build_state.json` after every stage and every 50 records; `--resume` skips completed work. Embeddings are keyed on a **content hash** of the embedded text (`corpus_fingerprint()`), so editing plot text invalidates the cache even when the film count is unchanged.
 
 ### Everything is deliberately non-deterministic
 
@@ -55,8 +66,7 @@ Three independent randomness sources, all intentional: Gaussian score perturbati
 
 ## Repo state worth knowing
 
-- **The committed corpus is only 21 movies**, mostly titles containing the literal word "horror". `build_corpus()` bails after 5 consecutive OMDb errors, and a rate-limited run stopped it early. Both corpus-based strategies are ranking against those 21 items, so semantic quality is far below what `docs/recommendation-engine.md` describes. Rebuilding it (with backoff/resume) is the highest-impact fix available.
-- `data/` and `models/` are gitignored and **not** copied into the Docker image, so a fresh container rebuilds the corpus from OMDb on first request.
+- `data/` and `models/` are gitignored and **not** copied into the Docker image. Since the lazy in-request build was removed, a fresh container has no corpus and will raise `CorpusNotBuiltError` until one is built or mounted — deployment needs to run `make corpus` or ship `data/` in as a volume.
 - `PyYAML` is imported by `strategies/embedding_omdb.py` but not declared in `pyproject.toml` — it only resolves transitively via transformers.
 - CSRF tokens are HMAC-verified but not bound to the session: `validate_csrf_token()` never compares against `request.session["csrf"]`, so a token from any session validates in any other.
 - `tests/` mixes pytest files (`test_*.py`) with manual scripts (`manual_*.py`, `debug_stripe.py`, `deployment_checklist.py`) that hit real services and are not collected by pytest.

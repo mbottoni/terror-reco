@@ -47,24 +47,27 @@ async def recommend_movies_advanced(
     min_rating: float | None = None,
     kind: str = "movie",  # "movie" | "series" | "both"  (corpus is movies only)
     english_only: bool = False,
-    pages: int = 2,
 ) -> list[dict[str, Any]]:
     """Return horror movies ranked by semantic similarity to *mood*.
 
     Uses a pre-built corpus of horror movies + sentence-transformer
-    embeddings.  The corpus is built once from OMDb on first call and
-    cached to disk; every subsequent call is a fast numpy dot-product.
+    embeddings.  The corpus is built offline by ``scripts/build_corpus.py``;
+    every request is a fast numpy dot-product with no network I/O.
 
     No hardcoded mood-to-keyword mapping is involved -- matching is
     purely ML-based.
     """
-    from .corpus import build_corpus, get_corpus_embeddings, load_corpus, semantic_search
+    from .corpus import CorpusNotBuiltError, get_corpus_embeddings, load_corpus, semantic_search
 
-    # Load or build the horror movie corpus (one-time cost)
     corpus = load_corpus()
     if not corpus:
-        print("Building horror movie corpus (first run, takes a few minutes)...")
-        corpus = await build_corpus(pages=pages)
+        # Building inside a request used to be the behaviour here; a crawl that
+        # got rate-limited mid-request is what silently froze the corpus at 21
+        # films. Fail loudly instead so the problem is visible.
+        raise CorpusNotBuiltError(
+            "Horror corpus is empty. Build it first:  make corpus  "
+            "(or: python scripts/build_corpus.py --target 500)"
+        )
 
     # Get pre-computed plot embeddings
     embeddings = get_corpus_embeddings(corpus)
@@ -72,7 +75,11 @@ async def recommend_movies_advanced(
     # Semantic search: rank entire corpus by similarity to the user text.
     # Temperature > 0 adds controlled noise so results vary per request.
     candidates = semantic_search(
-        mood, corpus, embeddings, top_k=max(limit * 10, 60), temperature=1.0,
+        mood,
+        corpus,
+        embeddings,
+        top_k=max(limit * 10, 60),
+        temperature=1.0,
     )
 
     # Apply optional filters (year range, language)

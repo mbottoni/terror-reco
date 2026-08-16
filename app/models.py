@@ -48,9 +48,7 @@ class MovieFeedback(Base):
     """
 
     __tablename__ = "movie_feedback"
-    __table_args__ = (
-        UniqueConstraint("user_id", "imdb_id", name="uq_user_movie"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "imdb_id", name="uq_user_movie"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
@@ -60,8 +58,6 @@ class MovieFeedback(Base):
     mood: Mapped[str | None] = mapped_column(String(512), nullable=True)
     strategy: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user: Mapped[User] = relationship(back_populates="feedback")

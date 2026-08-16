@@ -12,9 +12,15 @@ class AppSettings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-    # OMDb only
+    # OMDb (detail enrichment: IMDb rating/votes, Metascore, awards)
     OMDB_API_KEY: str | None = Field(default=None)
     OMDB_BASE_URL: str = Field(default="https://www.omdbapi.com/")
+
+    # TMDB (corpus discovery: real genre browsing, unlike OMDb's title-only search)
+    TMDB_API_KEY: str | None = Field(default=None)
+    TMDB_BEARER_TOKEN: str | None = Field(default=None)
+    TMDB_BASE_URL: str = Field(default="https://api.themoviedb.org/3")
+    TMDB_IMAGE_BASE: str = Field(default="https://image.tmdb.org/t/p/w500")
 
     # App
     APP_NAME: str = Field(default="TerrorReco")
