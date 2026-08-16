@@ -6,15 +6,18 @@ from typing import Any
 import numpy as np
 
 from .strategies.base import RecommenderStrategy
-from .strategies.embedding_omdb import EmbeddingOMDbStrategy
 from .strategies.keyword_omdb import KeywordOMDbStrategy
 
 
 def get_strategy(name: str) -> RecommenderStrategy:
-    key = (name or "").strip().lower()
-    if key in ("embed", "embedding", "tfidf"):
-        return EmbeddingOMDbStrategy()
-    # default
+    """Live-OMDb fallback strategies.
+
+    The TF-IDF strategy was removed: it fitted a fresh vectorizer on 30-120
+    documents per request, where IDF is statistically meaningless, made live
+    OMDb calls on the request path, and scored below the corpus pipeline on
+    every metric.  Only the keyword strategy remains as a no-corpus fallback.
+    """
+    del name  # only one live strategy remains
     return KeywordOMDbStrategy()
 
 
@@ -81,6 +84,7 @@ async def recommend_movies_advanced(
     english_only: bool = False,
     seed: int | None = None,
     temperature: float = 1.0,
+    keep_internal: bool = False,
 ) -> list[dict[str, Any]]:
     """Return horror movies ranked by semantic similarity to *mood*.
 
@@ -96,9 +100,9 @@ async def recommend_movies_advanced(
     Passing ``seed`` with ``temperature=0`` makes the whole call
     reproducible, which offline evaluation depends on.
     """
-    from .corpus import CorpusNotBuiltError, get_corpus_embeddings, load_corpus, semantic_search
+    from .corpus import CorpusNotBuiltError, get_corpus_and_embeddings, semantic_search
 
-    corpus = load_corpus()
+    corpus, embeddings = get_corpus_and_embeddings()
     if not corpus:
         # Building inside a request used to be the behaviour here; a crawl that
         # got rate-limited mid-request is what silently froze the corpus at 21
@@ -107,8 +111,6 @@ async def recommend_movies_advanced(
             "Horror corpus is empty. Build it first:  make corpus  "
             "(or: python scripts/build_corpus.py --target 500)"
         )
-
-    embeddings = get_corpus_embeddings(corpus)
 
     # Prefilter, keeping corpus rows and embedding rows aligned.
     keep = [
@@ -124,7 +126,8 @@ async def recommend_movies_advanced(
     ]
     if not keep:
         return []
-    if len(keep) < len(corpus):
+    filtered_corpus = len(keep) < len(corpus)
+    if filtered_corpus:
         corpus = [corpus[i] for i in keep]
         embeddings = embeddings[keep]
 
@@ -137,8 +140,19 @@ async def recommend_movies_advanced(
         seed=seed,
     )
 
-    # Strip internal scoring fields
-    filtered = [{k: v for k, v in movie.items() if not k.startswith("_")} for movie in candidates]
+    if filtered_corpus:
+        # `_embedding_row` indexes the *sliced* matrix; translate it back to the
+        # full corpus so downstream lookups are not silently off-by-filter.
+        for movie in candidates:
+            movie["_embedding_row"] = keep[movie["_embedding_row"]]
+
+    # Strip internal scoring fields unless a caller needs them (the unified
+    # re-ranker uses `_embedding_row` to avoid re-encoding cached vectors).
+    filtered = (
+        list(candidates)
+        if keep_internal
+        else [{k: v for k, v in m.items() if not k.startswith("_")} for m in candidates]
+    )
 
     # Weighted random sampling from the top pool so that the final
     # selection varies between requests while remaining relevant.

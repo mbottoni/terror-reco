@@ -247,16 +247,28 @@ def compute_signals(
 
     Returns ``(signals, item_embeddings)``.
     """
-    # Embed the SAME composed document the corpus embeddings use. Embedding
-    # `overview` alone here silently reverted the semantic signal to the
-    # plot-only text, discarding the keyword/genre composition that the
-    # retrieval step depends on -- so unified scored worse than the plain
+    # Reuse the cached corpus vectors when the caller preserved the row hints
+    # from semantic_search.  Re-encoding 60 candidates cost ~2.4s per unified
+    # request for vectors that were already sitting in corpus_embeddings.npy.
+    #
+    # The fallback path embeds the SAME composed document the corpus uses:
+    # embedding `overview` alone here once silently reverted the semantic
+    # signal to plot-only text, so unified scored worse than the plain
     # semantic search feeding it.
-    from .corpus import embedding_text
+    from .corpus import embedding_text, embeddings_for, get_corpus_and_embeddings
 
-    docs = [_normalize_text(mood)] + [_normalize_text(embedding_text(m)) for m in items]
-    embs = _embed_sbert(docs)
-    mood_vec, plot_vecs = embs[0:1], embs[1:]
+    mood_vec = _embed_sbert([_normalize_text(mood)])
+    plot_vecs = None
+    try:
+        _, corpus_embeddings = get_corpus_and_embeddings()
+        if corpus_embeddings.size:
+            plot_vecs = embeddings_for(items, corpus_embeddings)
+    except Exception:  # noqa: BLE001 - never fail ranking over a cache miss
+        plot_vecs = None
+
+    if plot_vecs is None or plot_vecs.shape[-1] != mood_vec.shape[-1]:
+        docs = [_normalize_text(embedding_text(m)) for m in items]
+        plot_vecs = _embed_sbert(docs)
 
     signals: dict[str, np.ndarray] = {
         "semantic": _minmax(_cosine(mood_vec, plot_vecs).ravel()),
@@ -361,4 +373,6 @@ def recommend_unified_semantic(
             pool_scores = _minmax(ce_scores)
 
     selected = _mmr(pool, sims=pool_scores, k=limit, lambda_=lambda_, embeddings=pool_embs)
-    return selected
+    # Internal hints (_embedding_row, _semantic_score) must not reach templates
+    # or the stored search history.
+    return [{k: v for k, v in m.items() if not k.startswith("_")} for m in selected]

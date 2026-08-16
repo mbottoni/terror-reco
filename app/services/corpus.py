@@ -313,5 +313,50 @@ def semantic_search(
     for idx in top_idx:
         movie = dict(corpus[int(idx)])
         movie["_semantic_score"] = float(sims[idx])
+        # Row index into `corpus_embeddings`. Downstream re-ranking can slice
+        # the cached matrix instead of re-encoding text it already has vectors
+        # for -- that re-encode cost ~2.4s per unified request.
+        movie["_embedding_row"] = int(idx)
         results.append(movie)
     return results
+
+
+_RUNTIME_CACHE: dict[str, Any] = {}
+
+
+def get_corpus_and_embeddings() -> tuple[list[dict[str, Any]], np.ndarray]:
+    """Corpus + embeddings, cached for the life of the process.
+
+    The corpus is built offline and immutable at runtime, but every request
+    used to re-read 740 KB of JSON and re-hash all 500 records to check the
+    embedding fingerprint.  Keyed on the file's mtime so a rebuild is still
+    picked up without a restart.
+    """
+    mtime = CORPUS_FILE.stat().st_mtime if CORPUS_FILE.exists() else 0.0
+    if _RUNTIME_CACHE.get("mtime") != mtime:
+        corpus = load_corpus()
+        _RUNTIME_CACHE.update(
+            mtime=mtime,
+            corpus=corpus,
+            embeddings=get_corpus_embeddings(corpus) if corpus else np.zeros((0, 0)),
+        )
+    corpus_out: list[dict[str, Any]] = _RUNTIME_CACHE["corpus"]
+    embeddings_out: np.ndarray = _RUNTIME_CACHE["embeddings"]
+    return corpus_out, embeddings_out
+
+
+def embeddings_for(items: list[dict[str, Any]], corpus_embeddings: np.ndarray) -> np.ndarray | None:
+    """Slice cached embeddings for *items* using their ``_embedding_row`` hints.
+
+    Returns None when any item lacks a usable hint, so callers fall back to
+    encoding rather than silently ranking against mismatched vectors.
+    """
+    rows: list[int] = []
+    for item in items:
+        row = item.get("_embedding_row")
+        if not isinstance(row, int) or not 0 <= row < corpus_embeddings.shape[0]:
+            return None
+        rows.append(row)
+    if not rows:
+        return None
+    return corpus_embeddings[rows]

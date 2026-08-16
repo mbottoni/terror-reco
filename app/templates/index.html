@@ -43,7 +43,7 @@
       <button type="button" class="mood-chip" onclick="pickMood('Classic slasher with suspense')"><span class="chip-icon">🔪</span> Slasher</button>
     </div>
 
-    <form action="/loading" method="get" id="search-form">
+    <form action="/recommend" method="get" id="search-form">
       <div class="search-wrap">
         <div class="search-bar">
           <input id="mood" name="mood" type="text" placeholder="Describe a vibe... e.g. haunted house with a dark secret" required autocomplete="off">
@@ -59,7 +59,6 @@
         <select id="strategy" name="strategy" class="strategy-select">
           <option value="semantic" selected>Semantic Search</option>
           <option value="unified">Unified (AI + Diversity)</option>
-          <option value="embedding">TF-IDF Similarity</option>
           <option value="keyword">Keyword Match</option>
         </select>
       </div>
@@ -101,6 +100,21 @@
         </div>
       </div>
     </form>
+
+    <script>
+    // Corpus strategies answer in tens of milliseconds, so the loading
+    // animation would be pure theatre -- it costs more than the work. Only
+    // the keyword strategy hits OMDb live and is actually slow enough to
+    // warrant it.
+    (function () {
+      var form = document.getElementById('search-form');
+      if (!form) return;
+      form.addEventListener('submit', function () {
+        var strategy = (document.getElementById('strategy') || {}).value;
+        form.action = strategy === 'keyword' ? '/loading' : '/recommend';
+      });
+    })();
+    </script>
   </section>
 
   <hr class="divider">

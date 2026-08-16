@@ -69,7 +69,7 @@ async def login(
     # Preserve email so the form can be pre-filled on error
     request.session["auth_email"] = email
 
-    if not validate_csrf_token(csrf):
+    if not validate_csrf_token(csrf, request.session.get("csrf")):
         logger.warning("LOGIN FAIL: CSRF token invalid for %s", email)
         _set_flash(request, "Security check failed. Please try again.", "error")
         return RedirectResponse(url="/auth/login", status_code=303)
@@ -135,7 +135,7 @@ async def register(
         len(confirm_password),
     )
 
-    if not validate_csrf_token(csrf):
+    if not validate_csrf_token(csrf, request.session.get("csrf")):
         logger.warning("REGISTER FAIL: CSRF invalid for %s", email)
         _set_flash(request, "Security check failed. Please try again.", "error")
         return RedirectResponse(url="/auth/register", status_code=303)

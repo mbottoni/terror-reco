@@ -15,6 +15,7 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .models import MovieFeedback, User
+from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import recommend_movies, recommend_movies_advanced
 from .services.unified_recommender import DEFAULT_WEIGHTS, recommend_unified_semantic
@@ -29,7 +30,8 @@ settings = get_settings()
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
 _https_only = not settings.DEBUG
-print(f"[TerrorReco] DEBUG={settings.DEBUG}, session https_only={_https_only}")
+logger = logging.getLogger(__name__)
+logger.info("DEBUG=%s, session https_only=%s", settings.DEBUG, _https_only)
 
 app.add_middleware(
     SessionMiddleware,
@@ -64,11 +66,31 @@ async def _startup() -> None:
         )
 
 
+@app.get("/healthz")
+async def healthz() -> dict[str, Any]:
+    """Liveness/readiness probe.
+
+    Reports corpus availability so a deploy that shipped without one is
+    visible from the platform rather than only from a failing user request.
+    """
+    from .services.corpus import get_corpus_and_embeddings
+
+    try:
+        corpus, embeddings = get_corpus_and_embeddings()
+        corpus_ok = bool(corpus) and embeddings.shape[0] == len(corpus)
+        return {
+            "status": "ok" if corpus_ok else "degraded",
+            "corpus_films": len(corpus),
+            "embeddings_ready": corpus_ok,
+        }
+    except Exception as exc:  # noqa: BLE001 - a probe must always answer
+        return {"status": "degraded", "corpus_films": 0, "error": str(exc)}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, user: User | None = Depends(get_current_user)) -> HTMLResponse:
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
-    print(f"[HOME] user_id_in_session={request.session.get('user_id')}, user={user}, flash={flash}")
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -97,7 +119,6 @@ def _load_taste(db: Session, user: User | None) -> UserTaste:
 # Valid strategy values accepted by the UI.
 STRATEGY_LABELS: dict[str, str] = {
     "keyword": "Keyword Match",
-    "embedding": "TF-IDF Similarity",
     "semantic": "Semantic Search",
     "unified": "Unified (AI + Diversity)",
 }
@@ -135,6 +156,7 @@ async def ui_recommendations(
             english_only=bool(english),
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
+            keep_internal=True,  # preserves _embedding_row so unified reuses cached vectors
         )
         taste = _load_taste(db, user)
         weights = dict(settings.UNIFIED_WEIGHTS) if settings.UNIFIED_WEIGHTS else None
@@ -169,9 +191,6 @@ async def ui_recommendations(
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
         )
-    elif strategy_key == "embedding":
-        # TF-IDF cosine similarity on OMDb plot descriptions
-        movies = await recommend_movies(mood=mood, limit=limit, strategy="embedding")
     else:
         # Keyword: OMDb title search ranked by IMDb rating
         movies = await recommend_movies(mood=mood, limit=limit, strategy="keyword")
@@ -205,10 +224,18 @@ async def ui_recommendations(
 
 @app.get("/api/recommendations")
 async def api_recommendations(
-    mood: str = Query(..., min_length=1), limit: int = 6
+    mood: str = Query(..., min_length=1),
+    limit: int = 6,
+    seed: int | None = Query(default=None),
 ) -> dict[str, Any]:
     try:
-        movies = await recommend_movies(mood=mood, limit=limit)
+        # Uses the same corpus pipeline as the UI. This previously called
+        # recommend_movies(), which defaults to the *keyword* strategy, so the
+        # JSON API returned materially worse results than the web page for the
+        # very same query.
+        movies = await recommend_movies_advanced(mood=mood, limit=limit, seed=seed)
+    except CorpusNotBuiltError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:  # pragma: no cover
