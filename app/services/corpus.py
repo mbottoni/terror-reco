@@ -210,6 +210,27 @@ def corpus_fingerprint(corpus: list[dict[str, Any]]) -> str:
     return h.hexdigest()
 
 
+def load_cached_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray | None:
+    """Return cached embeddings for *corpus*, or None if there is no valid cache.
+
+    Never computes and never writes.  Callers that are incidental to a request
+    (personalisation, say) must use this rather than
+    :func:`get_corpus_embeddings`, so they can neither block a request on a
+    full re-encode nor overwrite the cache with a partial corpus.
+    """
+    if not (EMBEDDINGS_FILE.exists() and EMBEDDINGS_META_FILE.exists()):
+        return None
+    try:
+        with open(EMBEDDINGS_META_FILE) as f:
+            meta = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if meta.get("fingerprint") != corpus_fingerprint(corpus):
+        return None
+    cached: np.ndarray = np.load(EMBEDDINGS_FILE)
+    return cached if cached.shape[0] == len(corpus) else None
+
+
 def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
     """Load or compute sentence-transformer embeddings for corpus plots."""
     fingerprint = corpus_fingerprint(corpus)

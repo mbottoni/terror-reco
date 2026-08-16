@@ -194,18 +194,59 @@ def _mmr(
     return [items[i] for i in selected]
 
 
-def recommend_unified_semantic(
-    *,
-    mood: str,
-    items: list[dict[str, Any]],
-    limit: int = 6,
-    diversity_lambda: float = 0.7,
-    weights: dict[str, float] | None = None,
-    seed: int | None = None,
-    temperature: float = 1.0,
-) -> list[dict[str, Any]]:
-    if not items:
-        return []
+CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+
+def _get_cross_encoder() -> Any:
+    if CROSS_ENCODER_MODEL in _MODEL_CACHE:
+        return _MODEL_CACHE[CROSS_ENCODER_MODEL]
+    try:
+        from sentence_transformers import CrossEncoder
+    except Exception:  # pragma: no cover - optional dependency path
+        return None
+    cache_folder = str(_MODELS_DIR) if _MODELS_DIR.is_dir() else None
+    _MODEL_CACHE[CROSS_ENCODER_MODEL] = CrossEncoder(CROSS_ENCODER_MODEL, cache_folder=cache_folder)
+    return _MODEL_CACHE[CROSS_ENCODER_MODEL]
+
+
+def _cross_encoder_scores(mood: str, items: list[dict[str, Any]]) -> np.ndarray | None:
+    """Score (query, document) pairs jointly.  Returns None if unavailable."""
+    model = _get_cross_encoder()
+    if model is None:
+        return None
+    from .corpus import embedding_text
+
+    try:
+        pairs = [(mood, embedding_text(it)) for it in items]
+        return np.asarray(model.predict(pairs), dtype=np.float32)
+    except Exception:  # pragma: no cover - never fail a request over a rerank
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "Cross-encoder rerank failed; using blend", exc_info=True
+        )
+        return None
+
+
+DEFAULT_WEIGHTS: dict[str, float] = {
+    "semantic": 0.45,
+    "keyword": 0.20,
+    "popularity": 0.20,
+    "recency": 0.05,
+}
+
+
+def compute_signals(
+    mood: str, items: list[dict[str, Any]], taste_vector: np.ndarray | None = None
+) -> tuple[dict[str, np.ndarray], np.ndarray]:
+    """Compute each ranking signal, min-max normalised, plus item embeddings.
+
+    Split out of :func:`recommend_unified_semantic` so weight tuning can
+    reuse the exact production signals instead of reimplementing them --
+    a tuner that drifts from production produces weights that do not apply.
+
+    Returns ``(signals, item_embeddings)``.
+    """
     # Embed the SAME composed document the corpus embeddings use. Embedding
     # `overview` alone here silently reverted the semantic signal to the
     # plot-only text, discarding the keyword/genre composition that the
@@ -216,12 +257,12 @@ def recommend_unified_semantic(
     docs = [_normalize_text(mood)] + [_normalize_text(embedding_text(m)) for m in items]
     embs = _embed_sbert(docs)
     mood_vec, plot_vecs = embs[0:1], embs[1:]
-    sem = _cosine(mood_vec, plot_vecs).ravel()
-    sem = _minmax(sem)
 
-    kw = _minmax(_bm25_scores(mood, items))
-    pop = np.array([_popularity(it) for it in items], dtype=np.float32)
-    pop = _minmax(pop)
+    signals: dict[str, np.ndarray] = {
+        "semantic": _minmax(_cosine(mood_vec, plot_vecs).ravel()),
+        "keyword": _minmax(_bm25_scores(mood, items)),
+        "popularity": _minmax(np.array([_popularity(it) for it in items], dtype=np.float32)),
+    }
 
     rec = np.zeros(len(items), dtype=np.float32)
     years: list[int | None] = []
@@ -236,13 +277,58 @@ def recommend_unified_semantic(
     if valid:
         y_arr = np.array([y if isinstance(y, int) else min(valid) for y in years], dtype=np.int32)
         rec = _minmax(y_arr.astype(np.float32))
+    signals["recency"] = rec
 
-    w = {"semantic": 0.45, "keyword": 0.20, "popularity": 0.20, "recency": 0.05}
+    # Affinity to the user's taste vector (mean embedding of liked films).
+    if taste_vector is not None and taste_vector.shape[-1] == plot_vecs.shape[-1]:
+        signals["taste"] = _minmax(_cosine(taste_vector.reshape(1, -1), plot_vecs).ravel())
+    else:
+        signals["taste"] = np.zeros(len(items), dtype=np.float32)
+
+    return signals, plot_vecs
+
+
+def blend_signals(signals: dict[str, np.ndarray], weights: dict[str, float]) -> np.ndarray:
+    """Weighted sum of normalised signals (missing signals contribute 0)."""
+    n = len(next(iter(signals.values())))
+    total = np.zeros(n, dtype=np.float32)
+    for name, weight in weights.items():
+        if weight and name in signals:
+            total += weight * signals[name]
+    return total.astype(np.float32)
+
+
+def recommend_unified_semantic(
+    *,
+    mood: str,
+    items: list[dict[str, Any]],
+    limit: int = 6,
+    diversity_lambda: float = 0.7,
+    weights: dict[str, float] | None = None,
+    seed: int | None = None,
+    temperature: float = 1.0,
+    taste_vector: np.ndarray | None = None,
+    demote_ids: set[str] | None = None,
+    use_cross_encoder: bool = False,
+) -> list[dict[str, Any]]:
+    if not items:
+        return []
+
+    signals, plot_vecs = compute_signals(mood, items, taste_vector=taste_vector)
+
+    w = dict(DEFAULT_WEIGHTS)
     if weights:
         w.update(weights)
-    blended = (
-        w["semantic"] * sem + w["keyword"] * kw + w["popularity"] * pop + w["recency"] * rec
-    ).astype(np.float32)
+    blended = blend_signals(signals, w)
+
+    # Films the user explicitly disliked are pushed below everything else
+    # rather than removed, so a heavily-rated user still gets a full page.
+    if demote_ids:
+        penalty = np.array(
+            [1.0 if (it.get("imdb_id") or "") in demote_ids else 0.0 for it in items],
+            dtype=np.float32,
+        )
+        blended = blended - penalty
 
     # Add controlled noise to blended scores so results vary per request.
     # Noise scale is proportional to score spread, keeping top picks near
@@ -264,6 +350,15 @@ def recommend_unified_semantic(
     pool = [items[i] for i in pool_idx]
     pool_scores = blended_noisy[pool_idx]
     pool_embs = plot_vecs[pool_idx]
+
+    # Optional cross-encoder rerank of the shortlist.  A cross-encoder reads
+    # the query and document *together* rather than comparing two independent
+    # vectors, so it is more accurate but far slower -- hence shortlist-only
+    # and off by default.
+    if use_cross_encoder:
+        ce_scores = _cross_encoder_scores(mood, pool)
+        if ce_scores is not None:
+            pool_scores = _minmax(ce_scores)
 
     selected = _mmr(pool, sims=pool_scores, k=limit, lambda_=lambda_, embeddings=pool_embs)
     return selected

@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval migrate migration migrate-check
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval tune migrate migration migrate-check
 
 
 setup:
@@ -54,6 +54,10 @@ migration:
 
 migrate-check:
 	.venv/bin/python -m alembic check
+
+# Grid-search blend weights (see docs/evaluation-baseline.md before shipping any)
+tune:
+	.venv/bin/python scripts/tune_weights.py
 
 # Score the recommender against the gold test set (see docs/evaluation-baseline.md)
 eval:

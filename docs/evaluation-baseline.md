@@ -53,6 +53,44 @@ Turning MMR off scores highest, but diversity is the entire point of the "AI + D
 strategy and the metric gives no credit for it, so the default stays at 0.7. Do not tune
 lambda upward to chase this number.
 
+## Two things measured and deliberately NOT shipped
+
+Both were on the roadmap as expected wins. Both were measured and rejected.
+
+### Tuned blend weights: rejected
+
+`scripts/tune_weights.py` (`make tune`) grid-searches 77 weight combinations at
+lambda=0.7, reusing the production `compute_signals()` so the result actually applies.
+
+| ndcg@6 | semantic | keyword | popularity | recency |
+|-------:|---------:|--------:|-----------:|--------:|
+| 0.5197 | 0.45 | 0.20 | 0.25 | 0.10 |
+| 0.5185 | 0.40 | 0.30 | 0.20 | 0.10 |
+| 0.5183 | 0.45 | 0.30 | 0.25 | 0.00 |
+| **0.5070** | **0.45** | **0.20** | **0.20** | **0.05** | <- current default |
+
+Best config beats the default by **+0.0127**. The pipeline's own run-to-run stddev is
+**~0.02**, and the top 12 configurations sit inside a 0.007 band. The "improvement" is
+therefore inside the noise floor, and it was selected on all 15 moods with no holdout,
+so it is an overfit to the test set rather than a real gain.
+
+**Decision: defaults unchanged.** Weights are configurable via `UNIFIED_WEIGHTS` for
+experimentation, but shipping the tuned values would be reporting noise as progress.
+
+### Cross-encoder reranking: rejected as a default
+
+| Configuration | ndcg@6 | precision@6 | time (15 moods) |
+|---|---:|---:|---:|
+| blend only | 0.5070 | 0.4889 | 36.7s |
+| + cross-encoder rerank | 0.5096 | 0.4778 | 53.7s |
+
++0.0026 NDCG (inside noise), **worse** precision, and ~46% more latency -- roughly 1.1s
+extra per query. `notebooks/3-cross-encoder.py` found a gain, but that was measured on
+the old 21-film corpus with plot-only embeddings, where retrieval was weak enough to
+leave headroom. With composed embeddings there is nothing left for it to fix.
+
+**Decision: implemented and wired to `UNIFIED_USE_CROSS_ENCODER`, default off.**
+
 ---
 
 ## v1 baseline (pre-composed-embeddings)

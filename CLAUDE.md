@@ -16,6 +16,7 @@ make docker      # build + run container
 make corpus      # build/refresh the corpus (resumable)
 make eval        # score against the gold set
 make migrate     # alembic upgrade head
+make tune        # grid-search blend weights
 ```
 
 Single test: `pytest tests/test_auth.py::test_register_success -v`
@@ -92,6 +93,25 @@ make migrate-check                # fail if models and migrations have drifted
 `migrations/env.py` takes the URL from app settings, not `alembic.ini` — the ini's
 `sqlalchemy.url` is deliberately blank. Generated migrations are auto-formatted by
 alembic post-write hooks so they pass `make lint` without a manual pass.
+
+## Personalisation and tuning
+
+`MovieFeedback` now feeds ranking via `services/personalization.py`. Two mechanisms with
+deliberately different strength: a **taste vector** (mean corpus embedding of liked films,
+blended in as a weighted signal, requires >= `MIN_LIKES_FOR_TASTE` likes) and **demotion**
+(disliked `imdb_id`s pushed below everything else). Disliked films are demoted, *not*
+filtered, so a heavily-rated user still gets a full page. `_load_taste()` in `main.py`
+swallows every error — personalisation must never break search.
+
+**Two roadmap features were measured and deliberately left off** (`docs/evaluation-baseline.md`):
+tuned blend weights beat the default by +0.0127 NDCG against a ~0.02 run-to-run stddev with
+no holdout, and cross-encoder reranking gained +0.0026 NDCG while *losing* precision and
+adding ~1.1s per query. Both are wired to settings (`UNIFIED_WEIGHTS`,
+`UNIFIED_USE_CROSS_ENCODER`) so they stay testable. **Do not enable either by citing the
+notebooks** — `notebooks/3-cross-encoder.py` measured its gain on the old 21-film corpus.
+
+Before claiming any ranking change helps, run `make eval` — and remember a single run is
+not a measurement, since the pipeline's stddev is comparable to most effects worth finding.
 
 ## Adding a strategy
 

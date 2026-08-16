@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +15,9 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .models import MovieFeedback, User
+from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import recommend_movies, recommend_movies_advanced
-from .services.unified_recommender import recommend_unified_semantic
+from .services.unified_recommender import DEFAULT_WEIGHTS, recommend_unified_semantic
 from .settings import get_settings
 from .stripe_payments import router as stripe_router
 
@@ -79,6 +81,19 @@ async def loading(request: Request, mood: str = "") -> HTMLResponse:
     return templates.TemplateResponse(request, "loading.html", {"mood": mood})
 
 
+def _load_taste(db: Session, user: User | None) -> UserTaste:
+    """Look up a signed-in user's taste, degrading to neutral on any failure."""
+    if not user or not settings.PERSONALIZATION_ENABLED:
+        return UserTaste()
+    try:
+        from .services.corpus import load_corpus
+
+        return load_user_taste(db, user.id, load_corpus())
+    except Exception:  # noqa: BLE001 - personalisation must never break search
+        logging.getLogger(__name__).warning("Could not load user taste", exc_info=True)
+        return UserTaste()
+
+
 # Valid strategy values accepted by the UI.
 STRATEGY_LABELS: dict[str, str] = {
     "keyword": "Keyword Match",
@@ -99,10 +114,14 @@ async def ui_recommendations(
     limit: int = Query(default=6, ge=1, le=20),
     kind: str = Query(default="movie"),  # movie | series | both
     english: int | None = Query(default=None),
+    seed: int | None = Query(
+        default=None, description="reproducible results; also disables sampling noise"
+    ),
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
-    strategy_key = strategy if strategy in STRATEGY_LABELS else "semantic"
+    default_strategy = "unified" if settings.USE_UNIFIED_RECOMMENDER else "semantic"
+    strategy_key = strategy if strategy in STRATEGY_LABELS else default_strategy
 
     if strategy_key == "unified":
         # Full pipeline: corpus semantic search → unified re-ranking with MMR
@@ -114,12 +133,28 @@ async def ui_recommendations(
             min_rating=min_rating,
             kind=kind,
             english_only=bool(english),
+            seed=seed,
+            temperature=0.0 if seed is not None else 1.0,
         )
+        taste = _load_taste(db, user)
+        weights = dict(settings.UNIFIED_WEIGHTS) if settings.UNIFIED_WEIGHTS else None
+        if taste.taste_vector is not None:
+            # Blend the taste signal in without renormalising the others: it
+            # is an additive nudge, not a replacement for relevance.
+            weights = dict(weights or DEFAULT_WEIGHTS)
+            weights["taste"] = settings.PERSONALIZATION_TASTE_WEIGHT
+
         movies = recommend_unified_semantic(
             mood=mood,
             items=pool,
             limit=limit,
             diversity_lambda=settings.UNIFIED_DIVERSITY_LAMBDA,
+            weights=weights,
+            seed=seed,
+            temperature=0.0 if seed is not None else 1.0,
+            taste_vector=taste.taste_vector,
+            demote_ids=taste.demote_ids,
+            use_cross_encoder=settings.UNIFIED_USE_CROSS_ENCODER,
         )
     elif strategy_key == "semantic":
         # Corpus-based sentence-transformer semantic search
@@ -131,6 +166,8 @@ async def ui_recommendations(
             min_rating=min_rating,
             kind=kind,
             english_only=bool(english),
+            seed=seed,
+            temperature=0.0 if seed is not None else 1.0,
         )
     elif strategy_key == "embedding":
         # TF-IDF cosine similarity on OMDb plot descriptions
