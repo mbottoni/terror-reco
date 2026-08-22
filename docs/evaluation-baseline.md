@@ -134,6 +134,72 @@ leave headroom. With composed embeddings there is nothing left for it to fix.
 
 **Decision: implemented and wired to `UNIFIED_USE_CROSS_ENCODER`, default off.**
 
+## Retrieval or ranking? (2026-08-22)
+
+`scripts/run_eval.py` now separates the two stages, because every metric above is
+measured at k=6 *after* both of them, so a 0.000 could be either a retriever that
+never found the film or a ranker that buried it.
+
+Two numbers per mood, deterministic (`temperature=0`):
+
+- **recall@60** -- of the gold films that are in the corpus, how many the 60-candidate
+  pool actually contains.
+- **ceiling** -- the best NDCG@6 obtainable from that pool by *any* re-ranker.
+
+| Mood | ndcg@6 | ceiling | recall@60 |
+|------|-------:|--------:|----------:|
+| slow-burn psychological dread | **0.000** | 0.775 | 0.44 |
+| body horror and grotesque transformation | **0.000** | 0.892 | 0.56 |
+| campy fun with lots of blood | 0.108 | 0.494 | 0.29 |
+| creepy kids and childhood fears | 0.117 | 0.645 | 0.38 |
+| home invasion and paranoia | 0.247 | 0.892 | 0.71 |
+| eerie folk horror pagan rituals | 0.321 | 0.892 | 0.62 |
+| *(nine moods at ceiling 1.000)* | | 1.000 | 0.75--1.00 |
+| **mean** | 0.4997 | | **0.737** |
+
+**The two 0.000 moods are ranking failures, not retrieval failures.** Both have
+ceilings well above zero: the pool holds 4 of 9 gold films for slow-burn dread and 5 of
+9 for body horror, and the top-6 contains none of them. No amount of corpus work or
+retrieval fusion can be what fixes those two -- the answers were already retrieved and
+then ordered below six other films.
+
+Two honest qualifications:
+
+1. Section A ranks by pure cosine, so "ranking failure" here means the same similarity
+   score that pulled the film into the top 60 also put six other films above it.
+2. Part of that is the benchmark, not the ranker. Body horror returns *The Brood*,
+   *Re-Animator* and *The Void* -- all canonically correct, none in the gold list. The
+   films "burying" the gold ones are partly right answers the gold set does not know
+   about.
+
+Separately, **32 gold films are in the corpus but never reach the pool** (mean recall
+0.737). That is a real retrieval loss, and it is invisible in every number recorded
+above it on this page.
+
+## Paired comparison: unified vs semantic is not established
+
+The A/B table reports two independent means with a stddev over runs. That throws away
+the fact that both arms saw the *same* 15 moods, and moods differ in difficulty far
+more than runs differ in noise. Pairing per mood and bootstrapping over moods (5,000
+resamples, 95% CI):
+
+| Metric | mean delta (B - A) | 95% CI | verdict |
+|--------|-------------------:|:------:|---------|
+| hit_rate@6 | -0.0267 | [-0.2067, +0.1333] | indistinguishable |
+| precision@6 | -0.0111 | [-0.0589, +0.0333] | indistinguishable |
+| ndcg@6 | -0.0174 | [-0.0771, +0.0375] | indistinguishable |
+| mrr | -0.0081 | [-0.1352, +0.1169] | indistinguishable |
+
+**The unified pipeline is not measurably better or worse than plain semantic search on
+this benchmark.** The earlier ±0.02 stddev understated the uncertainty because it only
+counted run-to-run noise; once mood sampling is counted, the NDCG interval is ±0.06.
+
+This does not mean unified should be removed -- MMR diversity is deliberate and this
+metric gives it no credit (see the lambda ablation above). It means **this benchmark
+cannot rank the two strategies against each other**, and any future change smaller than
+about 0.06 NDCG cannot be evaluated with 15 synthetic moods however many times it is
+re-run. That is an argument for widening the benchmark, not for re-running it.
+
 ---
 
 ## v1 baseline (pre-composed-embeddings)
