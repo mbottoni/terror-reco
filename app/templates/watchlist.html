@@ -16,8 +16,8 @@
   <ul class="card-grid">
     {% for item in items %}
     <li class="card">
-      {% if item.poster_url %}
-      <img class="card-poster" src="{{ item.poster_url }}" alt="{{ item.title }}" loading="lazy">
+      {% if item.poster_url | safe_url %}
+      <img class="card-poster" src="{{ item.poster_url | safe_url }}" alt="{{ item.title }}" loading="lazy">
       {% else %}
       <div class="card-no-poster">🎬</div>
       {% endif %}
@@ -28,7 +28,7 @@
         </p>
         <div class="watchlist-actions">
           <a class="card-noscript-link" rel="noopener" target="_blank"
-             href="https://www.imdb.com/title/{{ item.imdb_id }}/">IMDb</a>
+             href="https://www.imdb.com/title/{{ item.imdb_id | urlencode }}/">IMDb</a>
           <button type="button" class="share-btn"
                   onclick="removeSaved(this, '{{ item.imdb_id }}')">Remove</button>
         </div>

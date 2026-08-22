@@ -43,12 +43,16 @@ def _score_popularity(detail: dict[str, Any]) -> float:
     return rating * (1 + log(1 + votes)) + 0.02 * metascore
 
 
-async def similar_movies(*, imdb_id: str, limit: int = 6) -> list[dict[str, Any]]:
+def similar_movies(*, imdb_id: str, limit: int = 6) -> list[dict[str, Any]]:
     """Films most like *imdb_id*, by cosine on the cached corpus embeddings.
 
     Item-to-item similarity needs no query encoding at all -- the seed film's
     vector is already in the cached matrix -- so this is a single dot product
     against 500 rows.
+
+    Synchronous on purpose: there is no I/O here, only numpy.  Callers on the
+    request path must hand it to a threadpool rather than run it on the event
+    loop -- see :func:`recommend_movies_advanced`.
     """
     from .corpus import get_corpus_and_embeddings
 
@@ -132,7 +136,7 @@ def _passes_filters(
     return True
 
 
-async def recommend_movies_advanced(
+def recommend_movies_advanced(
     *,
     mood: str,
     limit: int = 6,
@@ -158,6 +162,13 @@ async def recommend_movies_advanced(
 
     Passing ``seed`` with ``temperature=0`` makes the whole call
     reproducible, which offline evaluation depends on.
+
+    **This function is synchronous and CPU-bound**: a sentence-transformer
+    forward pass on the query plus a dense matmul over the corpus.  It used to
+    be declared ``async`` despite containing no ``await``, which meant it ran
+    directly on the event loop and serialised every concurrent request behind
+    it.  Request handlers must call it through ``run_in_threadpool``; torch and
+    numpy both release the GIL, so the work really does overlap.
     """
     from .corpus import CorpusNotBuiltError, get_corpus_and_embeddings, semantic_search
 

@@ -34,9 +34,8 @@ class TestExplainMatch:
         assert len(explain_match("horror", movie, max_terms=2)) == 2
 
 
-@pytest.mark.asyncio
 class TestSimilarMovies:
-    async def test_returns_neighbours_and_excludes_the_seed(
+    def test_returns_neighbours_and_excludes_the_seed(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         fake_corpus: list[dict[str, Any]] = [
@@ -48,26 +47,26 @@ class TestSimilarMovies:
         embs = np.array([[1.0, 0.0], [0.96, 0.28], [0.0, 1.0]], dtype=np.float32)
         monkeypatch.setattr(corpus_mod, "get_corpus_and_embeddings", lambda: (fake_corpus, embs))
 
-        result = await similar_movies(imdb_id="tt1", limit=2)
+        result = similar_movies(imdb_id="tt1", limit=2)
         titles = [m["title"] for m in result]
         assert "Seed" not in titles, "a film must never be similar to itself"
         assert titles[0] == "Near"
 
-    async def test_unknown_id_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_unknown_id_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
             corpus_mod,
             "get_corpus_and_embeddings",
             lambda: ([{"imdb_id": "tt1", "title": "X"}], np.array([[1.0, 0.0]], dtype=np.float32)),
         )
-        assert await similar_movies(imdb_id="nope") == []
+        assert similar_movies(imdb_id="nope") == []
 
-    async def test_empty_corpus_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_empty_corpus_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(corpus_mod, "get_corpus_and_embeddings", lambda: ([], np.zeros((0, 0))))
-        assert await similar_movies(imdb_id="tt1") == []
+        assert similar_movies(imdb_id="tt1") == []
 
-    async def test_internal_fields_are_stripped(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_internal_fields_are_stripped(self, monkeypatch: pytest.MonkeyPatch) -> None:
         fake = [{"imdb_id": "tt1", "title": "A"}, {"imdb_id": "tt2", "title": "B", "_row": 1}]
         embs = np.array([[1.0, 0.0], [0.9, 0.4]], dtype=np.float32)
         monkeypatch.setattr(corpus_mod, "get_corpus_and_embeddings", lambda: (fake, embs))
-        result = await similar_movies(imdb_id="tt1", limit=1)
+        result = similar_movies(imdb_id="tt1", limit=1)
         assert all(not k.startswith("_") for m in result for k in m)

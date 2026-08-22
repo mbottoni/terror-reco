@@ -3,11 +3,15 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import Response
 
 from .auth import get_current_user
 from .auth import router as auth_router
@@ -15,6 +19,7 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .models import MovieFeedback, User, WatchlistItem
+from .security import safe_url
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
@@ -49,6 +54,9 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# Autoescaping makes a value safe as text but says nothing about a URL scheme,
+# so every poster URL rendered into a src/href goes through this first.
+templates.env.filters["safe_url"] = safe_url
 app.state.templates = templates
 
 
@@ -70,6 +78,79 @@ async def _startup() -> None:
             "Could not pre-load sentence-transformer model at startup; "
             "it will be loaded lazily on the first request."
         )
+
+
+def _wants_json(request: Request) -> bool:
+    """True for the JSON API, which must keep answering in JSON."""
+    return request.url.path.startswith("/api/")
+
+
+def _error_page(
+    request: Request, *, status_code: int, icon: str, heading: str, message: str
+) -> Response:
+    resp: Response = templates.TemplateResponse(
+        request,
+        "error.html",
+        {"icon": icon, "heading": heading, "message": message, "user": None},
+        status_code=status_code,
+    )
+    return resp
+
+
+@app.exception_handler(CorpusNotBuiltError)
+async def _corpus_not_built_handler(request: Request, exc: Exception) -> Response:
+    """A missing corpus is a deployment problem, not a bad query.
+
+    ``/api/recommendations`` already turned this into a clean 503, but the HTML
+    route let it escape as a 500 traceback -- so the same server-side condition
+    looked like two different failures depending on which door you came in.
+    ``/healthz`` reports it as ``degraded``; this makes the user-facing pages
+    agree with the probe.
+    """
+    logger.error("Recommendation requested with no corpus: %s", exc)
+    if _wants_json(request):
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+    return _error_page(
+        request,
+        status_code=503,
+        icon="\U0001f9ea",
+        heading="The film corpus is not available",
+        message=(
+            "Nothing is wrong with your search -- this server has no film data loaded "
+            "yet. It is a deployment problem on our side, not something you can fix by "
+            "trying a different mood."
+        ),
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _http_exception_handler(request: Request, exc: Exception) -> Response:
+    """Render 404s as a page; everything else keeps its default behaviour."""
+    assert isinstance(exc, StarletteHTTPException)
+    if exc.status_code == 404 and not _wants_json(request):
+        return _error_page(
+            request,
+            status_code=404,
+            icon="\U0001f573\ufe0f",
+            heading="Page not found",
+            message="That page does not exist. It may have been moved or never existed.",
+        )
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception) -> Response:
+    """Last resort: an HTML page instead of a bare plain-text 500."""
+    logger.exception("Unhandled error serving %s", request.url.path)
+    if _wants_json(request):
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    return _error_page(
+        request,
+        status_code=500,
+        icon="\U0001f480",
+        heading="Something went wrong",
+        message="An unexpected error occurred. It has been logged.",
+    )
 
 
 @app.get("/healthz")
@@ -152,7 +233,11 @@ async def ui_recommendations(
 
     if strategy_key == "unified":
         # Full pipeline: corpus semantic search → unified re-ranking with MMR
-        pool = await recommend_movies_advanced(
+        # Both stages below are CPU-bound (sbert forward pass + numpy) and do
+        # no I/O, so they run in a worker thread; on the event loop they would
+        # block every other request for the duration.
+        pool = await run_in_threadpool(
+            recommend_movies_advanced,
             mood=mood,
             limit=max(limit * 10, 60),
             min_year=min_year,
@@ -172,7 +257,8 @@ async def ui_recommendations(
             weights = dict(weights or DEFAULT_WEIGHTS)
             weights["taste"] = settings.PERSONALIZATION_TASTE_WEIGHT
 
-        movies = recommend_unified_semantic(
+        movies = await run_in_threadpool(
+            recommend_unified_semantic,
             mood=mood,
             items=pool,
             limit=limit,
@@ -186,7 +272,8 @@ async def ui_recommendations(
         )
     elif strategy_key == "semantic":
         # Corpus-based sentence-transformer semantic search
-        movies = await recommend_movies_advanced(
+        movies = await run_in_threadpool(
+            recommend_movies_advanced,
             mood=mood,
             limit=limit,
             min_year=min_year,
@@ -252,7 +339,9 @@ async def api_recommendations(
         # recommend_movies(), which defaults to the *keyword* strategy, so the
         # JSON API returned materially worse results than the web page for the
         # very same query.
-        movies = await recommend_movies_advanced(mood=mood, limit=limit, seed=seed)
+        movies = await run_in_threadpool(
+            recommend_movies_advanced, mood=mood, limit=limit, seed=seed
+        )
     except CorpusNotBuiltError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except HTTPException:
@@ -270,7 +359,7 @@ async def api_similar(imdb_id: str, limit: int = Query(default=6, ge=1, le=20)) 
     Pure item-to-item cosine over cached embeddings -- no query encoding, so
     this is a single dot product rather than a model forward pass.
     """
-    movies = await similar_movies(imdb_id=imdb_id, limit=limit)
+    movies = await run_in_threadpool(similar_movies, imdb_id=imdb_id, limit=limit)
     if not movies:
         raise HTTPException(status_code=404, detail="Unknown film, or corpus not built")
     return {"imdb_id": imdb_id, "count": len(movies), "results": movies}

@@ -1,0 +1,16 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ heading }} — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:64px">
+  <div class="empty-state">
+    <div class="empty-state-icon">{{ icon }}</div>
+    <h1 class="page-title" style="margin-bottom:12px">{{ heading }}</h1>
+    <p>{{ message }}</p>
+    <p style="margin-top:28px">
+      <a href="/" class="btn btn-primary">Back to search</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

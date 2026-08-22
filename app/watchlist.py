@@ -18,6 +18,7 @@ from starlette.responses import Response
 from .auth import get_current_user
 from .db import get_db
 from .models import User, WatchlistItem
+from .security import safe_url
 
 router = APIRouter(prefix="/watchlist")
 
@@ -75,7 +76,9 @@ async def toggle_watchlist(
             user_id=user.id,
             imdb_id=imdb_id,
             title=(body.get("title") or "")[:512],
-            poster_url=(body.get("poster_url") or None),
+            # Straight from a request body and rendered into an <img src> on the
+            # watchlist page, so the scheme is checked before it is stored.
+            poster_url=safe_url(body.get("poster_url"))[:1024] or None,
         )
     )
     db.commit()
