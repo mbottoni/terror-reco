@@ -15,6 +15,7 @@ make format      # ruff --fix + black, never fails
 make docker      # build + run container
 make corpus      # build/refresh the corpus (resumable)
 make eval        # score against the gold set
+make eval-gate   # rebuild the frozen eval slice CI replays
 make migrate     # alembic upgrade head
 make tune        # grid-search blend weights
 ```
@@ -104,6 +105,13 @@ no holdout, and cross-encoder reranking gained +0.0026 NDCG while *losing* preci
 adding ~1.1s per query. Both are wired to settings (`UNIFIED_WEIGHTS`,
 `UNIFIED_USE_CROSS_ENCODER`) so they stay testable. **Do not enable either by citing the
 notebooks** — `notebooks/3-cross-encoder.py` measured its gain on the old 21-film corpus.
+
+CI replays a frozen slice of the eval without the model (`tests/test_eval_gate.py`, fixture in
+`tests/fixtures/`): 236 films and the 8 dev-split moods, with precomputed vectors. It fails if
+NDCG@6 drops more than 0.10 below the recorded baseline, **and** if the text that gets embedded
+changes for any fixture film -- so editing `embedding_text()` or rebuilding the corpus will turn
+it red on purpose. Rebuild with `make eval-gate` (needs the model) and commit the fixture with the
+change. It guards against a collapse; it cannot show an improvement.
 
 Before claiming any ranking change helps, run `make eval` — and remember a single run is
 not a measurement, since the pipeline's stddev is comparable to most effects worth finding.
