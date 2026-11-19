@@ -60,6 +60,10 @@ class AppSettings(BaseSettings):
     SECRET_KEY: str = Field(default=DEFAULT_SECRET_KEY)
     SESSION_COOKIE_NAME: str = Field(default="terror_session")
 
+    # Per-client request limits (app/middleware.py). In-process counters, so
+    # correct only for a single worker.
+    RATE_LIMIT_ENABLED: bool = Field(default=True)
+
     # Stripe
     STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None)
     STRIPE_SECRET_KEY: str | None = Field(default=None)
