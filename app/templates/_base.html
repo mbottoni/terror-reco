@@ -257,6 +257,8 @@ select{cursor:pointer}
   border:1px solid transparent;
   transition:transform .3s ease,border-color .3s ease,box-shadow .3s ease;
 }
+.card:focus-visible{outline:2px solid #f87171;outline-offset:3px}
+.modal-content:focus{outline:none}
 .card:hover{
   transform:translateY(-6px);border-color:#333340;
   box-shadow:0 20px 50px rgba(0,0,0,.6);
@@ -416,7 +418,9 @@ select{cursor:pointer}
   transition:opacity .25s ease,visibility .25s ease;
   padding:24px;
 }
-.modal-overlay.open{opacity:1;visibility:visible}
+/* visibility flips at once on open (0s) so the dialog can take focus in the
+   same tick; the base rule's .25s still applies on close, for the fade-out. */
+.modal-overlay.open{opacity:1;visibility:visible;transition:opacity .25s ease,visibility 0s}
 .modal-content{
   position:relative;
   background:#141419;border:1px solid #2a2a33;border-radius:20px;
