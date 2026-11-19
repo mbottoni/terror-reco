@@ -5,27 +5,10 @@ from typing import Any
 
 import numpy as np
 
-from .strategies.base import RecommenderStrategy
-from .strategies.keyword_omdb import KeywordOMDbStrategy
-
-
-def get_strategy(name: str) -> RecommenderStrategy:
-    """Live-OMDb fallback strategies.
-
-    The TF-IDF strategy was removed: it fitted a fresh vectorizer on 30-120
-    documents per request, where IDF is statistically meaningless, made live
-    OMDb calls on the request path, and scored below the corpus pipeline on
-    every metric.  Only the keyword strategy remains as a no-corpus fallback.
-    """
-    del name  # only one live strategy remains
-    return KeywordOMDbStrategy()
-
-
-async def recommend_movies(
-    mood: str, limit: int = 5, strategy: str = "keyword"
-) -> list[dict[str, Any]]:
-    impl = get_strategy(strategy)
-    return await impl.recommend(mood=mood, limit=limit)
+# Every strategy here searches the local corpus. The two live-OMDb strategies
+# are gone: TF-IDF fitted a vectorizer on 30-120 documents per request, where
+# IDF is meaningless, and the keyword one existed only as a no-corpus fallback,
+# which has no trigger now that the corpus ships in the repo and the image.
 
 
 def _score_popularity(detail: dict[str, Any]) -> float:
@@ -143,7 +126,6 @@ def recommend_movies_advanced(
     min_year: int | None = None,
     max_year: int | None = None,
     min_rating: float | None = None,
-    kind: str = "movie",  # "movie" | "series" | "both"  (corpus is movies only)
     english_only: bool = False,
     seed: int | None = None,
     temperature: float = 1.0,

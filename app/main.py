@@ -24,7 +24,6 @@ from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
     explain_match,
-    recommend_movies,
     recommend_movies_advanced,
     similar_movies,
 )
@@ -185,11 +184,6 @@ async def index(request: Request, user: User | None = Depends(get_current_user))
     )
 
 
-@app.get("/loading", response_class=HTMLResponse)
-async def loading(request: Request, mood: str = "") -> HTMLResponse:
-    return templates.TemplateResponse(request, "loading.html", {"mood": mood})
-
-
 def _load_taste(db: Session, user: User | None) -> UserTaste:
     """Look up a signed-in user's taste, degrading to neutral on any failure."""
     if not user or not settings.PERSONALIZATION_ENABLED:
@@ -203,9 +197,9 @@ def _load_taste(db: Session, user: User | None) -> UserTaste:
         return UserTaste()
 
 
-# Valid strategy values accepted by the UI.
+# Valid strategy values accepted by the UI. Both search the local corpus; an
+# unknown value (including the retired "keyword") falls back to the default.
 STRATEGY_LABELS: dict[str, str] = {
-    "keyword": "Keyword Match",
     "semantic": "Semantic Search",
     "unified": "Unified (AI + Diversity)",
 }
@@ -220,7 +214,6 @@ async def ui_recommendations(
     max_year: int | None = Query(default=None, ge=1900, le=2100),
     min_rating: float | None = Query(default=None, ge=0, le=10),
     limit: int = Query(default=6, ge=1, le=20),
-    kind: str = Query(default="movie"),  # movie | series | both
     english: int | None = Query(default=None),
     seed: int | None = Query(
         default=None, description="reproducible results; also disables sampling noise"
@@ -243,7 +236,6 @@ async def ui_recommendations(
             min_year=min_year,
             max_year=max_year,
             min_rating=min_rating,
-            kind=kind,
             english_only=bool(english),
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
@@ -270,7 +262,7 @@ async def ui_recommendations(
             demote_ids=taste.demote_ids,
             use_cross_encoder=settings.UNIFIED_USE_CROSS_ENCODER,
         )
-    elif strategy_key == "semantic":
+    else:
         # Corpus-based sentence-transformer semantic search
         movies = await run_in_threadpool(
             recommend_movies_advanced,
@@ -279,14 +271,10 @@ async def ui_recommendations(
             min_year=min_year,
             max_year=max_year,
             min_rating=min_rating,
-            kind=kind,
             english_only=bool(english),
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
         )
-    else:
-        # Keyword: OMDb title search ranked by IMDb rating
-        movies = await recommend_movies(mood=mood, limit=limit, strategy="keyword")
 
     # Explain each result in the user's own words: which of the film's
     # keywords the query actually hit.
@@ -335,10 +323,7 @@ async def api_recommendations(
     seed: int | None = Query(default=None),
 ) -> dict[str, Any]:
     try:
-        # Uses the same corpus pipeline as the UI. This previously called
-        # recommend_movies(), which defaults to the *keyword* strategy, so the
-        # JSON API returned materially worse results than the web page for the
-        # very same query.
+        # Uses the same corpus pipeline as the UI.
         movies = await run_in_threadpool(
             recommend_movies_advanced, mood=mood, limit=limit, seed=seed
         )

@@ -10,12 +10,6 @@ Homepage with the search form, strategy selector, and advanced filters.
 
 **Response:** HTML page.
 
-### `GET /loading`
-
-Loading screen. Displays a spooky animation, then JavaScript redirects to `/recommend` with all query parameters forwarded.
-
-**Query parameters:** Same as `/recommend` (passed through).
-
 ### `GET /recommend`
 
 Main recommendation endpoint. Returns an HTML page with the movie results grid.

@@ -397,16 +397,6 @@ select{cursor:pointer}
 .status-desc{color:#6b6b78;font-size:.95rem;line-height:1.65;margin-bottom:28px}
 .status-amount{font-size:2.25rem;font-weight:900;color:#fff;margin-bottom:28px}
 
-/* ---- LOADING ---- */
-.loading-screen{
-  min-height:100vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:24px;background:#0b0b0f;
-}
-.loading-screen img{max-width:340px;width:80%;border-radius:16px;box-shadow:0 16px 60px rgba(0,0,0,.7)}
-.loading-text{color:#555566;font-size:.95rem;font-weight:600}
-.loading-dots::after{content:'';animation:ldots 1.4s steps(4,end) infinite}
-@keyframes ldots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
-
 /* ---- MOVIE DETAIL MODAL ---- */
 .modal-overlay{
   position:fixed;inset:0;z-index:1000;
