@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 # Force DEBUG=true so the session cookie uses https_only=False.
 # TestClient makes plain HTTP requests; a Secure cookie would never
@@ -61,10 +62,54 @@ def _override_get_db():
 app.dependency_overrides[get_db] = _override_get_db
 
 
+def session_csrf_token(client: TestClient) -> str | None:
+    """Read the CSRF token out of the client's session cookie.
+
+    The cookie is ``base64(json).timestamp.signature``; the payload is
+    readable without the key (it is signed, not encrypted).
+    """
+    import base64
+    import json
+
+    from app.settings import get_settings
+
+    cookie = client.cookies.get(get_settings().SESSION_COOKIE_NAME)
+    if not cookie:
+        return None
+    payload = cookie.split(".", 1)[0]
+    try:
+        data = json.loads(base64.b64decode(payload + "=" * (-len(payload) % 4)))
+    except ValueError:
+        return None
+    token = data.get("csrf")
+    return token if isinstance(token, str) else None
+
+
+class BrowserLikeClient(TestClient):
+    """A TestClient that sends the session's CSRF token on POST, as pages do.
+
+    Every real page embeds the token and its forms and fetch() calls send it
+    back. Tests written against plain ``client.post(...)`` would otherwise all
+    need the same boilerplate. Pass an explicit ``X-CSRF-Token`` header (even
+    an empty one), or use a plain ``TestClient``, to test the check itself.
+    """
+
+    def post(self, url: Any, **kwargs: Any) -> Any:  # type: ignore[override]
+        headers = dict(kwargs.pop("headers", None) or {})
+        if not any(name.lower() == "x-csrf-token" for name in headers):
+            token = session_csrf_token(self)
+            if token is None:
+                self.get("/")  # any page mints the token
+                token = session_csrf_token(self)
+            if token:
+                headers["X-CSRF-Token"] = token
+        return super().post(url, headers=headers, **kwargs)
+
+
 @pytest.fixture()
 def client():
-    """Provide a TestClient wired to the in-memory DB."""
-    with TestClient(app) as c:
+    """Provide a browser-like TestClient wired to the in-memory DB."""
+    with BrowserLikeClient(app) as c:
         yield c
 
 

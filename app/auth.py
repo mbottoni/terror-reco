@@ -11,8 +11,9 @@ from .db import get_db
 from .models import User
 from .security import (
     DUMMY_PASSWORD_HASH,
-    generate_csrf_token,
     hash_password,
+    require_csrf,
+    session_csrf_token,
     validate_csrf_token,
     verify_password,
 )
@@ -87,8 +88,7 @@ async def login_form(request: Request, db: Session = Depends(get_db)) -> Respons
     if get_current_user(request, db):
         return RedirectResponse(url="/", status_code=303)
 
-    csrf = generate_csrf_token()
-    request.session["csrf"] = csrf
+    csrf = session_csrf_token(request)
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
     email = request.session.pop("auth_email", "")
@@ -147,8 +147,7 @@ async def register_form(request: Request, db: Session = Depends(get_db)) -> Resp
     if get_current_user(request, db):
         return RedirectResponse(url="/", status_code=303)
 
-    csrf = generate_csrf_token()
-    request.session["csrf"] = csrf
+    csrf = session_csrf_token(request)
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
     email = request.session.pop("auth_email", "")
@@ -221,7 +220,7 @@ async def register(
     return RedirectResponse(url="/", status_code=303)
 
 
-@router.post("/logout")
+@router.post("/logout", dependencies=[Depends(require_csrf)])
 async def logout(request: Request) -> RedirectResponse:
     request.session.clear()
     # Set flash AFTER clear so it survives the redirect
@@ -230,7 +229,7 @@ async def logout(request: Request) -> RedirectResponse:
     return RedirectResponse(url="/", status_code=303)
 
 
-@router.post("/logout-all")
+@router.post("/logout-all", dependencies=[Depends(require_csrf)])
 async def logout_everywhere(
     request: Request,
     user: User | None = Depends(get_current_user),
