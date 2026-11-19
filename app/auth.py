@@ -32,11 +32,44 @@ def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
+SESSION_USER_KEY = "user_id"
+SESSION_VERSION_KEY = "sv"
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
-    user_id = request.session.get("user_id")
+    """The signed-in user, or None if the session is absent, stale or revoked."""
+    user_id = request.session.get(SESSION_USER_KEY)
     if not user_id:
         return None
-    return db.get(User, user_id)
+    user = db.get(User, user_id)
+    # A cookie issued before the user's session_version was bumped is revoked.
+    # Cookies from before this field existed carry no version; they count as
+    # version 0, so nobody is signed out by the deploy that introduced it.
+    if user is None or request.session.get(SESSION_VERSION_KEY, 0) != user.session_version:
+        request.session.pop(SESSION_USER_KEY, None)
+        request.session.pop(SESSION_VERSION_KEY, None)
+        return None
+    return user
+
+
+def start_session(request: Request, user: User) -> None:
+    """Sign *user* in on a clean session.
+
+    Whatever the pre-login session held is dropped first, so nothing planted
+    in it before authentication survives into the authenticated one.
+    """
+    request.session.clear()
+    request.session[SESSION_USER_KEY] = user.id
+    request.session[SESSION_VERSION_KEY] = user.session_version
+
+
+def revoke_sessions(db: Session, user: User) -> None:
+    """Invalidate every session cookie this user holds, on every device.
+
+    Call on password change, password reset and "sign out everywhere".
+    """
+    user.session_version += 1
+    db.commit()
 
 
 def _set_flash(request: Request, message: str, kind: str = "success") -> None:
@@ -51,8 +84,7 @@ router = APIRouter(prefix="/auth")
 @router.get("/login", response_class=HTMLResponse, response_model=None)
 async def login_form(request: Request, db: Session = Depends(get_db)) -> Response:
     # Redirect if already logged in
-    user_id = request.session.get("user_id")
-    if user_id and db.get(User, user_id):
+    if get_current_user(request, db):
         return RedirectResponse(url="/", status_code=303)
 
     csrf = generate_csrf_token()
@@ -103,9 +135,7 @@ async def login(
         _set_flash(request, "Invalid email or password.", "error")
         return RedirectResponse(url="/auth/login", status_code=303)
 
-    # Clear preserved email on success
-    request.session.pop("auth_email", None)
-    request.session["user_id"] = user.id
+    start_session(request, user)
     logger.info("LOGIN OK: user_id=%s", user.id)
     _set_flash(request, "Signed in successfully.")
     return RedirectResponse(url="/", status_code=303)
@@ -114,8 +144,7 @@ async def login(
 @router.get("/register", response_class=HTMLResponse, response_model=None)
 async def register_form(request: Request, db: Session = Depends(get_db)) -> Response:
     # Redirect if already logged in
-    user_id = request.session.get("user_id")
-    if user_id and db.get(User, user_id):
+    if get_current_user(request, db):
         return RedirectResponse(url="/", status_code=303)
 
     csrf = generate_csrf_token()
@@ -186,9 +215,7 @@ async def register(
     db.commit()
     db.refresh(user)
 
-    # Clear preserved email on success
-    request.session.pop("auth_email", None)
-    request.session["user_id"] = user.id
+    start_session(request, user)
     logger.info("REGISTER OK: user_id=%s", user.id)
     _set_flash(request, "Account created. Welcome!")
     return RedirectResponse(url="/", status_code=303)
@@ -199,5 +226,21 @@ async def logout(request: Request) -> RedirectResponse:
     request.session.clear()
     # Set flash AFTER clear so it survives the redirect
     request.session["flash"] = "You've been signed out."
+    request.session["flash_type"] = "success"
+    return RedirectResponse(url="/", status_code=303)
+
+
+@router.post("/logout-all")
+async def logout_everywhere(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    """Sign out of every device, including this one."""
+    if user:
+        revoke_sessions(db, user)
+        logger.info("SESSIONS REVOKED: user_id=%s", user.id)
+    request.session.clear()
+    request.session["flash"] = "You've been signed out everywhere."
     request.session["flash_type"] = "success"
     return RedirectResponse(url="/", status_code=303)
