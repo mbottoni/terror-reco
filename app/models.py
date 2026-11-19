@@ -130,3 +130,29 @@ class MovieFeedback(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="feedback")
+
+
+class Payment(Base):
+    """One completed Stripe checkout.
+
+    Written by the webhook, which is the only trustworthy record that money
+    moved: the success page is just a redirect the browser may never follow.
+    Stripe retries deliveries, so ``checkout_session_id`` is unique and a
+    repeat of the same event changes nothing.
+    """
+
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    checkout_session_id: Mapped[str] = mapped_column(String(255), unique=True)
+    stripe_event_id: Mapped[str] = mapped_column(String(255))
+    payment_intent_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    amount_total: Mapped[int] = mapped_column()  # minor units (cents)
+    currency: Mapped[str] = mapped_column(String(8))
+    status: Mapped[str] = mapped_column(String(32))  # "paid" | "refunded"
+    # Nullable: most supporters are not signed in, and deleting an account
+    # must not delete the record that a payment happened.
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
