@@ -28,6 +28,35 @@
     <p class="results-mood">for <em>"{{ mood }}"</em> {% if strategy_label %}<span class="results-strategy">via {{ strategy_label }}</span>{% endif %}</p>
   </div>
 
+  {# Adjust the search from here: no need to go back and re-enter everything.
+     Plain links and a GET form, so all of it works without JavaScript. #}
+  <div class="refine" id="refine">
+    <form action="/recommend" method="get" class="refine-form" role="search">
+      <div class="search-bar refine-bar">
+        <label class="visually-hidden" for="refine-mood">Describe a vibe</label>
+        <input id="refine-mood" name="mood" type="text" value="{{ mood }}" required autocomplete="off">
+        <select name="strategy" class="refine-strategy" aria-label="Strategy">
+          {% for key, label in strategy_labels.items() %}
+          <option value="{{ key }}"{% if key == strategy %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Search</button>
+      </div>
+      {# Active filters ride along, so a new mood keeps them. #}
+      {% for key, value in refine.params.items() %}{% if key != "strategy" %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% endif %}{% endfor %}
+    </form>
+    <div class="refine-row">
+      {% for chip in refine.chips %}
+      <a class="filter-chip" href="{{ chip.remove_url }}" title="Remove this filter"
+         aria-label="Remove filter: {{ chip.label }}">{{ chip.label }} <span aria-hidden="true">&times;</span></a>
+      {% endfor %}
+      <a class="share-btn refine-shuffle" href="{{ refine.shuffle_url }}"
+         title="Same search, a different draw">Shuffle</a>
+    </div>
+  </div>
+
   {% if movies %}
   <ul class="grid">
     {% for m in movies %}
@@ -73,7 +102,11 @@
   {% else %}
   <div class="empty-state">
     <div class="empty-state-icon">👻</div>
+    {% if refine.chips %}
+    <p>No films match that mood with these filters. Remove one above to widen the search.</p>
+    {% else %}
     <p>No movies found for that mood. Try a different vibe!</p>
+    {% endif %}
   </div>
   {% endif %}
 </div>

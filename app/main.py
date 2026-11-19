@@ -234,6 +234,58 @@ def _load_taste(db: Session, user: User | None) -> UserTaste:
         return UserTaste()
 
 
+def refine_context(
+    *,
+    mood: str,
+    strategy: str,
+    min_year: int | None,
+    max_year: int | None,
+    min_rating: float | None,
+    limit: int,
+    english: bool,
+) -> dict[str, Any]:
+    """What the results page needs to adjust a search without starting over.
+
+    ``params`` are the active, non-default query parameters (never ``seed``:
+    refining wants a fresh draw). Each chip names one active filter and links
+    to the same search without it. ``shuffle_url`` repeats the search as is.
+    """
+    from urllib.parse import urlencode
+
+    params: dict[str, str] = {"mood": mood, "strategy": strategy}
+    labels: dict[str, str] = {}
+    if min_year is not None:
+        params["min_year"] = str(min_year)
+        labels["min_year"] = f"From {min_year}"
+    if max_year is not None:
+        params["max_year"] = str(max_year)
+        labels["max_year"] = f"Up to {max_year}"
+    if min_rating is not None:
+        params["min_rating"] = f"{min_rating:g}"
+        labels["min_rating"] = f"IMDb {min_rating:g}+"
+    if english:
+        params["english"] = "1"
+        labels["english"] = "English only"
+    if limit != DEFAULT_RESULT_LIMIT:
+        params["limit"] = str(limit)
+        labels["limit"] = f"{limit} results"
+
+    chips = [
+        {
+            "label": label,
+            "remove_url": "/recommend?" + urlencode({k: v for k, v in params.items() if k != key}),
+        }
+        for key, label in labels.items()
+    ]
+    return {
+        "params": {k: v for k, v in params.items() if k != "mood"},
+        "chips": chips,
+        "shuffle_url": "/recommend?" + urlencode(params),
+    }
+
+
+DEFAULT_RESULT_LIMIT = 6
+
 # Valid strategy values accepted by the UI. Both search the local corpus; an
 # unknown value (including the retired "keyword") falls back to the default.
 STRATEGY_LABELS: dict[str, str] = {
@@ -250,7 +302,7 @@ async def ui_recommendations(
     min_year: int | None = Query(default=None, ge=1900, le=2100),
     max_year: int | None = Query(default=None, ge=1900, le=2100),
     min_rating: float | None = Query(default=None, ge=0, le=10),
-    limit: int = Query(default=6, ge=1, le=20),
+    limit: int = Query(default=DEFAULT_RESULT_LIMIT, ge=1, le=20),
     english: int | None = Query(default=None),
     seed: int | None = Query(
         default=None, description="reproducible results; also disables sampling noise"
@@ -347,6 +399,16 @@ async def ui_recommendations(
             "movies": movies,
             "strategy": strategy_key,
             "strategy_label": STRATEGY_LABELS[strategy_key],
+            "strategy_labels": STRATEGY_LABELS,
+            "refine": refine_context(
+                mood=mood,
+                strategy=strategy_key,
+                min_year=min_year,
+                max_year=max_year,
+                min_rating=min_rating,
+                limit=limit,
+                english=bool(english),
+            ),
             "user": user,
             "user_feedback": user_feedback,
         },
