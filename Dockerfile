@@ -34,16 +34,29 @@ RUN grep -v -E '^(nvidia-|triton==)' requirements.txt > /tmp/requirements.cpu.tx
     pip install --no-deps -r /tmp/requirements.cpu.txt && \
     rm /tmp/requirements.cpu.txt
 
+# Everything from here on runs as an unprivileged user, and so does the app.
+# Created before the model download so the cache it writes is owned by that
+# user from the start; a later `chown -R` would copy ~450 MB into a new layer.
+RUN useradd --create-home --uid 10001 app && chown app:app /app
+ENV HF_HOME=/app/.cache/huggingface
+USER app
+
 # Pre-download the sentence-transformer model so the container starts fast
 # (no HuggingFace download at runtime)
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-mpnet-base-v2')"
 
+# The model is in the image now. Offline mode stops the hub client from
+# phoning home on every start, so boot does not depend on huggingface.co
+# being reachable. Set before the embeddings step below, which proves at
+# build time that the cached model loads without the network.
+ENV HF_HUB_OFFLINE=1
+
 # Copy source
-COPY app /app/app
+COPY --chown=app:app app /app/app
 
 # Ship the pre-built horror corpus so the container serves recommendations
 # immediately, without needing TMDB/OMDb keys at build time.
-COPY data /app/data
+COPY --chown=app:app data /app/data
 
 # Embeddings are not committed, so compute them here rather than on the first
 # request: a fresh container would otherwise re-encode the whole corpus while a
@@ -51,8 +64,8 @@ COPY data /app/data
 RUN python -c "from app.services.corpus import get_corpus_embeddings, load_corpus; get_corpus_embeddings(load_corpus())"
 
 # Migrations run at startup via init_db(), so they must ship with the image
-COPY alembic.ini /app/alembic.ini
-COPY migrations /app/migrations
+COPY --chown=app:app alembic.ini /app/alembic.ini
+COPY --chown=app:app migrations /app/migrations
 
 # Render expects Docker services to listen on port 10000
 EXPOSE 10000
