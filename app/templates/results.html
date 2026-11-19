@@ -31,7 +31,8 @@
   {% if movies %}
   <ul class="grid">
     {% for m in movies %}
-    <li class="card" onclick="openDetail({{ loop.index0 }})" role="button" tabindex="0">
+    <li class="card" onclick="openDetail({{ loop.index0 }})" onkeydown="cardKey(event, {{ loop.index0 }})"
+        role="button" tabindex="0" aria-haspopup="dialog">
       {% if m.poster_url | safe_url and m.poster_url != 'N/A' %}
       <img class="card-poster" src="{{ m.poster_url | safe_url }}" alt="{{ m.title }}" loading="lazy">
       {% else %}
@@ -76,7 +77,8 @@
 
 {# ---- Movie detail modal ---- #}
 <div class="modal-overlay" id="movie-modal" onclick="closeDetail(event)">
-  <div class="modal-content" onclick="event.stopPropagation()">
+  <div class="modal-content" id="modal-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="modal-title" tabindex="-1" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeDetail()" aria-label="Close">&times;</button>
     <div class="modal-layout">
       <div class="modal-poster-wrap">
@@ -245,10 +247,39 @@ function renderSimilar(imdbId){
     .catch(function(){ box.innerHTML = ''; });
 }
 
+// A card is role="button", so it must answer the keys a button answers.
+// Only when the card itself has focus: Enter on a chip link inside it should
+// follow the link, not open the modal.
+function cardKey(e, idx){
+  if(e.target !== e.currentTarget) return;
+  if(e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'){
+    e.preventDefault();
+    openDetail(idx);
+  }
+}
+
+var _lastFocus = null;
+
+function modalIsOpen(){
+  return document.getElementById('movie-modal').classList.contains('open');
+}
+
+function modalFocusables(){
+  var dialog = document.getElementById('modal-dialog');
+  var nodes = dialog.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
+  return Array.prototype.filter.call(nodes, function(el){
+    return el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement;
+  });
+}
+
 function openDetail(idx){
-  _currentIdx = idx;
   var m = MOVIES[idx];
   if(!m) return;
+  // Remember where focus came from, but only on the first open: "more like
+  // this" re-opens the modal from inside itself.
+  if(!modalIsOpen()) _lastFocus = document.activeElement;
+  _currentIdx = idx;
   renderSimilar(m.imdb_id);
 
   var modal = document.getElementById('movie-modal');
@@ -315,6 +346,11 @@ function openDetail(idx){
 
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Move focus into the dialog so keyboard and screen-reader users land in it.
+  // The container, not the close button: the button has `transition: all`,
+  // so its inherited visibility is still "hidden" on this tick and focus()
+  // on it silently does nothing.
+  document.getElementById('modal-dialog').focus();
 }
 
 function renderFeedback(imdbId){
@@ -392,12 +428,30 @@ document.addEventListener('DOMContentLoaded', function(){
 
 function closeDetail(e){
   if(e && e.target !== document.getElementById('movie-modal')) return;
+  if(!modalIsOpen()) return;
   document.getElementById('movie-modal').classList.remove('open');
   document.body.style.overflow = '';
+  // Hand focus back to the card that opened the dialog.
+  if(_lastFocus && document.body.contains(_lastFocus)) _lastFocus.focus();
+  _lastFocus = null;
 }
 
 document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape') closeDetail();
+  if(!modalIsOpen()) return;
+  if(e.key === 'Escape'){ closeDetail(); return; }
+  if(e.key !== 'Tab') return;
+  // Keep Tab inside the dialog while it is open.
+  var items = modalFocusables();
+  if(!items.length){ e.preventDefault(); return; }
+  var first = items[0], last = items[items.length - 1];
+  var dialog = document.getElementById('modal-dialog');
+  if(e.shiftKey && (document.activeElement === first || document.activeElement === dialog)){
+    e.preventDefault(); last.focus();
+  } else if(!e.shiftKey && document.activeElement === last){
+    e.preventDefault(); first.focus();
+  } else if(!dialog.contains(document.activeElement)){
+    e.preventDefault(); first.focus();
+  }
 });
 </script>
 {% endblock %}

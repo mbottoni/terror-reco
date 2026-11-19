@@ -113,3 +113,44 @@ class TestSafeUrl:
     )
     def test_rejects_everything_else(self, url: str | None) -> None:
         assert safe_url(url) == ""
+
+
+class TestResultsAccessibility:
+    """Cards are operable from the keyboard and the modal is a real dialog."""
+
+    @pytest.fixture()
+    def page(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> str:
+        film: dict[str, Any] = {
+            "imdb_id": "tt0000002",
+            "title": "A Film",
+            "overview": "Plot.",
+            "poster_url": "https://example.com/p.jpg",
+            "keywords": "isolation",
+            "year": "1979",
+        }
+        monkeypatch.setattr(main_mod, "recommend_movies_advanced", lambda **kw: [film])
+        resp = client.get("/recommend", params={"mood": "anything", "strategy": "semantic"})
+        assert resp.status_code == 200
+        return resp.text
+
+    def test_cards_handle_keys_as_well_as_clicks(self, page: str) -> None:
+        card = page[page.index('<li class="card"') :]
+        card = card[: card.index(">") + 1]
+        assert 'role="button"' in card and 'tabindex="0"' in card
+        assert "onkeydown=" in card, "a role=button card must respond to Enter/Space"
+
+    def test_modal_has_dialog_semantics(self, page: str) -> None:
+        assert 'role="dialog"' in page
+        assert 'aria-modal="true"' in page
+        assert 'aria-labelledby="modal-title"' in page
+        assert 'id="modal-title"' in page
+
+    def test_modal_script_manages_focus(self, page: str) -> None:
+        # Focus moves in on open, is trapped while open, and returns on close.
+        for needle in (
+            "function cardKey",
+            "_lastFocus.focus()",
+            "e.key !== 'Tab'",
+            "modal-dialog').focus()",
+        ):
+            assert needle in page
