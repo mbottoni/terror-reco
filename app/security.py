@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hmac
+import re
 import secrets
 from hashlib import sha256
 
@@ -48,6 +49,25 @@ def safe_url(url: str | None) -> str:
     if candidate.startswith("/") and not candidate.startswith("//"):
         return candidate
     return ""
+
+
+_TMDB_IMAGE_RE = re.compile(r"^(https://image\.tmdb\.org/t/p/)w\d+(/.+)$")
+
+
+def poster_variant(url: str | None, size: str) -> str:
+    """The same TMDB poster at another width (``w185``, ``w342``, ``w500``).
+
+    The corpus stores one fully-qualified ``w500`` URL per film. Grid cards
+    render far narrower than 500px, so they ask for a smaller rendition of the
+    same file. Anything that is not a TMDB image URL comes back unchanged
+    (after the usual scheme check), so OMDb posters and test fixtures still
+    work.
+    """
+    safe = safe_url(url)
+    match = _TMDB_IMAGE_RE.match(safe)
+    if not match or not re.fullmatch(r"w\d+", size):
+        return safe
+    return f"{match.group(1)}{size}{match.group(2)}"
 
 
 def generate_csrf_token() -> str:

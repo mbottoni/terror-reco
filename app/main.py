@@ -23,7 +23,7 @@ from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from .models import MovieFeedback, User, WatchlistItem
 from .schemas import FeedbackIn, FeedbackOut
-from .security import safe_url
+from .security import poster_variant, safe_url
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
@@ -108,6 +108,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Autoescaping makes a value safe as text but says nothing about a URL scheme,
 # so every poster URL rendered into a src/href goes through this first.
 templates.env.filters["safe_url"] = safe_url
+templates.env.filters["poster_variant"] = poster_variant
 app.state.templates = templates
 
 

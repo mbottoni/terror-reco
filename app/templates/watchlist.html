@@ -17,7 +17,9 @@
     {% for item in items %}
     <li class="card">
       {% if item.poster_url | safe_url %}
-      <img class="card-poster" src="{{ item.poster_url | safe_url }}" alt="{{ item.title }}" loading="lazy">
+      <img class="card-poster" src="{{ item.poster_url | poster_variant('w342') }}"
+           srcset="{{ item.poster_url | poster_variant('w342') }} 342w, {{ item.poster_url | poster_variant('w500') }} 500w"
+           sizes="(max-width: 600px) 45vw, 240px" alt="{{ item.title }}" loading="lazy" decoding="async">
       {% else %}
       <div class="card-no-poster">🎬</div>
       {% endif %}

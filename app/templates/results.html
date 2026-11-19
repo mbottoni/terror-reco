@@ -34,7 +34,10 @@
     <li class="card" onclick="openDetail({{ loop.index0 }})" onkeydown="cardKey(event, {{ loop.index0 }})"
         role="button" tabindex="0" aria-haspopup="dialog">
       {% if m.poster_url | safe_url and m.poster_url != 'N/A' %}
-      <img class="card-poster" src="{{ m.poster_url | safe_url }}" alt="{{ m.title }}" loading="lazy">
+      {# The grid never shows a poster at 500px; the browser picks from srcset. #}
+      <img class="card-poster" src="{{ m.poster_url | poster_variant('w342') }}"
+           srcset="{{ m.poster_url | poster_variant('w342') }} 342w, {{ m.poster_url | poster_variant('w500') }} 500w"
+           sizes="(max-width: 600px) 45vw, 240px" alt="{{ m.title }}" loading="lazy" decoding="async">
       {% else %}
       <div class="card-no-poster">🎬</div>
       {% endif %}
@@ -227,7 +230,9 @@ function renderSimilar(imdbId){
         var url = safeUrl(f.poster_url);
         if(url){
           var img = document.createElement('img');
-          img.src = url; img.alt = ''; img.loading = 'lazy';
+          // Thumbnails are about 100px wide; w185 is plenty.
+          img.src = url.replace(/^(https:\/\/image\.tmdb\.org\/t\/p\/)w\d+\//, '$1w185/');
+          img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
           link.appendChild(img);
         } else {
           var ph = document.createElement('span');
