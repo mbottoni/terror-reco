@@ -70,7 +70,7 @@ Three independent randomness sources, all intentional: Gaussian score perturbati
 - `data/horror_corpus.json` **is committed** (626 KB) and copied into the Docker image, so deploys need no TMDB/OMDb keys at build time. Embeddings (`.npy`) and the build checkpoint stay gitignored and are regenerated from the corpus on first use.
 - Filters are applied to the corpus **before** ranking (`_passes_filters` in `recommender.py`), keeping corpus rows and embedding rows aligned. Filtering the top-K afterwards used to starve restrictive queries.
 - CSRF tokens are HMAC-verified but not bound to the session: `validate_csrf_token()` never compares against `request.session["csrf"]`, so a token from any session validates in any other.
-- `tests/` mixes pytest files (`test_*.py`) with manual scripts (`manual_*.py`, `debug_stripe.py`, `deployment_checklist.py`) that hit real services and are not collected by pytest.
+- `scripts/manual/` holds hand-run scripts (`manual_*.py`, `debug_stripe.py`, `deployment_checklist.py`) that hit real services. They predate the Hetzner deploy and are not maintained; `tests/` contains only pytest files.
 - No test touches the network (the request path has no outbound calls left); `conftest.py` forces `DEBUG=true` so session cookies aren't `Secure` (TestClient speaks plain HTTP) and swaps the DB for in-memory SQLite.
 
 ## Database migrations
