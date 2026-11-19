@@ -116,3 +116,23 @@ not a measurement, since the pipeline's stddev is comparable to most effects wor
 ## Adding a strategy
 
 Four coordinated edits: the class in `services/strategies/` (must satisfy the `recommend(mood, limit)` protocol in `base.py`), a branch in `get_strategy()` in `services/recommender.py`, a branch plus a `STRATEGY_LABELS` entry in `app/main.py`, and the `<option>` in `index.html`.
+
+## Deployment
+
+Production is one Hetzner box running `docker-compose.prod.yml`: the app, Postgres and Caddy
+(automatic HTTPS). **Pushing to `main` deploys it** — `.github/workflows/ci.yml` runs
+`build-test` → `image` (build, push to `ghcr.io/mbottoni/terror-reco:<sha>`) → `deploy`
+(scp the compose file and Caddyfile, `docker compose pull && up -d`, then poll `/healthz`).
+A red `build-test` never ships; a deploy that leaves `/healthz` unhealthy fails the run.
+
+The server holds exactly three files in `/opt/terror-reco`: the compose file, the Caddyfile
+and `.env.prod`. **`.env.prod` is the only thing not in git** — secrets, `SITE_ADDRESS`
+(the domain Caddy serves) and `DATABASE_SSLMODE=disable` (the Postgres container has no TLS;
+the default `require` is for managed Postgres). A new setting that production needs must be
+added there by hand; the pipeline does not manage it.
+
+The Dockerfile strips `nvidia-*`/`triton` from `requirements.txt` before installing. The
+lockfile pins the CUDA build of torch, and those wheels are separate packages that
+`--no-deps` would otherwise install next to the CPU torch (11.9 GB image instead of a few).
+Embeddings are computed at image build, so a fresh container never re-encodes the corpus on
+a user's first request.

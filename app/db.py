@@ -59,7 +59,7 @@ if _is_postgres(_DB_URL):
     # negotiates SSL correctly (putting sslmode in the URL query string is
     # unreliable with the SQLAlchemy psycopg dialect).
     _engine_kwargs["connect_args"] = {
-        "sslmode": "require",
+        "sslmode": _settings.DATABASE_SSLMODE,
         "connect_timeout": 10,
         "keepalives": 1,
         "keepalives_idle": 30,

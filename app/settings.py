@@ -49,6 +49,9 @@ class AppSettings(BaseSettings):
 
     # Auth / DB
     DATABASE_URL: str = Field(default="sqlite:///./app.db")
+    # libpq sslmode for Postgres. Managed Postgres needs "require"; a Postgres
+    # container on the same Docker network has no TLS and needs "disable".
+    DATABASE_SSLMODE: str = Field(default="require")
     SECRET_KEY: str = Field(default="change-me-please")
     SESSION_COOKIE_NAME: str = Field(default="terror_session")
 

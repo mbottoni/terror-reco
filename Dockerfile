@@ -26,7 +26,13 @@ RUN pip install --upgrade pip && \
 # meant the image shipped different versions than CI tested against; the
 # requirements file is generated from uv.lock by `make requirements`.
 COPY pyproject.toml README.md requirements.txt /app/
-RUN pip install --no-deps -r requirements.txt
+# The lockfile pins the PyPI (CUDA) build of torch, whose nvidia-*/triton
+# wheels are listed as packages in their own right -- so `--no-deps` installed
+# all ~9 GB of them next to the CPU torch above. Nothing imports them on a
+# CPU-only box; dropping them takes the image from 11.9 GB to a few GB.
+RUN grep -v -E '^(nvidia-|triton==)' requirements.txt > /tmp/requirements.cpu.txt && \
+    pip install --no-deps -r /tmp/requirements.cpu.txt && \
+    rm /tmp/requirements.cpu.txt
 
 # Pre-download the sentence-transformer model so the container starts fast
 # (no HuggingFace download at runtime)
@@ -36,9 +42,13 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 COPY app /app/app
 
 # Ship the pre-built horror corpus so the container serves recommendations
-# immediately, without needing TMDB/OMDb keys at build time. Embeddings are
-# not committed; they are computed from this corpus on first use.
+# immediately, without needing TMDB/OMDb keys at build time.
 COPY data /app/data
+
+# Embeddings are not committed, so compute them here rather than on the first
+# request: a fresh container would otherwise re-encode the whole corpus while a
+# user waits. A valid cache copied in with data/ is reused as-is.
+RUN python -c "from app.services.corpus import get_corpus_embeddings, load_corpus; get_corpus_embeddings(load_corpus())"
 
 # Migrations run at startup via init_db(), so they must ship with the image
 COPY alembic.ini /app/alembic.ini

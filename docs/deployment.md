@@ -24,6 +24,53 @@ SECRET_KEY=a-long-random-string
 DEBUG=1
 ```
 
+## Production (Hetzner, deployed from GitHub)
+
+Production is a single Hetzner Cloud server running `docker-compose.prod.yml`:
+the app, Postgres 17 and Caddy, which obtains and renews the HTTPS certificate.
+
+**Deploying is `git push origin main`.** The CI workflow then:
+
+1. `build-test` — lint, type-check, tests.
+2. `image` — builds the Docker image and pushes it to
+   `ghcr.io/mbottoni/terror-reco:<commit sha>` (and `:latest`).
+3. `deploy` — copies `docker-compose.prod.yml` and `Caddyfile` to the server,
+   pulls the new image, restarts the stack, and fails the run unless
+   `/healthz` reports `ok`.
+
+Rolling back is re-running the `deploy` job of an older green commit.
+
+### What lives where
+
+| Thing | Location |
+|-------|----------|
+| Code, compose file, Caddyfile | this repository |
+| `DEPLOY_HOST`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` | GitHub Actions secrets |
+| `DEPLOY_URL` (health-check base URL) | GitHub Actions variable |
+| App secrets, `SITE_ADDRESS`, DB password | `/opt/terror-reco/.env.prod` on the server |
+| Database | `terror-reco_pgdata` Docker volume on the server |
+
+### Setting up a new server
+
+1. Ubuntu 24.04 with Docker; firewall open on 22, 80, 443 only.
+2. A `deploy` user in the `docker` group whose `authorized_keys` holds the
+   public half of `DEPLOY_SSH_KEY`, owning `/opt/terror-reco`.
+3. `/opt/terror-reco/.env.prod` (mode 600) with at least:
+
+   ```bash
+   SITE_ADDRESS=example.com
+   DEBUG=false
+   SECRET_KEY=<long random string>
+   POSTGRES_PASSWORD=<random>
+   DATABASE_URL=postgresql://terror:<same password>@db:5432/terror
+   DATABASE_SSLMODE=disable
+   OMDB_API_KEY=...
+   # plus the Stripe and TMDB keys from the table above
+   ```
+
+4. Point the domain's `A` record at the server, update the three `DEPLOY_*`
+   secrets and `DEPLOY_URL`, and push to `main`.
+
 ## Docker
 
 ### Build

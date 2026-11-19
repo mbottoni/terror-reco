@@ -1,0 +1,59 @@
+# Single-box production stack: app + Postgres + Caddy (automatic HTTPS).
+# Secrets and SITE_ADDRESS live in .env.prod on the server, never in git.
+#
+# Deployed by .github/workflows/ci.yml on every green push to main: CI builds
+# the image, pushes it to GHCR, copies this file and the Caddyfile to the
+# server and runs `docker compose pull && up -d` with IMAGE_TAG=<commit sha>.
+# By hand, on the server:
+#   IMAGE_TAG=<sha> docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+name: terror-reco
+
+services:
+  app:
+    image: ghcr.io/mbottoni/terror-reco:${IMAGE_TAG:-latest}
+    env_file: .env.prod
+    # --proxy-headers so the app sees the https scheme Caddy terminated.
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
+      --proxy-headers --forwarded-allow-ips=*
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: terror
+      POSTGRES_DB: terror
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env.prod}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terror -d terror"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set in .env.prod}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

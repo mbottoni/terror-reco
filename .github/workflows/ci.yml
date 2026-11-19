@@ -44,5 +44,82 @@ jobs:
           OMDB_API_KEY: dummy
         run: uv run pytest
 
-      - name: Build Docker image
-        run: docker build -t terror-reco:ci .
+  # Builds the production image on every run (so a broken Dockerfile fails the
+  # PR), but only pushes it to GHCR for a green push to main.
+  image:
+    needs: build-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Ships the image just built to the Hetzner box. The server holds only
+  # docker-compose.prod.yml, the Caddyfile and .env.prod (secrets); everything
+  # else comes from this repository.
+  deploy:
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    env:
+      HOST: ${{ secrets.DEPLOY_HOST }}
+      APP_DIR: /opt/terror-reco
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Copy compose file and Caddyfile
+        run: scp docker-compose.prod.yml Caddyfile "deploy@$HOST:$APP_DIR/"
+
+      # The job's own token authenticates the pull, so the server needs no
+      # long-lived registry credential and the package can stay private.
+      - name: Pull and restart
+        run: |
+          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | ssh "deploy@$HOST" \
+            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin >/dev/null"
+          ssh "deploy@$HOST" "cd $APP_DIR \
+            && export IMAGE_TAG=${{ github.sha }} \
+            && docker compose -f docker-compose.prod.yml --env-file .env.prod pull -q app \
+            && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans \
+            && sed -i '/^IMAGE_TAG=/d' .env.prod && echo IMAGE_TAG=${{ github.sha }} >> .env.prod \
+            ; status=\$?; docker logout ghcr.io >/dev/null; docker image prune -af >/dev/null; exit \$status"
+
+      # A deploy that leaves the site down must fail the run, not pass it.
+      - name: Wait for /healthz
+        run: |
+          for i in $(seq 1 30); do
+            body=$(curl -fsS -m 5 "${{ vars.DEPLOY_URL }}/healthz" || true)
+            if echo "$body" | grep -q '"status":"ok"'; then echo "$body"; exit 0; fi
+            sleep 5
+          done
+          echo "healthz never reported ok: $body"; exit 1

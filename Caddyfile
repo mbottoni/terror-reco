@@ -1,0 +1,5 @@
+# SITE_ADDRESS comes from .env.prod (e.g. example.com, www.example.com).
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy app:8000
+}
