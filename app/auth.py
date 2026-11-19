@@ -9,11 +9,27 @@ from sqlalchemy.orm import Session
 
 from .db import get_db
 from .models import User
-from .security import generate_csrf_token, hash_password, validate_csrf_token, verify_password
+from .security import (
+    DUMMY_PASSWORD_HASH,
+    generate_csrf_token,
+    hash_password,
+    validate_csrf_token,
+    verify_password,
+)
 
 logger = logging.getLogger(__name__)
 
 MIN_PASSWORD_LENGTH = 8
+
+
+def normalize_email(email: str) -> str:
+    """The one form an address is stored and looked up in.
+
+    Without this ``Ana@x.com`` and ``ana@x.com`` are two accounts, and someone
+    who registered with a capital letter cannot sign in from a keyboard that
+    lowercases it.
+    """
+    return email.strip().lower()
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
@@ -68,27 +84,29 @@ async def login(
 ) -> RedirectResponse:
     # Preserve email so the form can be pre-filled on error
     request.session["auth_email"] = email
+    email = normalize_email(email)
 
+    # Log lines here never carry the address: it is personal data, and which
+    # addresses fail to sign in is exactly what an attacker wants from a log.
     if not validate_csrf_token(csrf, request.session.get("csrf")):
-        logger.warning("LOGIN FAIL: CSRF token invalid for %s", email)
+        logger.warning("LOGIN FAIL: CSRF token invalid")
         _set_flash(request, "Security check failed. Please try again.", "error")
         return RedirectResponse(url="/auth/login", status_code=303)
 
     user = db.query(User).filter(User.email == email).first()
-    if not user:
-        logger.warning("LOGIN FAIL: No user found with email %s", email)
-        _set_flash(request, "Invalid email or password.", "error")
-        return RedirectResponse(url="/auth/login", status_code=303)
-
-    if not verify_password(password, user.password_hash):
-        logger.warning("LOGIN FAIL: Wrong password for %s", email)
+    # Always spend one Argon2 verification. Returning early for an unknown
+    # address made "no such user" tens of milliseconds faster than "wrong
+    # password", which reveals who has an account despite the shared message.
+    password_ok = verify_password(password, user.password_hash if user else DUMMY_PASSWORD_HASH)
+    if not user or not password_ok:
+        logger.warning("LOGIN FAIL: invalid credentials")
         _set_flash(request, "Invalid email or password.", "error")
         return RedirectResponse(url="/auth/login", status_code=303)
 
     # Clear preserved email on success
     request.session.pop("auth_email", None)
     request.session["user_id"] = user.id
-    logger.info("LOGIN OK: user_id=%s email=%s", user.id, email)
+    logger.info("LOGIN OK: user_id=%s", user.id)
     _set_flash(request, "Signed in successfully.")
     return RedirectResponse(url="/", status_code=303)
 
@@ -128,27 +146,22 @@ async def register(
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     request.session["auth_email"] = email
-    logger.info(
-        "REGISTER attempt: email=%s, pw_len=%d, confirm_len=%d",
-        email,
-        len(password),
-        len(confirm_password),
-    )
+    email = normalize_email(email)
 
     if not validate_csrf_token(csrf, request.session.get("csrf")):
-        logger.warning("REGISTER FAIL: CSRF invalid for %s", email)
+        logger.warning("REGISTER FAIL: CSRF invalid")
         _set_flash(request, "Security check failed. Please try again.", "error")
         return RedirectResponse(url="/auth/register", status_code=303)
 
     # Validate email format
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        logger.warning("REGISTER FAIL: invalid email format %s", email)
+        logger.warning("REGISTER FAIL: invalid email format")
         _set_flash(request, "Please enter a valid email address.", "error")
         return RedirectResponse(url="/auth/register", status_code=303)
 
     # Validate password length
     if len(password) < MIN_PASSWORD_LENGTH:
-        logger.warning("REGISTER FAIL: password too short (%d chars)", len(password))
+        logger.warning("REGISTER FAIL: password too short")
         _set_flash(
             request,
             f"Password must be at least {MIN_PASSWORD_LENGTH} characters.",
@@ -158,13 +171,13 @@ async def register(
 
     # Validate password confirmation
     if password != confirm_password:
-        logger.warning("REGISTER FAIL: passwords don't match for %s", email)
+        logger.warning("REGISTER FAIL: passwords do not match")
         _set_flash(request, "Passwords do not match.", "error")
         return RedirectResponse(url="/auth/register", status_code=303)
 
     existing = db.query(User).filter(User.email == email).first()
     if existing:
-        logger.warning("REGISTER FAIL: email %s already exists", email)
+        logger.warning("REGISTER FAIL: address already registered (user_id=%s)", existing.id)
         _set_flash(request, "Email already registered. Please sign in.", "error")
         return RedirectResponse(url="/auth/login", status_code=303)
 
@@ -176,7 +189,7 @@ async def register(
     # Clear preserved email on success
     request.session.pop("auth_email", None)
     request.session["user_id"] = user.id
-    logger.info("REGISTER OK: user_id=%s email=%s", user.id, email)
+    logger.info("REGISTER OK: user_id=%s", user.id)
     _set_flash(request, "Account created. Welcome!")
     return RedirectResponse(url="/", status_code=303)
 
