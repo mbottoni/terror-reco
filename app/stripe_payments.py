@@ -5,151 +5,147 @@ Handles "Buy me a coffee" payments.
 
 from __future__ import annotations
 
-import os
+import logging
 from typing import Any
 
 import stripe
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from starlette.responses import Response
 
+from .auth import get_current_user
+from .models import User
 from .settings import get_settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/stripe", tags=["stripe"])
 settings = get_settings()
 
-# Initialize Stripe
-if settings.STRIPE_SECRET_KEY:
-    stripe.api_key = settings.STRIPE_SECRET_KEY
+# Written into every checkout session and checked on the way back, so the
+# success page only thanks someone for a session this app created.
+APP_METADATA = {"app": "terror-reco", "type": "coffee"}
 
 
-@router.get("/debug")
-async def stripe_debug() -> dict[str, Any]:
-    """Debug endpoint to check Stripe configuration."""
-    return {
-        "stripe_publishable_key_set": bool(settings.STRIPE_PUBLISHABLE_KEY),
-        "stripe_secret_key_set": bool(settings.STRIPE_SECRET_KEY),
-        "coffee_price_id_set": bool(settings.COFFEE_PRICE_ID),
-        "webhook_secret_set": bool(settings.STRIPE_WEBHOOK_SECRET),
-        "stripe_publishable_key": (
-            settings.STRIPE_PUBLISHABLE_KEY[:20] + "..."
-            if settings.STRIPE_PUBLISHABLE_KEY
-            else None
-        ),
-        "coffee_price_id": settings.COFFEE_PRICE_ID,
-        "running_on_render": bool(os.getenv("RENDER")),
-    }
+def _page(
+    request: Request,
+    template: str,
+    context: dict[str, Any],
+    user: User | None,
+    status_code: int = 200,
+) -> Response:
+    """Render through the shared templates, so the nav knows who is signed in."""
+    resp: Response = request.app.state.templates.TemplateResponse(
+        request, template, {**context, "user": user}, status_code=status_code
+    )
+    return resp
 
 
-# Get templates from app state
-def get_templates() -> Jinja2Templates:
-    from pathlib import Path
+def _problem(request: Request, user: User | None, *, status_code: int, message: str) -> Response:
+    return _page(
+        request,
+        "error.html",
+        {"icon": "☕", "heading": "Payment problem", "message": message},
+        user,
+        status_code=status_code,
+    )
 
-    BASE_DIR = Path(__file__).resolve().parent
-    TEMPLATES_DIR = BASE_DIR / "templates"
-    return Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+# The handlers that call Stripe are plain ``def``: the SDK is synchronous, so
+# FastAPI runs them in its threadpool. As ``async def`` each call blocked the
+# event loop for a full network round trip.
 
 
 @router.get("/coffee", response_class=HTMLResponse)
-async def buy_coffee_page(request: Request) -> HTMLResponse:
+def buy_coffee_page(request: Request, user: User | None = Depends(get_current_user)) -> Response:
     """Display the buy coffee page."""
     if not settings.STRIPE_PUBLISHABLE_KEY:
-        raise HTTPException(status_code=500, detail="Stripe not configured")
-
-    templates = get_templates()
-    return HTMLResponse(
-        templates.TemplateResponse(
-            request,
-            "coffee.html",
-            {
-                "stripe_publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
-                "price_id": settings.COFFEE_PRICE_ID,
-            },
-        ).body,
+        return _problem(
+            request, user, status_code=503, message="Payments are not set up on this site yet."
+        )
+    return _page(
+        request,
+        "coffee.html",
+        {
+            "stripe_publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
+            "price_id": settings.COFFEE_PRICE_ID,
+        },
+        user,
     )
 
 
 @router.post("/create-checkout-session")
-async def create_checkout_session(request: Request) -> dict[str, Any]:
+def create_checkout_session(request: Request) -> dict[str, Any]:
     """Create a Stripe checkout session for coffee purchase."""
-    print("Creating checkout session...")
-    print(f"STRIPE_SECRET_KEY set: {bool(settings.STRIPE_SECRET_KEY)}")
-    print(f"COFFEE_PRICE_ID set: {bool(settings.COFFEE_PRICE_ID)}")
-
     if not settings.STRIPE_SECRET_KEY or not settings.COFFEE_PRICE_ID:
-        error_msg = "Stripe not configured - missing keys"
-        print(f"Error: {error_msg}")
-        raise HTTPException(status_code=500, detail=error_msg)
+        logger.error("Checkout requested but Stripe is not configured")
+        raise HTTPException(status_code=503, detail="Payments are not available right now.")
 
+    base_url = str(request.base_url).rstrip("/")
     try:
-        # Build URLs manually to avoid issues in production
-        base_url = str(request.base_url).rstrip("/")
-        success_url = f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{base_url}/stripe/cancel"
-
-        print(f"Base URL: {base_url}")
-        print(f"Success URL: {success_url}")
-        print(f"Cancel URL: {cancel_url}")
-        price_suffix = settings.COFFEE_PRICE_ID[-3:] if settings.COFFEE_PRICE_ID else "None"
-        print(f"Price ID: ...{price_suffix}")
-
+        # No payment_method_types: Stripe then offers every method enabled in
+        # the dashboard (wallets, local methods), not cards alone.
         checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price": settings.COFFEE_PRICE_ID,
-                    "quantity": 1,
-                }
-            ],
+            api_key=settings.STRIPE_SECRET_KEY,
+            line_items=[{"price": settings.COFFEE_PRICE_ID, "quantity": 1}],
             mode="payment",
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={"app": "terror-reco", "type": "coffee"},
+            success_url=f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{base_url}/stripe/cancel",
+            metadata=APP_METADATA,
         )
+    except stripe.StripeError:
+        # The exception text can carry key and account details; it goes to
+        # the log, never to the browser.
+        logger.exception("Stripe refused to create a checkout session")
+        raise HTTPException(
+            status_code=502, detail="Could not start the payment. Please try again."
+        ) from None
 
-        print(f"Checkout session created: ...{checkout_session.id[-3:]}")
-        return {"checkout_url": checkout_session.url}
-
-    except stripe.StripeError as e:
-        print(f"Stripe error: {e}")
-        raise HTTPException(status_code=400, detail=f"Payment error: {e!s}") from e
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail=f"Server error: {e!s}") from e
+    logger.info("Checkout session created: ...%s", checkout_session.id[-6:])
+    return {"checkout_url": checkout_session.url}
 
 
 @router.get("/success", response_class=HTMLResponse)
-async def stripe_success(request: Request, session_id: str | None = None) -> HTMLResponse:
-    """Handle successful payment."""
-    if not session_id:
-        raise HTTPException(status_code=400, detail="No session ID provided")
+def stripe_success(
+    request: Request,
+    session_id: str | None = None,
+    user: User | None = Depends(get_current_user),
+) -> Response:
+    """Thank the supporter, but only for a payment Stripe confirms was made."""
+    unconfirmed = (
+        "We could not confirm that payment. If you were charged, it will still go through."
+    )
+    if not session_id or not settings.STRIPE_SECRET_KEY:
+        return _problem(request, user, status_code=400, message=unconfirmed)
 
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
-        templates = get_templates()
+        session = stripe.checkout.Session.retrieve(session_id, api_key=settings.STRIPE_SECRET_KEY)
+    except stripe.StripeError:
+        logger.warning("Could not retrieve checkout session for the success page", exc_info=True)
+        return _problem(request, user, status_code=400, message=unconfirmed)
 
-        amount_total = session.amount_total or 0
-        return HTMLResponse(
-            templates.TemplateResponse(
-                request,
-                "coffee_success.html",
-                {
-                    "session": session,
-                    "amount": amount_total / 100,  # Convert from cents
-                },
-            ).body,
-        )
-    except stripe.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+    metadata = dict(session.metadata or {})
+    if session.payment_status != "paid" or metadata.get("app") != APP_METADATA["app"]:
+        # An abandoned, unpaid or foreign session id must not render as a
+        # completed donation.
+        return _problem(request, user, status_code=402, message=unconfirmed)
+
+    # Only the two values the page shows; the session object stays here.
+    return _page(
+        request,
+        "coffee_success.html",
+        {
+            "amount": (session.amount_total or 0) / 100,  # minor units
+            "currency": (session.currency or "usd").upper(),
+        },
+        user,
+    )
 
 
 @router.get("/cancel", response_class=HTMLResponse)
-async def stripe_cancel(request: Request) -> HTMLResponse:
+def stripe_cancel(request: Request, user: User | None = Depends(get_current_user)) -> Response:
     """Handle cancelled payment."""
-    templates = get_templates()
-    return HTMLResponse(
-        templates.TemplateResponse(request, "coffee_cancel.html").body,
-    )
+    return _page(request, "coffee_cancel.html", {}, user)
 
 
 @router.post("/webhook")
@@ -174,11 +170,10 @@ async def stripe_webhook(request: Request) -> dict[str, str]:
     except stripe.SignatureVerificationError as e:
         raise HTTPException(status_code=400, detail="Invalid signature") from e
 
-    # Handle the event
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        # Here you could save the payment to your database
-        # For now, we'll just log it
-        print(f"Payment completed: {session['id']}")
+        # Recording the payment is tracked separately (issue #58); until then
+        # the event is only logged.
+        logger.info("Payment completed: ...%s", str(session["id"])[-6:])
 
     return {"status": "success"}

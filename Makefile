@@ -73,8 +73,8 @@ eval:
 	.venv/bin/python scripts/run_eval.py --runs 10
 
 deployment:
-	python tests/manual_deployment.py
-	python tests/manual_deployment_simple.py || true
-	python tests/deployment_checklist.py || true
+	python scripts/manual/manual_deployment.py
+	python scripts/manual/manual_deployment_simple.py || true
+	python scripts/manual/deployment_checklist.py || true
 
 ci: lint typecheck test

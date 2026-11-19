@@ -10,7 +10,7 @@
     Your support means a lot and helps keep TerrorReco running
     with fresh horror recommendations.
   </p>
-  <div class="status-amount">${{ "%.2f"|format(amount) }}</div>
+  <div class="status-amount">{% if currency == "USD" %}${{ "%.2f"|format(amount) }}{% else %}{{ "%.2f"|format(amount) }} {{ currency }}{% endif %}</div>
   <a href="/" class="btn btn-primary">Back to recommendations</a>
 </div>
 {% endblock %}
