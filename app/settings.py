@@ -59,6 +59,11 @@ class AppSettings(BaseSettings):
     DATABASE_SSLMODE: str = Field(default="require")
     SECRET_KEY: str = Field(default=DEFAULT_SECRET_KEY)
     SESSION_COOKIE_NAME: str = Field(default="terror_session")
+    # The site's canonical origin, e.g. "https://example.com" (no trailing
+    # slash). Every absolute URL the app hands to someone else -- Stripe
+    # return URLs today; email links and OAuth redirects later -- is built
+    # from this, never from the request's Host header. Required in production.
+    PUBLIC_BASE_URL: str | None = Field(default=None)
 
     # Per-client request limits (app/middleware.py). In-process counters, so
     # correct only for a single worker.
@@ -86,6 +91,27 @@ class AppSettings(BaseSettings):
                 "(python -c 'import secrets; print(secrets.token_urlsafe(48))'), "
                 "or set DEBUG=1 for local development."
             )
+        return self
+
+    @model_validator(mode="after")
+    def _normalise_public_base_url(self) -> "AppSettings":
+        """Require a well-formed PUBLIC_BASE_URL whenever DEBUG is off."""
+        url = (self.PUBLIC_BASE_URL or "").strip().rstrip("/")
+        if not url:
+            if self.DEBUG:
+                self.PUBLIC_BASE_URL = None
+                return self
+            raise ValueError(
+                "PUBLIC_BASE_URL is required in production: set it to the site's origin, "
+                "e.g. PUBLIC_BASE_URL=https://example.com"
+            )
+        scheme_ok = url.startswith("https://") or (self.DEBUG and url.startswith("http://"))
+        if not scheme_ok or "/" in url.split("://", 1)[1]:
+            raise ValueError(
+                "PUBLIC_BASE_URL must be an origin with no path, e.g. https://example.com "
+                "(http:// is accepted only when DEBUG is on)"
+            )
+        self.PUBLIC_BASE_URL = url
         return self
 
 

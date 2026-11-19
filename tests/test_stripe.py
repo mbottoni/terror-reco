@@ -94,6 +94,22 @@ class TestCreateCheckoutSession:
     def test_unconfigured_is_503(self, client: TestClient, unconfigured: None) -> None:
         assert client.post("/stripe/create-checkout-session").status_code == 503
 
+    def test_return_urls_come_from_configuration_not_the_host_header(
+        self, client: TestClient, configured: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: dict[str, Any] = {}
+
+        def _create(**kwargs: Any) -> SimpleNamespace:
+            seen.update(kwargs)
+            return _session()
+
+        monkeypatch.setattr(stripe.checkout.Session, "create", _create)
+        monkeypatch.setattr(sp.settings, "PUBLIC_BASE_URL", "https://real.example")
+        client.post("/stripe/create-checkout-session", headers={"Host": "evil.example"})
+        assert seen["success_url"].startswith("https://real.example/stripe/success?")
+        assert seen["cancel_url"] == "https://real.example/stripe/cancel"
+        assert "evil.example" not in seen["success_url"]
+
     def test_stripe_error_text_never_reaches_the_browser(
         self, client: TestClient, configured: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:

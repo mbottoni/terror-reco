@@ -7,7 +7,8 @@ This guide covers deploying TerrorReco with Docker, on Render, and the CI/CD pip
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `OMDB_API_KEY` | Yes | -- | OMDb API key ([get one free](https://www.omdbapi.com/apikey.aspx)) |
-| `SECRET_KEY` | Recommended | Auto-generated | Session encryption key (must be stable in production) |
+| `SECRET_KEY` | Production | -- | Signs sessions and CSRF tokens. The app refuses to start in production without a random value of at least 32 characters |
+| `PUBLIC_BASE_URL` | Production | -- | The site's origin, e.g. `https://example.com`. Absolute URLs (Stripe return URLs) are built from it. The app refuses to start in production without it |
 | `DATABASE_URL` | Production | SQLite file | PostgreSQL connection URL |
 | `DEBUG` | No | `false` | Set to `1` or `true` for development mode |
 | `PORT` | No | `10000` | Port the server listens on |
@@ -61,6 +62,7 @@ Rolling back is re-running the `deploy` job of an older green commit.
    SITE_ADDRESS=example.com
    DEBUG=false
    SECRET_KEY=<long random string>
+   PUBLIC_BASE_URL=https://example.com
    POSTGRES_PASSWORD=<random>
    DATABASE_URL=postgresql://terror:<same password>@db:5432/terror
    DATABASE_SSLMODE=disable
