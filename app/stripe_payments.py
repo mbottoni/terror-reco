@@ -89,7 +89,8 @@ def create_checkout_session(
         logger.error("Checkout requested but Stripe is not configured")
         raise HTTPException(status_code=503, detail="Payments are not available right now.")
 
-    base_url = str(request.base_url).rstrip("/")
+    # From configuration, not from the Host header the request arrived with.
+    base_url = settings.PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
     # No payment_method_types: Stripe then offers every method enabled in the
     # dashboard (wallets, local methods), not cards alone.
     params: dict[str, Any] = {

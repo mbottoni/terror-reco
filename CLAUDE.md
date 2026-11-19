@@ -124,7 +124,10 @@ The server holds exactly three files in `/opt/terror-reco`: the compose file, th
 and `.env.prod`. **`.env.prod` is the only thing not in git** — secrets, `SITE_ADDRESS`
 (the domain Caddy serves) and `DATABASE_SSLMODE=disable` (the Postgres container has no TLS;
 the default `require` is for managed Postgres). A new setting that production needs must be
-added there by hand; the pipeline does not manage it.
+added there by hand; the pipeline does not manage it. Two are enforced at startup when `DEBUG` is off:
+a real `SECRET_KEY` and `PUBLIC_BASE_URL` (the site's origin; every absolute URL the app emits
+is built from it, never from the request's `Host` header). **When the domain changes, update
+`SITE_ADDRESS`, `PUBLIC_BASE_URL` and the `DEPLOY_URL` Actions variable together.**
 
 The Dockerfile strips `nvidia-*`/`triton` from `requirements.txt` before installing. The
 lockfile pins the CUDA build of torch, and those wheels are separate packages that
