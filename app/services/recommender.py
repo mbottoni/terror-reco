@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from math import log
 from typing import Any
 
@@ -54,6 +55,35 @@ def similar_movies(*, imdb_id: str, limit: int = 6) -> list[dict[str, Any]]:
         {k: v for k, v in corpus[int(i)].items() if not k.startswith("_")}
         for i in top
         if np.isfinite(sims[i])
+    ]
+
+
+_IMDB_ID_RE = re.compile(r"^tt\d{5,10}$")
+MAX_SHARED_FILMS = 20
+
+
+def films_by_ids(ids: list[str]) -> list[dict[str, Any]]:
+    """Corpus films for *ids*, in the order given.
+
+    Backs shared result links, which carry the exact films that were on
+    screen. Unknown or malformed ids are skipped, duplicates collapse, and
+    the list is capped, so a hand-edited URL cannot make this do much.
+    """
+    from .corpus import get_corpus_and_embeddings
+
+    wanted: list[str] = []
+    for raw in ids:
+        candidate = raw.strip()
+        if _IMDB_ID_RE.match(candidate) and candidate not in wanted:
+            wanted.append(candidate)
+        if len(wanted) >= MAX_SHARED_FILMS:
+            break
+    if not wanted:
+        return []
+    corpus, _ = get_corpus_and_embeddings()
+    by_id = {m.get("imdb_id"): m for m in corpus}
+    return [
+        {k: v for k, v in by_id[i].items() if not k.startswith("_")} for i in wanted if i in by_id
     ]
 
 
