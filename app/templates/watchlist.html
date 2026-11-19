@@ -53,7 +53,7 @@ function removeSaved(btn, imdbId){
   btn.disabled = true;
   fetch('/watchlist/toggle', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: csrfHeaders({'Content-Type': 'application/json'}),
     body: JSON.stringify({imdb_id: imdbId})
   }).then(function(r){
     if(!r.ok) throw new Error(r.status);

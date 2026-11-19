@@ -193,7 +193,7 @@ function toggleSaved(imdbId){
   var m = MOVIES[_currentIdx] || {};
   fetch('/watchlist/toggle', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: csrfHeaders({'Content-Type': 'application/json'}),
     body: JSON.stringify({imdb_id: imdbId, title: m.title, poster_url: m.poster_url})
   }).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function(data){
@@ -388,7 +388,7 @@ function sendFeedback(imdbId, rating){
   var m = MOVIES[_currentIdx];
   fetch('/api/feedback', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: csrfHeaders({'Content-Type': 'application/json'}),
     body: JSON.stringify({
       imdb_id: imdbId,
       title: m ? m.title : '',

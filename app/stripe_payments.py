@@ -20,6 +20,7 @@ from starlette.responses import Response
 from .auth import get_current_user
 from .db import get_db
 from .models import Payment, User
+from .security import require_csrf
 from .settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ def buy_coffee_page(request: Request, user: User | None = Depends(get_current_us
     )
 
 
-@router.post("/create-checkout-session")
+@router.post("/create-checkout-session", dependencies=[Depends(require_csrf)])
 def create_checkout_session(
     request: Request, user: User | None = Depends(get_current_user)
 ) -> dict[str, Any]:

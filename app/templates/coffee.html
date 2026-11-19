@@ -25,7 +25,7 @@ var btn=document.getElementById('coffee-button');
 btn.addEventListener('click',async function(){
   btn.disabled=true;btn.textContent='Processing…';
   try{
-    var res=await fetch('/stripe/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'}});
+    var res=await fetch('/stripe/create-checkout-session',{method:'POST',headers:csrfHeaders({'Content-Type':'application/json'})});
     var data=await res.json();
     if(data.checkout_url)window.location.href=data.checkout_url;
     else throw new Error('No checkout URL');

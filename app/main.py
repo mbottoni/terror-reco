@@ -23,7 +23,7 @@ from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from .models import MovieFeedback, User, WatchlistItem
 from .schemas import FeedbackIn, FeedbackOut
-from .security import poster_variant, safe_url
+from .security import poster_variant, require_csrf, safe_url, session_csrf_token
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
@@ -109,6 +109,9 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # so every poster URL rendered into a src/href goes through this first.
 templates.env.filters["safe_url"] = safe_url
 templates.env.filters["poster_variant"] = poster_variant
+# Every page embeds the session's CSRF token (see _base.html), so forms and
+# fetch() calls on any page can send it back.
+templates.env.globals["csrf_token"] = session_csrf_token
 app.state.templates = templates
 
 
@@ -383,7 +386,7 @@ async def api_similar(imdb_id: str, limit: int = Query(default=6, ge=1, le=20)) 
     return {"imdb_id": imdb_id, "count": len(movies), "results": movies}
 
 
-@app.post("/api/feedback", response_model=FeedbackOut)
+@app.post("/api/feedback", response_model=FeedbackOut, dependencies=[Depends(require_csrf)])
 async def submit_feedback(
     payload: FeedbackIn,
     user: User | None = Depends(get_current_user),

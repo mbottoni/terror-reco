@@ -19,7 +19,7 @@ from .auth import get_current_user
 from .db import get_db
 from .models import User, WatchlistItem
 from .schemas import WatchlistToggleIn, WatchlistToggleOut
-from .security import safe_url
+from .security import require_csrf, safe_url
 
 router = APIRouter(prefix="/watchlist")
 
@@ -44,7 +44,7 @@ async def watchlist_page(
     return resp
 
 
-@router.post("/toggle", response_model=WatchlistToggleOut)
+@router.post("/toggle", response_model=WatchlistToggleOut, dependencies=[Depends(require_csrf)])
 async def toggle_watchlist(
     payload: WatchlistToggleIn,
     user: User | None = Depends(get_current_user),

@@ -6,6 +6,7 @@ import secrets
 from hashlib import sha256
 
 from argon2 import PasswordHasher
+from fastapi import HTTPException, Request
 
 from .settings import get_settings
 
@@ -107,3 +108,48 @@ def validate_csrf_token(token: str, session_token: str | None = None) -> bool:
     if session_token is None:
         return False
     return hmac.compare_digest(token, session_token)
+
+
+CSRF_SESSION_KEY = "csrf"
+CSRF_HEADER = "x-csrf-token"
+CSRF_FORM_FIELD = "csrf"
+
+
+def session_csrf_token(request: Request) -> str:
+    """This session's CSRF token, minted on first use.
+
+    One token per session rather than one per form render: regenerating on
+    every render meant opening the login page in a second tab silently
+    invalidated the form in the first.
+    """
+    if "session" not in request.scope:
+        # Rendered outside the session middleware: the rate limiter's 429
+        # page is produced before the session exists. Such a page has no
+        # token, and nothing on it needs one.
+        return ""
+    token = request.session.get(CSRF_SESSION_KEY)
+    if not token or not validate_csrf_token(token, token):
+        token = generate_csrf_token()
+        request.session[CSRF_SESSION_KEY] = token
+    return str(token)
+
+
+async def require_csrf(request: Request) -> None:
+    """Dependency for state-changing routes: the request must carry the token.
+
+    ``fetch`` callers send it in the ``X-CSRF-Token`` header (read from the
+    ``<meta name="csrf-token">`` every page carries); plain forms send it as a
+    hidden ``csrf`` field. ``SameSite=Lax`` on the session cookie already
+    blocks cross-site POSTs in current browsers; this is the second lock.
+    """
+    token = request.headers.get(CSRF_HEADER)
+    if not token:
+        content_type = request.headers.get("content-type", "")
+        if content_type.startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
+            form = await request.form()
+            value = form.get(CSRF_FORM_FIELD)
+            token = value if isinstance(value, str) else None
+    if not validate_csrf_token(token or "", request.session.get(CSRF_SESSION_KEY)):
+        raise HTTPException(
+            status_code=403, detail="Security check failed. Reload the page and try again."
+        )
