@@ -64,12 +64,45 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          push: ${{ github.event_name == 'push' }}
+          load: true
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Boot the image exactly as production does (DEBUG off, so the startup
+      # guards on SECRET_KEY and PUBLIC_BASE_URL apply) and require /healthz
+      # to report ok. --network none proves the container needs nothing from
+      # the internet to start: the model and embeddings must be in the image.
+      - name: Smoke-test the image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+        run: |
+          docker run -d --name smoke --network none \
+            -e DEBUG=false \
+            -e SECRET_KEY="$(openssl rand -hex 32)" \
+            -e PUBLIC_BASE_URL=https://example.com \
+            -e DATABASE_URL=sqlite:////tmp/smoke.db \
+            "$IMAGE" uvicorn app.main:app --host 127.0.0.1 --port 8000
+          probe='import json,urllib.request; print(json.load(urllib.request.urlopen("http://127.0.0.1:8000/healthz", timeout=4)))'
+          for i in $(seq 1 30); do
+            body=$(docker exec smoke python -c "$probe" 2>/dev/null || true)
+            if echo "$body" | grep -q "'status': 'ok'"; then break; fi
+            sleep 3
+          done
+          echo "healthz: $body"
+          uid=$(docker exec smoke id -u)
+          echo "container uid: $uid"
+          if ! echo "$body" | grep -q "'status': 'ok'" || [ "$uid" = "0" ]; then
+            docker logs smoke 2>&1 | grep -v "Loading weights" | tail -40
+            exit 1
+          fi
+          docker rm -f smoke >/dev/null
+
+      - name: Push to GHCR
+        if: github.event_name == 'push'
+        run: docker push --all-tags ghcr.io/${{ github.repository }}
 
   # Ships the image just built to the Hetzner box. The server holds only
   # docker-compose.prod.yml, the Caddyfile and .env.prod (secrets); everything
