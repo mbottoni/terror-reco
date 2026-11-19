@@ -254,3 +254,55 @@ class TestLoginDoesNotLeak:
         assert logged, "expected the auth module to log these attempts"
         assert "@example.com" not in logged
         assert "pw_len" not in logged and "chars" not in logged
+
+
+class TestSessionRevocation:
+    """A signed cookie cannot be deleted server-side; the version check revokes it."""
+
+    def test_sign_out_everywhere_kills_other_devices(self, client: TestClient, db: Session):
+        from app.main import app
+
+        _register(client)  # device A, signed in
+        with TestClient(app) as other:  # device B, same account
+            assert "Signed in" in _login(other).text
+            assert other.get("/history/", follow_redirects=False).status_code == 200
+
+            client.post("/auth/logout-all")
+
+            # B's cookie is still validly signed, but its version is stale.
+            assert other.get("/history/", follow_redirects=False).status_code != 200
+        assert db.query(User).one().session_version == 1
+
+    def test_plain_sign_out_leaves_other_devices_alone(self, client: TestClient):
+        from app.main import app
+
+        _register(client)
+        with TestClient(app) as other:
+            _login(other)
+            client.post("/auth/logout")
+            assert other.get("/history/", follow_redirects=False).status_code == 200
+
+    def test_signing_in_again_after_revocation_works(self, client: TestClient):
+        _register(client)
+        client.post("/auth/logout-all")
+        assert "Signed in" in _login(client).text
+        assert client.get("/history/", follow_redirects=False).status_code == 200
+
+    def test_cookie_for_a_deleted_user_is_dropped(self, client: TestClient, db: Session):
+        _register(client)
+        db.query(User).delete()
+        db.commit()
+        assert client.get("/history/", follow_redirects=False).status_code != 200
+
+    def test_login_starts_from_a_clean_session(self, client: TestClient):
+        """Nothing set before authentication survives into the session after it."""
+        _register(client)
+        client.post("/auth/logout")
+        _login(client, password="wrong-password")  # leaves auth_email behind
+        _login(client)
+        page = client.get("/auth/register", follow_redirects=False)
+        assert page.status_code == 303  # signed in, so the form redirects home
+
+    def test_sign_out_everywhere_when_signed_out_is_harmless(self, client: TestClient):
+        resp = client.post("/auth/logout-all", follow_redirects=False)
+        assert resp.status_code == 303

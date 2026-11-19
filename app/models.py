@@ -24,6 +24,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    # Copied into the session cookie at sign-in and compared on every request.
+    # Bumping it invalidates every cookie issued before, which is the only
+    # way to revoke a signed-cookie session short of rotating SECRET_KEY.
+    session_version: Mapped[int] = mapped_column(default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     history: Mapped[list[SearchHistory]] = relationship(
