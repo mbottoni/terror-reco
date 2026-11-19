@@ -102,6 +102,11 @@ def _run_migrations() -> bool:
     from alembic.config import Config
 
     cfg = Config(str(alembic_ini))
+    # Tell migrations/env.py not to apply alembic.ini's logging section.
+    # fileConfig() there disables every logger that already exists, which in
+    # a running app is all of them: after startup the app logged nothing,
+    # including unhandled-exception tracebacks.
+    cfg.attributes["configure_logger"] = False
     cfg.set_main_option("script_location", str(alembic_ini.parent / "migrations"))
     command.upgrade(cfg, "head")
     return True

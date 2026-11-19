@@ -43,3 +43,14 @@ def test_corpus_is_not_encoded_at_startup_without_a_cache(
     )
     main_mod._warm_model_and_corpus()
     assert called == []
+
+
+def test_startup_leaves_application_loggers_enabled() -> None:
+    """Alembic's fileConfig() used to disable every existing logger at boot,
+    so the app logged nothing afterwards -- not even unhandled exceptions."""
+    import logging
+
+    names = ("app.main", "app.auth", "app.stripe_payments", "app.services.corpus")
+    with TestClient(app):
+        disabled = [name for name in names if logging.getLogger(name).disabled]
+    assert disabled == []

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -188,3 +189,68 @@ class TestFlashMessages:
         """Error flash uses the flash-error class."""
         resp = _login(client, email="nobody@x.com")
         assert 'class="flash flash-error"' in resp.text
+
+
+class TestEmailNormalisation:
+    """One person, one account, whatever the keyboard did to the address."""
+
+    def test_stored_lowercase_and_trimmed(self, client: TestClient, db: Session):
+        _register(client, email="  Ana.Silva@Example.COM ")
+        assert [u.email for u in db.query(User).all()] == ["ana.silva@example.com"]
+
+    def test_login_ignores_case(self, client: TestClient):
+        _register(client, email="Ana@Example.com")
+        client.post("/auth/logout")
+        resp = _login(client, email="ANA@example.COM")
+        assert "Signed in" in resp.text
+
+    def test_case_variant_cannot_register_a_second_account(self, client: TestClient, db: Session):
+        _register(client, email="ana@example.com")
+        client.post("/auth/logout")
+        resp = _register(client, email="Ana@Example.com")
+        assert "already registered" in resp.text
+        assert db.query(User).count() == 1
+
+
+class TestLoginDoesNotLeak:
+    def test_unknown_address_still_pays_for_a_hash_verification(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Skipping Argon2 for a missing user made that path measurably faster."""
+        import app.auth as auth_mod
+        from app.security import DUMMY_PASSWORD_HASH
+
+        verified: list[str] = []
+
+        def _spy(password: str, password_hash: str) -> bool:
+            verified.append(password_hash)
+            return False
+
+        monkeypatch.setattr(auth_mod, "verify_password", _spy)
+        resp = _login(client, email="nobody@example.com")
+        assert "Invalid email or password" in resp.text
+        assert verified == [DUMMY_PASSWORD_HASH]
+
+    def test_dummy_hash_matches_nothing_guessable(self):
+        from app.security import DUMMY_PASSWORD_HASH, verify_password
+
+        assert DUMMY_PASSWORD_HASH.startswith("$argon2")
+        assert not verify_password("", DUMMY_PASSWORD_HASH)
+        assert not verify_password("password", DUMMY_PASSWORD_HASH)
+
+    def test_no_address_or_password_length_in_logs(
+        self, client: TestClient, caplog: pytest.LogCaptureFixture
+    ):
+        import logging
+
+        with caplog.at_level(logging.DEBUG, logger="app.auth"):
+            _register(client, email="private.person@example.com", password="Str0ngPass!")
+            client.post("/auth/logout")
+            _login(client, email="private.person@example.com", password="wrong-password")
+            _login(client, email="missing.person@example.com")
+            _register(client, email="private.person@example.com")
+            _register(client, email="short@example.com", password="abc")
+        logged = "\n".join(record.getMessage() for record in caplog.records)
+        assert logged, "expected the auth module to log these attempts"
+        assert "@example.com" not in logged
+        assert "pw_len" not in logged and "chars" not in logged
