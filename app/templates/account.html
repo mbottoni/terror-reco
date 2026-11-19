@@ -1,0 +1,81 @@
+{% extends "_base.html" %}
+
+{% block title %}Account — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px;max-width:640px">
+  <a href="/" class="back-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
+    Back
+  </a>
+
+  <h1 class="page-title">Account</h1>
+  <p class="page-subtitle">Signed in as {{ user.email }}</p>
+
+  {% if flash %}
+  <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+  {% endif %}
+
+  <section class="auth-card account-section">
+    <h2 class="account-heading">Change password</h2>
+    <form action="/account/password" method="post" class="auth-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <div class="form-group">
+        <label for="pw-current">Current password</label>
+        <input id="pw-current" type="password" name="current_password" required autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label for="pw-new">New password</label>
+        <input id="pw-new" type="password" name="new_password" required minlength="{{ min_password_length }}" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="pw-confirm">Confirm new password</label>
+        <input id="pw-confirm" type="password" name="confirm_password" required minlength="{{ min_password_length }}" autocomplete="new-password">
+      </div>
+      <p class="account-note">Changing your password signs you out on every other device.</p>
+      <button type="submit" class="btn btn-primary">Change password</button>
+    </form>
+  </section>
+
+  <section class="auth-card account-section">
+    <h2 class="account-heading">Change email</h2>
+    <form action="/account/email" method="post" class="auth-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <div class="form-group">
+        <label for="email-new">New email address</label>
+        <input id="email-new" type="email" name="new_email" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="email-pw">Current password</label>
+        <input id="email-pw" type="password" name="current_password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary">Change email</button>
+    </form>
+  </section>
+
+  <section class="auth-card account-section">
+    <h2 class="account-heading">Your data</h2>
+    <p class="account-note">
+      {{ counts.searches }} searches, {{ counts.ratings }} ratings and {{ counts.saved }} saved films
+      are stored with your account.
+    </p>
+    <a href="/account/export" class="btn" download>Download my data (JSON)</a>
+  </section>
+
+  <section class="auth-card account-section account-danger">
+    <h2 class="account-heading">Delete account</h2>
+    <p class="account-note">
+      Permanently deletes your account, search history, ratings and watchlist. This cannot be undone.
+    </p>
+    <form action="/account/delete" method="post" class="auth-form"
+          onsubmit="return confirm('Delete your account and all of its data? This cannot be undone.');">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <div class="form-group">
+        <label for="delete-pw">Current password</label>
+        <input id="delete-pw" type="password" name="current_password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-danger">Delete my account</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
