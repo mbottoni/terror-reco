@@ -30,21 +30,17 @@ Notebooks are Marimo `.py` files (reactive; a variable may be defined in only on
 
 FastAPI app, fully server-rendered with Jinja2. Movie data comes from **OMDb**; ranking is done with **sentence-transformers** (`all-mpnet-base-v2`). No SPA — a little inline JS drives the detail modal and the feedback AJAX call.
 
-**Request path:** `index.html` form → `GET /loading` (animation, JS forwards query params) → `GET /recommend` (`app/main.py`) → strategy router → `results.html`.
+**Request path:** `index.html` form → `GET /recommend` (`app/main.py`) → strategy router → `results.html`. There is no interstitial: the `/loading` page and its param-forwarding array were removed, so a new query parameter needs only the `Query()` signature in `ui_recommendations()` and the form input in `index.html`.
 
-Because `/loading` sits between the form and the results, **any new query parameter must be added in three places**: the `Query()` signature in `ui_recommendations()`, the form input in `index.html`, and the param-forwarding array in `loading.html`. Miss the last one and the filter silently vanishes.
+### The two strategies
 
-### The four strategies
-
-`ui_recommendations()` in `app/main.py` dispatches on `strategy`, validated against `STRATEGY_LABELS`. Two families with very different data sources:
-
-**Corpus-based (offline, fast)** — `semantic` and `unified` search a local cached corpus and do **no network I/O at request time**:
+`ui_recommendations()` in `app/main.py` dispatches on `strategy`, validated against `STRATEGY_LABELS`; an unknown value (including the retired `keyword`) falls back to the default. Both strategies search a local cached corpus and do **no network I/O at request time**:
 - `services/corpus.py` — load/save, the TMDB→corpus field mapping, embedding cache, and `semantic_search()` (query-time cosine ranking).
 - **`embedding_text()` defines what gets embedded**: `title + genre + keywords + overview`, *not* the plot alone. Plot summaries are narrative prose and contain almost none of the tone/subgenre vocabulary users actually type ("campy", "folk horror"); TMDB keywords supply it. This one change moved NDCG@6 from 0.3111 to 0.4997 — see `docs/evaluation-baseline.md`. **Anything computing a semantic score must use `embedding_text()`**; `recommend_unified_semantic` once embedded `overview` alone and silently scored worse than the search feeding it.
-- `services/recommender.py` → `recommend_movies_advanced()` — semantic search, then year/rating/language filters, then weighted random sampling.
-- `services/unified_recommender.py` → `recommend_unified_semantic()` — takes a 60-item pool from the above and re-ranks by a blend (semantic .45 / keyword overlap .20 / popularity .20 / recency .05), then applies MMR for diversity.
+- `semantic` → `services/recommender.py` → `recommend_movies_advanced()` — semantic search, then year/rating/language filters, then weighted random sampling.
+- `unified` → `services/unified_recommender.py` → `recommend_unified_semantic()` — takes a 60-item pool from the above and re-ranks by a blend (semantic .45 / keyword overlap .20 / popularity .20 / recency .05), then applies MMR for diversity.
 
-**Live-OMDb (slow, network-bound)** — `keyword` and `embedding` in `services/strategies/`, both fetching from OMDb per request. `embedding_omdb.py` uses sklearn TF-IDF, *not* the neural model, despite the name.
+The live-OMDb strategies (`keyword`, and the TF-IDF `embedding` before it) are gone. `services/omdb_client.py` remains only for the offline corpus build.
 
 ### Corpus building
 
@@ -73,10 +69,9 @@ Three independent randomness sources, all intentional: Gaussian score perturbati
 
 - `data/horror_corpus.json` **is committed** (626 KB) and copied into the Docker image, so deploys need no TMDB/OMDb keys at build time. Embeddings (`.npy`) and the build checkpoint stay gitignored and are regenerated from the corpus on first use.
 - Filters are applied to the corpus **before** ranking (`_passes_filters` in `recommender.py`), keeping corpus rows and embedding rows aligned. Filtering the top-K afterwards used to starve restrictive queries.
-- `PyYAML` is imported by `strategies/embedding_omdb.py` but not declared in `pyproject.toml` — it only resolves transitively via transformers.
 - CSRF tokens are HMAC-verified but not bound to the session: `validate_csrf_token()` never compares against `request.session["csrf"]`, so a token from any session validates in any other.
 - `tests/` mixes pytest files (`test_*.py`) with manual scripts (`manual_*.py`, `debug_stripe.py`, `deployment_checklist.py`) that hit real services and are not collected by pytest.
-- OMDb is always mocked in tests via `respx`; `conftest.py` forces `DEBUG=true` so session cookies aren't `Secure` (TestClient speaks plain HTTP) and swaps the DB for in-memory SQLite.
+- No test touches the network (the request path has no outbound calls left); `conftest.py` forces `DEBUG=true` so session cookies aren't `Secure` (TestClient speaks plain HTTP) and swaps the DB for in-memory SQLite.
 
 ## Database migrations
 
@@ -115,7 +110,7 @@ not a measurement, since the pipeline's stddev is comparable to most effects wor
 
 ## Adding a strategy
 
-Four coordinated edits: the class in `services/strategies/` (must satisfy the `recommend(mood, limit)` protocol in `base.py`), a branch in `get_strategy()` in `services/recommender.py`, a branch plus a `STRATEGY_LABELS` entry in `app/main.py`, and the `<option>` in `index.html`.
+Three coordinated edits: the ranking function in `services/`, a branch plus a `STRATEGY_LABELS` entry in `ui_recommendations()` in `app/main.py`, and the `<option>` in `index.html`. It must search the corpus — nothing on the request path may call OMDb or TMDB.
 
 ## Deployment
 

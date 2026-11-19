@@ -59,7 +59,6 @@
         <select id="strategy" name="strategy" class="strategy-select">
           <option value="semantic" selected>Semantic Search</option>
           <option value="unified">Unified (AI + Diversity)</option>
-          <option value="keyword">Keyword Match</option>
         </select>
       </div>
 
@@ -85,14 +84,6 @@
             <label for="limit">Results</label>
             <input id="limit" name="limit" type="number" min="1" max="20" value="6">
           </div>
-          <div class="filter-group">
-            <label for="kind">Type</label>
-            <select id="kind" name="kind">
-              <option value="movie" selected>Movies</option>
-              <option value="series">Series</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
           <div class="filter-checkbox">
             <input id="english" name="english" type="checkbox" value="1">
             <label for="english">English only</label>
@@ -101,20 +92,6 @@
       </div>
     </form>
 
-    <script>
-    // Corpus strategies answer in tens of milliseconds, so the loading
-    // animation would be pure theatre -- it costs more than the work. Only
-    // the keyword strategy hits OMDb live and is actually slow enough to
-    // warrant it.
-    (function () {
-      var form = document.getElementById('search-form');
-      if (!form) return;
-      form.addEventListener('submit', function () {
-        var strategy = (document.getElementById('strategy') || {}).value;
-        form.action = strategy === 'keyword' ? '/loading' : '/recommend';
-      });
-    })();
-    </script>
   </section>
 
   <hr class="divider">
