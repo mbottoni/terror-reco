@@ -23,6 +23,12 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
+# A real Argon2 hash of a random password nobody knows. Login verifies against
+# it when the address is unknown, so that path costs the same as a wrong
+# password instead of returning measurably sooner.
+DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
+
+
 def safe_url(url: str | None) -> str:
     """Return *url* if it is safe to put in ``src``/``href``, else ``""``.
 

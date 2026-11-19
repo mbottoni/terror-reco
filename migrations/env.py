@@ -28,8 +28,11 @@ import app.models  # noqa: E402,F401  isort:skip
 
 config = context.config
 
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# Only the `alembic` CLI should take its logging setup from alembic.ini. When
+# the app runs migrations at startup it sets configure_logger=False, because
+# fileConfig() would otherwise switch off the application's own loggers.
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 DATABASE_URL = _normalize_database_url(get_settings().DATABASE_URL)
 config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
