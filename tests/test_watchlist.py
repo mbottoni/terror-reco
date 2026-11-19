@@ -40,7 +40,7 @@ class TestWatchlistToggle:
 
     def test_rejects_missing_imdb_id(self, client: Any) -> None:
         _register(client, "wl2@example.com")
-        assert client.post("/watchlist/toggle", json={"title": "no id"}).status_code == 400
+        assert client.post("/watchlist/toggle", json={"title": "no id"}).status_code == 422
 
     def test_saving_twice_does_not_duplicate(self, client: Any, db: Any) -> None:
         """The unique constraint is the backstop; toggling is the behaviour."""
