@@ -142,6 +142,10 @@ async def require_csrf(request: Request) -> None:
     hidden ``csrf`` field. ``SameSite=Lax`` on the session cookie already
     blocks cross-site POSTs in current browsers; this is the second lock.
     """
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        # Safe methods change nothing, so a router can apply this dependency
+        # to all of its routes without breaking its pages.
+        return
     token = request.headers.get(CSRF_HEADER)
     if not token:
         content_type = request.headers.get("content-type", "")

@@ -15,6 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import Response
 
+from .account import router as account_router
 from .auth import get_current_user
 from .auth import router as auth_router
 from .db import get_db, init_db
@@ -442,6 +443,7 @@ async def submit_feedback(
 
 # Routers
 app.include_router(auth_router)
+app.include_router(account_router)
 app.include_router(history_router)
 app.include_router(stripe_router)
 app.include_router(watchlist_router)

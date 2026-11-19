@@ -61,7 +61,13 @@ class Rule:
 # Sized for a person, not a script: nobody types 30 searches a minute, and
 # each search costs a sentence-transformer forward pass.
 DEFAULT_RULES: tuple[Rule, ...] = (
-    Rule("auth", frozenset({"POST"}), ("/auth/login", "/auth/register"), limit=10),
+    Rule(
+        "auth",
+        frozenset({"POST"}),
+        # /account/ too: each of its forms is a password check.
+        ("/auth/login", "/auth/register", "/account/"),
+        limit=10,
+    ),
     Rule("checkout", frozenset({"POST"}), ("/stripe/create-checkout-session",), limit=10),
     Rule(
         "search",
