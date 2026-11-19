@@ -10,6 +10,7 @@ import numpy as np
 # IDF is meaningless, and the keyword one existed only as a no-corpus fallback,
 # which has no trigger now that the corpus ships in the repo and the image.
 
+
 def _score_popularity(detail: dict[str, Any]) -> float:
     rating = float(detail.get("vote_average") or 0.0)
     votes_str = (detail.get("imdbVotes") or detail.get("imdb_votes_raw") or "0").replace(",", "")
