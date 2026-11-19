@@ -19,6 +19,7 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .models import MovieFeedback, User, WatchlistItem
+from .schemas import FeedbackIn, FeedbackOut
 from .security import safe_url
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
@@ -365,31 +366,27 @@ async def api_similar(imdb_id: str, limit: int = Query(default=6, ge=1, le=20)) 
     return {"imdb_id": imdb_id, "count": len(movies), "results": movies}
 
 
-@app.post("/api/feedback")
+@app.post("/api/feedback", response_model=FeedbackOut)
 async def submit_feedback(
-    request: Request,
+    payload: FeedbackIn,
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Record a like (+1) or dislike (-1) for a movie.
 
-    Expects JSON: ``{"imdb_id": "...", "title": "...", "rating": 1,
-    "mood": "...", "strategy": "..."}``.
     Upserts: if the user already rated this movie, the rating is updated.
     Sending the same rating again removes the feedback (toggle off).
     """
     if not user:
         raise HTTPException(status_code=401, detail="Sign in to rate movies")
 
-    body = await request.json()
-    imdb_id: str = body.get("imdb_id", "")
-    title: str = body.get("title", "")
-    rating: int = int(body.get("rating", 0))
-    mood: str | None = body.get("mood")
-    strategy: str | None = body.get("strategy")
-
-    if not imdb_id or rating not in (1, -1):
-        raise HTTPException(status_code=400, detail="Invalid feedback payload")
+    imdb_id = payload.imdb_id
+    rating: int = payload.rating
+    # Free text is clipped to the column widths rather than rejected: a long
+    # mood is a legitimate query, and Postgres would refuse the overflow.
+    title = payload.title[:512]
+    mood = payload.mood[:512] if payload.mood else payload.mood
+    strategy = payload.strategy[:64] if payload.strategy else payload.strategy
 
     existing = (
         db.query(MovieFeedback)
