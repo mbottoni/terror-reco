@@ -229,7 +229,11 @@ async def logout(request: Request) -> RedirectResponse:
     return RedirectResponse(url="/", status_code=303)
 
 
+<<<<<<< HEAD
 @router.post("/logout-all", dependencies=[Depends(require_csrf)])
+=======
+@router.post("/logout-all")
+>>>>>>> origin/main
 async def logout_everywhere(
     request: Request,
     user: User | None = Depends(get_current_user),
