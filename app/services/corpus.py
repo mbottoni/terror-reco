@@ -16,10 +16,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CORPUS_DIR = _PROJECT_ROOT / "data"
@@ -249,7 +252,7 @@ def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
     from .unified_recommender import _embed_sbert, _normalize_text
 
     texts = [_normalize_text(embedding_text(m)) for m in corpus]
-    print(f"  Computing embeddings for {len(texts)} movies...")
+    logger.info("Computing embeddings for %d movies", len(texts))
     embs = _embed_sbert(texts)
 
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
