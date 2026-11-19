@@ -154,3 +154,51 @@ class TestResultsAccessibility:
             "modal-dialog').focus()",
         ):
             assert needle in page
+
+
+class TestPosterVariant:
+    TMDB = "https://image.tmdb.org/t/p/w500/abc123.jpg"
+
+    def test_rewrites_the_size_segment(self) -> None:
+        from app.security import poster_variant
+
+        assert poster_variant(self.TMDB, "w342") == "https://image.tmdb.org/t/p/w342/abc123.jpg"
+        assert poster_variant(self.TMDB, "w185") == "https://image.tmdb.org/t/p/w185/abc123.jpg"
+
+    @pytest.mark.parametrize(
+        "url",
+        ["https://m.media-amazon.com/images/M/x.jpg", "/static/p.jpg", "https://example.com/w500/"],
+    )
+    def test_leaves_other_hosts_alone(self, url: str) -> None:
+        from app.security import poster_variant
+
+        assert poster_variant(url, "w342") == url
+
+    @pytest.mark.parametrize("url", ["javascript:alert(1)", "//evil.example/x.jpg", None, ""])
+    def test_still_refuses_unsafe_urls(self, url: str | None) -> None:
+        from app.security import poster_variant
+
+        assert poster_variant(url, "w342") == ""
+
+    def test_ignores_a_bogus_size(self) -> None:
+        from app.security import poster_variant
+
+        assert poster_variant(self.TMDB, "../../x") == self.TMDB
+
+    def test_grid_cards_request_the_small_rendition(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        film: dict[str, Any] = {
+            "imdb_id": "tt0000003",
+            "title": "A Film",
+            "overview": "Plot.",
+            "poster_url": self.TMDB,
+            "keywords": "isolation",
+            "year": "1979",
+        }
+        monkeypatch.setattr(main_mod, "recommend_movies_advanced", lambda **kw: [film])
+        page = client.get("/recommend", params={"mood": "x", "strategy": "semantic"}).text
+        card = page[page.index('class="card-poster"') :]
+        card = card[: card.index(">")]
+        assert 'src="https://image.tmdb.org/t/p/w342/abc123.jpg"' in card
+        assert "w500/abc123.jpg 500w" in card
