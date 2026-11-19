@@ -18,6 +18,7 @@ import stripe
 from fastapi.testclient import TestClient
 
 import app.stripe_payments as sp
+from app.models import Payment, User
 
 WEBHOOK_SECRET = "whsec_test_secret"
 
@@ -177,15 +178,30 @@ def _signed(payload: bytes, secret: str = WEBHOOK_SECRET) -> str:
     return f"t={timestamp},v1={signature}"
 
 
-def _event(event_type: str = "checkout.session.completed") -> bytes:
+def _event(
+    event_type: str = "checkout.session.completed",
+    event_id: str = "evt_test_1",
+    **obj_overrides: Any,
+) -> bytes:
+    obj: dict[str, Any] = {
+        "id": "cs_test_123456",
+        "object": "checkout.session",
+        "payment_status": "paid",
+        "payment_intent": "pi_test_1",
+        "amount_total": 300,
+        "currency": "usd",
+        "client_reference_id": None,
+    }
+    obj.update(obj_overrides)
     return json.dumps(
-        {
-            "id": "evt_test_1",
-            "object": "event",
-            "type": event_type,
-            "data": {"object": {"id": "cs_test_123456", "object": "checkout.session"}},
-        }
+        {"id": event_id, "object": "event", "type": event_type, "data": {"object": obj}}
     ).encode()
+
+
+def _deliver(client: TestClient, payload: bytes) -> Any:
+    return client.post(
+        "/stripe/webhook", content=payload, headers={"stripe-signature": _signed(payload)}
+    )
 
 
 class TestWebhook:
@@ -227,3 +243,125 @@ class TestWebhook:
 
     def test_unconfigured_secret_is_500(self, client: TestClient, unconfigured: None) -> None:
         assert client.post("/stripe/webhook", content=_event()).status_code == 500
+
+
+class TestPaymentsAreRecorded:
+    def test_completed_checkout_is_stored(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        assert _deliver(client, _event()).status_code == 200
+        payment = db.query(Payment).one()
+        assert payment.checkout_session_id == "cs_test_123456"
+        assert payment.stripe_event_id == "evt_test_1"
+        assert payment.payment_intent_id == "pi_test_1"
+        assert (payment.amount_total, payment.currency, payment.status) == (300, "usd", "paid")
+        assert payment.user_id is None
+
+    def test_redelivery_does_not_duplicate(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        """Stripe delivers at least once; the same event twice is one payment."""
+        for _ in range(3):
+            assert _deliver(client, _event()).status_code == 200
+        assert db.query(Payment).count() == 1
+
+    def test_same_session_under_a_new_event_id_does_not_duplicate(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        _deliver(client, _event(event_id="evt_a"))
+        _deliver(client, _event(event_id="evt_b"))
+        assert db.query(Payment).count() == 1
+
+    def test_unpaid_completion_is_not_a_payment(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        assert _deliver(client, _event(payment_status="unpaid")).status_code == 200
+        assert db.query(Payment).count() == 0
+
+    def test_payment_is_linked_to_the_signed_in_user(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        user = User(email="supporter@example.com", password_hash="x")
+        db.add(user)
+        db.commit()
+        _deliver(client, _event(client_reference_id=str(user.id)))
+        assert db.query(Payment).one().user_id == user.id
+
+    @pytest.mark.parametrize("reference", ["999999", "not-a-number", "1; drop table users"])
+    def test_bogus_reference_is_stored_unlinked(
+        self, client: TestClient, configured: None, db: Any, reference: str
+    ) -> None:
+        assert _deliver(client, _event(client_reference_id=reference)).status_code == 200
+        assert db.query(Payment).one().user_id is None
+
+    def test_refund_marks_the_payment(self, client: TestClient, configured: None, db: Any) -> None:
+        _deliver(client, _event())
+        refund = _event(
+            "charge.refunded",
+            event_id="evt_refund",
+            id="ch_test_1",
+            object="charge",
+            payment_intent="pi_test_1",
+            refunded=True,
+        )
+        assert _deliver(client, refund).status_code == 200
+        db.expire_all()
+        assert db.query(Payment).one().status == "refunded"
+
+    def test_refund_for_an_unknown_payment_is_acknowledged(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        refund = _event("charge.refunded", id="ch_x", payment_intent="pi_unknown", refunded=True)
+        assert _deliver(client, refund).status_code == 200
+        assert db.query(Payment).count() == 0
+
+    def test_rejected_signature_records_nothing(
+        self, client: TestClient, configured: None, db: Any
+    ) -> None:
+        payload = _event()
+        resp = client.post(
+            "/stripe/webhook",
+            content=payload,
+            headers={"stripe-signature": _signed(payload, secret="whsec_wrong")},
+        )
+        assert resp.status_code == 400
+        assert db.query(Payment).count() == 0
+
+
+class TestCheckoutCarriesTheUser:
+    def _capture(self, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
+        seen: dict[str, Any] = {}
+
+        def _create(**kwargs: Any) -> SimpleNamespace:
+            seen.update(kwargs)
+            return _session()
+
+        monkeypatch.setattr(stripe.checkout.Session, "create", _create)
+        return seen
+
+    def test_signed_out_checkout_has_no_reference(
+        self, client: TestClient, configured: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen = self._capture(monkeypatch)
+        client.post("/stripe/create-checkout-session")
+        assert "client_reference_id" not in seen
+
+    def test_signed_in_checkout_references_the_user(
+        self, client: TestClient, configured: None, monkeypatch: pytest.MonkeyPatch, db: Any
+    ) -> None:
+        import re
+
+        page = client.get("/auth/register").text
+        csrf = re.search(r'name="csrf" value="([^"]+)"', page).group(1)  # type: ignore[union-attr]
+        client.post(
+            "/auth/register",
+            data={
+                "email": "payer@example.com",
+                "password": "password123",
+                "confirm_password": "password123",
+                "csrf": csrf,
+            },
+        )
+        seen = self._capture(monkeypatch)
+        client.post("/stripe/create-checkout-session")
+        assert seen["client_reference_id"] == str(db.query(User).one().id)

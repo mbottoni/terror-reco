@@ -5,16 +5,21 @@ Handles "Buy me a coffee" payments.
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import Response
 
 from .auth import get_current_user
-from .models import User
+from .db import get_db
+from .models import Payment, User
 from .settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -75,24 +80,31 @@ def buy_coffee_page(request: Request, user: User | None = Depends(get_current_us
 
 
 @router.post("/create-checkout-session")
-def create_checkout_session(request: Request) -> dict[str, Any]:
+def create_checkout_session(
+    request: Request, user: User | None = Depends(get_current_user)
+) -> dict[str, Any]:
     """Create a Stripe checkout session for coffee purchase."""
     if not settings.STRIPE_SECRET_KEY or not settings.COFFEE_PRICE_ID:
         logger.error("Checkout requested but Stripe is not configured")
         raise HTTPException(status_code=503, detail="Payments are not available right now.")
 
     base_url = str(request.base_url).rstrip("/")
+    # No payment_method_types: Stripe then offers every method enabled in the
+    # dashboard (wallets, local methods), not cards alone.
+    params: dict[str, Any] = {
+        "api_key": settings.STRIPE_SECRET_KEY,
+        "line_items": [{"price": settings.COFFEE_PRICE_ID, "quantity": 1}],
+        "mode": "payment",
+        "success_url": f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}",
+        "cancel_url": f"{base_url}/stripe/cancel",
+        "metadata": APP_METADATA,
+    }
+    if user:
+        # Comes back on the webhook, which is how a payment is tied to the
+        # account that made it. Absent for signed-out supporters.
+        params["client_reference_id"] = str(user.id)
     try:
-        # No payment_method_types: Stripe then offers every method enabled in
-        # the dashboard (wallets, local methods), not cards alone.
-        checkout_session = stripe.checkout.Session.create(
-            api_key=settings.STRIPE_SECRET_KEY,
-            line_items=[{"price": settings.COFFEE_PRICE_ID, "quantity": 1}],
-            mode="payment",
-            success_url=f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{base_url}/stripe/cancel",
-            metadata=APP_METADATA,
-        )
+        checkout_session = stripe.checkout.Session.create(**params)
     except stripe.StripeError:
         # The exception text can carry key and account details; it goes to
         # the log, never to the browser.
@@ -148,8 +160,59 @@ def stripe_cancel(request: Request, user: User | None = Depends(get_current_user
     return _page(request, "coffee_cancel.html", {}, user)
 
 
+def record_checkout_completed(db: Session, event_id: str, session: dict[str, Any]) -> bool:
+    """Store a completed checkout. Returns False if it was already recorded.
+
+    Stripe delivers at least once and retries on any non-2xx, so the same
+    session can arrive several times, possibly concurrently. The unique
+    constraint on ``checkout_session_id`` is the arbiter; the lookup first is
+    only there to make the common repeat cheap.
+    """
+    session_id = str(session.get("id") or "")
+    if not session_id:
+        return False
+    if db.query(Payment.id).filter(Payment.checkout_session_id == session_id).first():
+        return False
+
+    user_id: int | None = None
+    reference = session.get("client_reference_id")
+    if reference and str(reference).isdigit() and db.get(User, int(reference)):
+        user_id = int(reference)
+
+    db.add(
+        Payment(
+            checkout_session_id=session_id,
+            stripe_event_id=event_id,
+            payment_intent_id=session.get("payment_intent") or None,
+            amount_total=int(session.get("amount_total") or 0),
+            currency=str(session.get("currency") or "usd")[:8],
+            status="paid",
+            user_id=user_id,
+        )
+    )
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()  # a concurrent delivery of the same event won the race
+        return False
+    return True
+
+
+def record_refund(db: Session, charge: dict[str, Any]) -> bool:
+    """Mark the payment behind a fully refunded charge. False if unknown."""
+    intent = charge.get("payment_intent")
+    if not intent or not charge.get("refunded"):
+        return False
+    payment = db.query(Payment).filter(Payment.payment_intent_id == intent).first()
+    if payment is None or payment.status == "refunded":
+        return False
+    payment.status = "refunded"
+    db.commit()
+    return True
+
+
 @router.post("/webhook")
-async def stripe_webhook(request: Request) -> dict[str, str]:
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, str]:
     """Handle Stripe webhooks."""
     if not settings.STRIPE_WEBHOOK_SECRET:
         raise HTTPException(status_code=500, detail="Webhook secret not configured")
@@ -162,7 +225,7 @@ async def stripe_webhook(request: Request) -> dict[str, str]:
         raise HTTPException(status_code=400, detail="Missing stripe-signature header")
 
     try:
-        event = stripe.Webhook.construct_event(  # type: ignore[no-untyped-call]
+        stripe.Webhook.construct_event(  # type: ignore[no-untyped-call]
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
     except ValueError as e:
@@ -170,10 +233,25 @@ async def stripe_webhook(request: Request) -> dict[str, str]:
     except stripe.SignatureVerificationError as e:
         raise HTTPException(status_code=400, detail="Invalid signature") from e
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        # Recording the payment is tracked separately (issue #58); until then
-        # the event is only logged.
-        logger.info("Payment completed: ...%s", str(session["id"])[-6:])
+    # The payload is verified at this point; read it as plain JSON rather than
+    # through the SDK's object wrapper.
+    event: dict[str, Any] = json.loads(payload)
+    obj: dict[str, Any] = (event.get("data") or {}).get("object") or {}
+    event_id = str(event.get("id") or "")
 
+    if event.get("type") == "checkout.session.completed":
+        if obj.get("payment_status") != "paid":
+            # Delayed payment methods complete the session before the money
+            # arrives; only a paid session is a payment.
+            logger.info("Checkout completed but not paid yet: ...%s", str(obj.get("id"))[-6:])
+        elif await run_in_threadpool(record_checkout_completed, db, event_id, obj):
+            logger.info("Payment recorded: ...%s", str(obj.get("id"))[-6:])
+        else:
+            logger.info("Payment already recorded: ...%s", str(obj.get("id"))[-6:])
+    elif event.get("type") == "charge.refunded":
+        if await run_in_threadpool(record_refund, db, obj):
+            logger.info("Payment refunded: ...%s", str(obj.get("payment_intent"))[-6:])
+
+    # Always 2xx for a verified event, including ones not handled here;
+    # anything else makes Stripe retry it for days.
     return {"status": "success"}
