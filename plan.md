@@ -1,5 +1,10 @@
 # Work Plan
 
+> **The live plan is the [Roadmap issue](https://github.com/mbottoni/terror-reco/issues/68)
+> and its [milestones](https://github.com/mbottoni/terror-reco/milestones).** Everything
+> below is the record of the first round of work, kept for the measurements and the
+> "deliberately not doing" decisions.
+
 Ordered by value per unit of effort. Measurements referenced here live in
 `docs/evaluation-baseline.md`; latency figures were taken on this machine with a
 warm model and the 500-film corpus.
