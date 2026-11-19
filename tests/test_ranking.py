@@ -11,10 +11,18 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+import pytest
 
 from app.services.corpus import embedding_text
 from app.services.recommender import _passes_filters
-from app.services.unified_recommender import _bm25_scores, _mmr, recommend_unified_semantic
+from app.services.unified_recommender import (
+    Bm25Stats,
+    _bm25_scores,
+    _bm25_stats,
+    _mmr,
+    corpus_bm25_stats,
+    recommend_unified_semantic,
+)
 
 
 def _movie(title: str, overview: str = "", **extra: Any) -> dict[str, Any]:
@@ -58,6 +66,56 @@ class TestBM25:
     def test_empty_query_and_empty_items_are_safe(self) -> None:
         assert len(_bm25_scores("", [_movie("A")])) == 1
         assert len(_bm25_scores("anything", [])) == 0
+
+
+class TestBM25CollectionStatistics:
+    """IDF must come from the corpus, not from the pool a query retrieved."""
+
+    def test_pool_idf_collapses_for_a_term_every_candidate_shares(self) -> None:
+        """The bug: in a pool retrieved *for* "vampire", every film says vampire."""
+        pool = [_movie(f"V{i}", overview="vampire castle") for i in range(4)]
+        pool.append(_movie("Odd", overview="vampire castle zeppelin"))
+        corpus_stats = Bm25Stats(n_docs=500, avg_len=3.0, df={"vampire": 20, "zeppelin": 1})
+
+        pool_only = _bm25_scores("vampire", pool)
+        with_corpus = _bm25_scores("vampire", pool, stats=corpus_stats)
+        # Rare in the corpus (20/500), universal in the pool (5/5): the pool
+        # estimate is a small fraction of the true weight.
+        assert with_corpus[0] > pool_only[0] * 5
+
+    def test_score_does_not_depend_on_the_other_candidates(self) -> None:
+        film = _movie("Target", overview="pagan ritual island")
+        stats = Bm25Stats(n_docs=500, avg_len=3.0, df={"pagan": 5, "ritual": 12})
+        pool_a = [film, _movie("A", overview="pagan pagan"), _movie("B", overview="ritual")]
+        pool_b = [film, _movie("C", overview="shark"), _movie("D", overview="clown")]
+
+        assert _bm25_scores("pagan ritual", pool_a, stats=stats)[0] == pytest.approx(
+            _bm25_scores("pagan ritual", pool_b, stats=stats)[0]
+        )
+        # ...which is exactly what pool-level statistics get wrong.
+        assert _bm25_scores("pagan ritual", pool_a)[0] != pytest.approx(
+            _bm25_scores("pagan ritual", pool_b)[0]
+        )
+
+    def test_term_unknown_to_the_collection_still_scores_on_a_match(self) -> None:
+        stats = Bm25Stats(n_docs=500, avg_len=2.0, df={})
+        scores = _bm25_scores(
+            "zeppelin", [_movie("A", overview="zeppelin"), _movie("B")], stats=stats
+        )
+        assert scores[0] > 0 and scores[1] == 0
+
+    def test_stats_count_each_document_once_per_term(self) -> None:
+        stats = _bm25_stats([_movie("A", overview="ghost ghost ghost"), _movie("B", overview="x")])
+        assert stats.n_docs == 2
+        assert stats.df["ghost"] == 1
+
+    def test_shipped_corpus_yields_statistics(self) -> None:
+        stats = corpus_bm25_stats()
+        if stats is None:
+            pytest.skip("corpus not built in this environment")
+        assert stats.n_docs >= 100
+        # "horror" is in nearly every record's genre; a tone word is not.
+        assert stats.df.get("horror", 0) > stats.df.get("lovecraftian", 0)
 
 
 class TestMMR:

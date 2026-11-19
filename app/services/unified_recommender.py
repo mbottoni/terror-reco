@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import dataclass
 from math import isfinite, log
 from pathlib import Path
 from typing import Any
@@ -102,31 +103,89 @@ def _item_text(item: dict[str, Any]) -> str:
     return " ".join(p for p in parts if p)
 
 
-def _bm25_scores(mood: str, items: list[dict[str, Any]], k1: float = 1.5, b: float = 0.75) -> Any:
+@dataclass(frozen=True)
+class Bm25Stats:
+    """Collection statistics BM25 needs: how common each term is, overall."""
+
+    n_docs: int
+    avg_len: float
+    df: dict[str, int]
+
+
+def _bm25_stats(items: list[dict[str, Any]]) -> Bm25Stats:
+    docs = [_tokenize(_item_text(it)) for it in items]
+    df: Counter[str] = Counter()
+    for doc in docs:
+        df.update(set(doc))
+    n = len(docs)
+    return Bm25Stats(n_docs=n, avg_len=(sum(len(d) for d in docs) / n if n else 0.0), df=dict(df))
+
+
+_CORPUS_STATS_CACHE: dict[str, Any] = {}
+
+
+def corpus_bm25_stats() -> Bm25Stats | None:
+    """BM25 statistics over the whole corpus, cached until the file changes.
+
+    Returns None when there is no corpus, so callers fall back to the pool.
+    Reads the corpus JSON directly rather than through
+    ``get_corpus_and_embeddings()``: that would compute embeddings on a miss,
+    and term counts need no model.
+    """
+    from .corpus import CORPUS_FILE, load_corpus
+
+    try:
+        mtime = CORPUS_FILE.stat().st_mtime if CORPUS_FILE.exists() else 0.0
+        if _CORPUS_STATS_CACHE.get("mtime") != mtime:
+            corpus = load_corpus()
+            _CORPUS_STATS_CACHE.update(mtime=mtime, stats=_bm25_stats(corpus) if corpus else None)
+        stats: Bm25Stats | None = _CORPUS_STATS_CACHE["stats"]
+        return stats
+    except Exception:  # noqa: BLE001 - never fail ranking over a statistics miss
+        return None
+
+
+def _bm25_scores(
+    mood: str,
+    items: list[dict[str, Any]],
+    k1: float = 1.5,
+    b: float = 0.75,
+    stats: Bm25Stats | None = None,
+) -> Any:
     """Okapi BM25 of *mood* against each item's text.
 
     Replaces a raw ``|query ∩ doc| / |query|`` overlap ratio, which had no
     stopword filtering, no term-frequency saturation and no inverse document
     frequency -- so a query's common words dominated the score.
+
+    *stats* supplies the collection statistics (document frequencies and mean
+    length). Production passes the whole corpus. Left as None they are taken
+    from *items*, which is only right when *items* is itself the collection:
+    over a 60-film candidate pool every film was retrieved **because** it
+    resembles the query, so the query's own terms look common, their IDF
+    collapses, and the same film scores differently depending on which query
+    retrieved it.
     """
     query = _tokenize(mood)
     docs = [_tokenize(_item_text(it)) for it in items]
-    n = len(docs)
-    scores = np.zeros(n, dtype=np.float32)
-    if not query or n == 0:
+    scores = np.zeros(len(docs), dtype=np.float32)
+    if not query or not docs:
         return scores
 
-    avg_len = sum(len(d) for d in docs) / n or 1.0
+    if stats is None or stats.n_docs == 0:
+        stats = _bm25_stats(items)
+    n = stats.n_docs
+    avg_len = stats.avg_len or 1.0
     doc_counters = [Counter(d) for d in docs]
-    # Document frequency per query term
-    df = {term: sum(1 for c in doc_counters if term in c) for term in set(query)}
 
     for term in query:
-        n_q = df.get(term, 0)
-        if n_q == 0:
-            continue
-        # BM25 idf, floored at 0 so terms in most documents cannot go negative
+        n_q = stats.df.get(term, 0)
+        # BM25 idf, floored at 0 so terms in most documents cannot go negative.
+        # A term the collection has never seen (n_q == 0) is maximally rare;
+        # it only scores if a candidate actually contains it.
         idf = max(0.0, log((n - n_q + 0.5) / (n_q + 0.5) + 1.0))
+        if idf == 0.0:
+            continue
         for i, counter in enumerate(doc_counters):
             freq = counter.get(term, 0)
             if not freq:
@@ -272,7 +331,7 @@ def compute_signals(
 
     signals: dict[str, np.ndarray] = {
         "semantic": _minmax(_cosine(mood_vec, plot_vecs).ravel()),
-        "keyword": _minmax(_bm25_scores(mood, items)),
+        "keyword": _minmax(_bm25_scores(mood, items, stats=corpus_bm25_stats())),
         "popularity": _minmax(np.array([_popularity(it) for it in items], dtype=np.float32)),
     }
 
