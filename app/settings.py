@@ -1,7 +1,12 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# SECRET_KEY signs the session cookie and every CSRF token, so a deployment
+# running on the placeholder has forgeable sessions.
+DEFAULT_SECRET_KEY = "change-me-please"
+MIN_SECRET_KEY_LENGTH = 32
 
 
 class AppSettings(BaseSettings):
@@ -52,7 +57,7 @@ class AppSettings(BaseSettings):
     # libpq sslmode for Postgres. Managed Postgres needs "require"; a Postgres
     # container on the same Docker network has no TLS and needs "disable".
     DATABASE_SSLMODE: str = Field(default="require")
-    SECRET_KEY: str = Field(default="change-me-please")
+    SECRET_KEY: str = Field(default=DEFAULT_SECRET_KEY)
     SESSION_COOKIE_NAME: str = Field(default="terror_session")
 
     # Stripe
@@ -60,6 +65,24 @@ class AppSettings(BaseSettings):
     STRIPE_SECRET_KEY: str | None = Field(default=None)
     STRIPE_WEBHOOK_SECRET: str | None = Field(default=None)
     COFFEE_PRICE_ID: str | None = Field(default=None)  # Stripe Price ID for coffee
+
+    @model_validator(mode="after")
+    def _refuse_weak_secret_in_production(self) -> "AppSettings":
+        """Fail at startup rather than serve forgeable sessions.
+
+        Gated on DEBUG so local development and the test suite (which forces
+        DEBUG=true in conftest.py) keep working without a real key.
+        """
+        if self.DEBUG:
+            return self
+        if self.SECRET_KEY == DEFAULT_SECRET_KEY or len(self.SECRET_KEY) < MIN_SECRET_KEY_LENGTH:
+            raise ValueError(
+                "SECRET_KEY is unset or too short for production. Set SECRET_KEY to a random "
+                f"string of at least {MIN_SECRET_KEY_LENGTH} characters "
+                "(python -c 'import secrets; print(secrets.token_urlsafe(48))'), "
+                "or set DEBUG=1 for local development."
+            )
+        return self
 
 
 @lru_cache(maxsize=1)
