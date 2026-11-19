@@ -34,6 +34,20 @@ def _setup_db():
     Base.metadata.drop_all(bind=_test_engine)
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Every test starts with a clean slate.
+
+    All TestClient requests share one client address, so without this the
+    suite as a whole would trip the per-client limits.
+    """
+    from app.middleware import limiter
+
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
 def _override_get_db():
     """Yield a test-scoped DB session."""
     session = _TestSession()

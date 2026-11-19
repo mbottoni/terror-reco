@@ -20,6 +20,7 @@ from .auth import router as auth_router
 from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
+from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from .models import MovieFeedback, User, WatchlistItem
 from .schemas import FeedbackIn, FeedbackOut
 from .security import safe_url
@@ -96,6 +97,12 @@ app.add_middleware(
     same_site="lax",
     max_age=60 * 60 * 24 * 30,
 )
+# Added after the session middleware, so these wrap it: a rate-limited request
+# is refused before any session or database work, and every response --
+# including that refusal -- carries the security headers.
+if settings.RATE_LIMIT_ENABLED:
+    app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware, hsts=_https_only)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Autoescaping makes a value safe as text but says nothing about a URL scheme,
