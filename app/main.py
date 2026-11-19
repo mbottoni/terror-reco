@@ -1,4 +1,6 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +40,49 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
 settings = get_settings()
-app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
+
+
+def _warm_model_and_corpus() -> None:
+    """Load the model and the corpus before the first request needs them.
+
+    Every step is best-effort: booting without the model (CI, offline) or
+    without a corpus is deliberate, and /healthz reports the latter.
+    """
+    log = logging.getLogger(__name__)
+    try:
+        from .services.unified_recommender import _get_sbert
+
+        _get_sbert()
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "Could not pre-load sentence-transformer model at startup; "
+            "it will be loaded lazily on the first request."
+        )
+    try:
+        from .services.corpus import (
+            get_corpus_and_embeddings,
+            load_cached_embeddings,
+            load_corpus,
+        )
+
+        # Only warm from a valid on-disk cache. Without one,
+        # get_corpus_and_embeddings() would re-encode the whole corpus here
+        # and hold up startup; that case stays lazy.
+        if load_cached_embeddings(load_corpus()) is not None:
+            corpus, _ = get_corpus_and_embeddings()
+            log.info("Corpus warmed: %d films", len(corpus))
+    except Exception:  # noqa: BLE001
+        log.warning("Could not warm the corpus at startup", exc_info=True)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    _warm_model_and_corpus()
+    yield
+
+
+app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG, lifespan=lifespan)
 
 _https_only = not settings.DEBUG
 logger = logging.getLogger(__name__)
@@ -58,26 +102,6 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # so every poster URL rendered into a src/href goes through this first.
 templates.env.filters["safe_url"] = safe_url
 app.state.templates = templates
-
-
-# Initialize DB on startup (for SQLite dev); for Postgres use migrations
-@app.on_event("startup")
-async def _startup() -> None:
-    init_db()
-    # Pre-load the sentence-transformer model so the first request is fast.
-    # Wrapped in try/except so the app still starts when the model isn't
-    # available (e.g. CI, offline environments).
-    try:
-        from .services.unified_recommender import _get_sbert
-
-        _get_sbert()
-    except Exception:  # noqa: BLE001
-        import logging
-
-        logging.getLogger(__name__).warning(
-            "Could not pre-load sentence-transformer model at startup; "
-            "it will be loaded lazily on the first request."
-        )
 
 
 def _wants_json(request: Request) -> bool:
