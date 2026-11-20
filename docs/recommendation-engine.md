@@ -32,11 +32,14 @@ Takes a 60-film pool from the semantic search and re-ranks it by a blend:
 
 | Signal | Weight | Description |
 |--------|--------|-------------|
-| Semantic | 0.45 | Sentence-transformer cosine similarity |
-| Keyword | 0.20 | Okapi BM25 over title, keywords, genre and overview. Document frequencies come from the whole corpus, not the pool |
-| Popularity | 0.20 | IMDb rating × log(1 + votes), plus a small Metascore term |
-| Recency | 0.05 | Weak prior favouring newer films |
+| Tags | 0.35 | How well the film's descriptive tags answer the query: cosine between the query and the best-matching of the film's tag definitions ("slasher: a killer stalks and picks off a group of victims..."). For a query that names a film, the share of tags in common with that film |
+| Semantic | 0.30 | Sentence-transformer cosine similarity |
+| Keyword | 0.25 | Okapi BM25 over title, keywords, tags, genre and overview. Document frequencies come from the whole corpus, not the pool |
+| Popularity | 0.10 | IMDb rating × log(1 + votes), plus a small Metascore term |
+| Recency | 0 | Fitted to zero; kept as a signal so a setting can turn it on |
 | Taste | 0.15 | Signed-in users with at least three likes: cosine to the mean embedding of their liked films. Added on top, not renormalised |
+
+The weights were fitted on the graded benchmark and checked on moods held out of the fit (+0.07 NDCG@6 over the previous hand-set blend). Re-fitting the old signals alone gained nothing; the tag signal is the gain. See `docs/evaluation-baseline.md`.
 
 Then:
 
@@ -45,7 +48,7 @@ Then:
 3. Apply **Maximal Marginal Relevance** with a slightly jittered lambda to trade relevance against variety.
 4. Films the user disliked are demoted below everything else, not removed, so a heavy rater still gets a full page.
 
-Two alternatives were measured and deliberately left off: tuned blend weights and cross-encoder re-ranking. Both gains sat inside the noise; see `docs/evaluation-baseline.md`.
+Two alternatives were measured and deliberately left off: cross-encoder re-ranking, and larger learned rankers (gradient boosting on 18 features did worse on held-out moods than the five-weight blend). See `docs/evaluation-baseline.md`.
 
 ### Queries that name a film
 

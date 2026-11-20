@@ -563,3 +563,41 @@ Paired, as served: exclusion alone +0.074 [+0.037, +0.112]; the film vector on t
 - "less bleak" and "but funny" are embedded as text. The model does not understand negation or contrast, so the condition nudges the results and no more.
 - The judge is an AI model. No person has checked the grades.
 
+## A fitted blend with a tag signal (2026-11-20)
+
+**Where quality was being lost.** For each of the 55 moods, 92% of the films graded 2 are already among the 60 candidates the search retrieves, yet the page scored 0.685. An oracle ordering of the same 60 would score about 0.99. Retrieval was fine; ordering was the problem.
+
+**What was tried**, each fitted on some moods and scored on moods held out of the fit (six repetitions of five folds):
+
+| Ranker | Held-out NDCG@6 | Against the fixed blend |
+|---|---|---|
+| The fixed blend (semantic .45, keyword .20, popularity .20, recency .05) | 0.679 | |
+| Ridge on the same four signals | 0.692 | +0.013 [-0.011, +0.038] |
+| Ridge on the four plus a query-to-tag signal | 0.760 | +0.080 [+0.048, +0.114] |
+| Gradient boosting on those six | 0.744 | +0.065 [+0.034, +0.096] |
+| Gradient boosting on 18 features | 0.729 | +0.050 [+0.006, +0.094] |
+
+Re-weighting what was already there gains nothing, as the earlier weight tuning found. One new signal carries the whole gain, and the simplest model that uses it is the best: more features and trees fit the 55 moods and lose on the held-out ones.
+
+**The signal.** Each of the 140 tags has a one-line meaning in `data/film_tags.json`. Those definitions are embedded once; a film's score is the cosine between the query and the best-matching of its tags' definitions. Taking the best tag beats averaging, and embedding "tag: meaning" beats the tag alone (+0.080 against +0.063).
+
+**What ships.** `DEFAULT_WEIGHTS` is now semantic .30, keyword .25, tags .35, popularity .10, recency 0: a non-negative ridge fit, rounded. For a query that names a film the tag signal is the share of tags the candidate has in common with the named film, which beat both alternatives on the title queries (0.751 as served, against 0.668 using the film's vector and 0.682 with no tag signal).
+
+As served, five draws per query, paired against the previous blend:
+
+| | Before | After | Difference | Page judged a fit |
+|---|---|---|---|---|
+| 55 moods | 0.677 | 0.738 | +0.061 [+0.026, +0.096] | 77% to 85% |
+| 15 hand-written moods | 0.745 | 0.807 | +0.062 [+0.015, +0.116] | 88% to 94% |
+| 24 title queries | 0.602 | 0.736 | +0.134 [+0.072, +0.195] | 79% to 89% |
+
+No returned film was left unjudged: 132 new pairs were graded first.
+
+**What this does not show.**
+
+- The shipped weights were fitted on all 55 moods, so 0.738 is in-sample. The honest estimate of the gain is the held-out one, about +0.07, which the as-served difference happens to match.
+- An AI model wrote the tags and an AI model graded the films. A signal built from one and scored by the other can agree with itself. The hand-written slice, whose gold films a person chose, moves by the same amount, which is some reassurance and not proof.
+- Ten moods got worse by more than 0.05. The largest are literal ones with no tag to match: "cursed videotape or haunted technology" (-0.21), "anthology of short scary stories" (-0.19), "evil clown" (-0.15). The tag signal adds noise when no tag fits, and nothing yet turns its weight down in that case.
+- The weakest moods are still weak: "campy fun with lots of blood" 0.10 to 0.19, "ghost story that is sad more than scary" 0.17 to 0.22. Degree and negation need attributes the tags do not have.
+- Recency now has no weight and popularity half of what it had. Popular films are shown a little less; that was not measured as a goal in itself.
+

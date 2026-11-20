@@ -18,6 +18,7 @@ from scripts.eval_gate import (
     evaluate,
     ndcg_at_k,
     stored_vectors,
+    tag_lookup,
     text_sha,
     title_match,
 )
@@ -81,7 +82,7 @@ class TestFixtureStillDescribesTheCorpus:
 class TestRankingHasNotCollapsed:
     def test_ndcg_stays_near_the_recorded_baseline(self, gate: dict[str, Any]) -> None:
         import app.services.corpus as corpus_mod
-        from app.services.unified_recommender import _normalize_text
+        from app.services.unified_recommender import _normalize_text, tag_definition_texts
 
         meta, vecs = gate["meta"], gate["vecs"]
         films = [
@@ -94,6 +95,12 @@ class TestRankingHasNotCollapsed:
             text_sha(_normalize_text(case["mood"])): vec.astype(np.float32)
             for case, vec in zip(meta["moods"], vecs["mood_vecs"], strict=True)
         }
+
+        _, tag_texts = tag_definition_texts()
+        assert [text_sha(text) for text in tag_texts] == meta["tag_texts"], (
+            "The tag vocabulary changed since the fixture was built. " + REBUILD
+        )
+        lookup.update(tag_lookup(tag_texts, vecs["tag_vecs"]))
 
         with stored_vectors(corpus_mod, films, film_vecs, lookup):
             scores = evaluate(meta["moods"], films, film_vecs)
