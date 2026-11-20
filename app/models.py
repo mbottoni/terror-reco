@@ -259,3 +259,23 @@ class PasswordResetToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class PublicList(Base):
+    """A user's watchlist, published at an unguessable address.
+
+    A row here *is* the publication: unpublishing deletes it, and publishing
+    again mints a new slug. So a link that was withdrawn stays dead, which is
+    the only way "unpublish" can mean anything once a URL has been shared.
+    One per user for now; the films are whatever is in their watchlist.
+    """
+
+    __tablename__ = "public_lists"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    # Random, not sequential: public pages must not be enumerable.
+    slug: Mapped[str] = mapped_column(String(32), unique=True)
+    title: Mapped[str] = mapped_column(String(80))
+    description: Mapped[str | None] = mapped_column(String(280), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

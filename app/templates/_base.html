@@ -30,6 +30,7 @@ function csrfHeaders(headers){
 }
 </script>
 <link rel="preload" href="/static/fonts/inter-latin-v20.woff2" as="font" type="font/woff2" crossorigin>
+{% block robots %}{% endblock %}
 {% block head %}{% endblock %}
 <link rel="stylesheet" href="{{ static_url('styles.css') }}">
 </head>

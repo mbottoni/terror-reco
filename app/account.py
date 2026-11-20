@@ -29,6 +29,7 @@ from .models import (
     MovieFeedback,
     PasswordResetToken,
     Payment,
+    PublicList,
     SearchHistory,
     SetFeedback,
     User,
@@ -227,6 +228,8 @@ async def delete_account(
     db.query(SetFeedback).filter(SetFeedback.user_id == user_id).update({SetFeedback.user_id: None})
     # Explicit for SQLite, which does not enforce the FK's ON DELETE CASCADE.
     db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete()
+    # A published list goes with the account: its link must stop working.
+    db.query(PublicList).filter(PublicList.user_id == user_id).delete()
     # ORM delete, so the cascades on history, feedback and watchlist run (and
     # history's cascade removes its result rows). A bulk DELETE would skip them.
     db.delete(user)

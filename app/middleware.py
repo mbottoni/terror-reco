@@ -75,6 +75,9 @@ DEFAULT_RULES: tuple[Rule, ...] = (
         ("/recommend", "/api/recommendations", "/api/similar/"),
         limit=30,
     ),
+    # Public list pages are unauthenticated; slugs are random, and this keeps
+    # guessing them slow.
+    Rule("lists", frozenset({"GET"}), ("/l/",), limit=60),
     # A dictionary lookup, fired once per detail view alongside /api/similar.
     Rule("lookup", frozenset({"GET"}), ("/api/providers/",), limit=120),
     Rule(

@@ -57,6 +57,9 @@ filter responsible.
 | `POST /account/delete` | Delete the account and its data (`current_password`) |
 | `GET /history/` | Your past searches |
 | `GET /watchlist/` | Your saved films |
+| `POST /watchlist/publish` | Publish the watchlist, or edit a published one (`title`, `description`) |
+| `POST /watchlist/unpublish` | Make it private. The public link stops working for good |
+| `GET /l/{slug}` | A published list, read-only, no sign-in. Sent with `noindex` |
 
 Pages that need an account redirect to `/auth/login` when signed out.
 
