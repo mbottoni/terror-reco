@@ -12,6 +12,8 @@ This guide covers deploying TerrorReco with Docker, on Render, and the CI/CD pip
 | `DATABASE_URL` | Production | SQLite file | PostgreSQL connection URL |
 | `DEBUG` | No | `false` | Set to `1` or `true` for development mode |
 | `PORT` | No | `10000` | Port the server listens on |
+| `LOG_LEVEL` | No | `INFO` | Level for the app's own log lines |
+| `SENTRY_DSN` | Optional | -- | Turns on error tracking. Unset means off. No request bodies, cookies or user details are sent |
 | `STRIPE_PUBLISHABLE_KEY` | Optional | -- | Stripe public key (for payments) |
 | `STRIPE_SECRET_KEY` | Optional | -- | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Optional | -- | Stripe webhook signing secret |
