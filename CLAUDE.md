@@ -56,6 +56,15 @@ Three things about this pipeline are load-bearing:
 
 The build checkpoints to `data/.corpus_build_state.json` after every stage and every 50 records; `--resume` skips completed work. Embeddings are keyed on a **content hash** of the embedded text (`corpus_fingerprint()`), so editing plot text invalidates the cache even when the film count is unchanged.
 
+**One film per franchise.** Each corpus record carries `collection_id`/`collection` from TMDB's
+`belongs_to_collection` (253 of 500 films are in one). Both strategies drop all but the best-ranked
+entry of a collection (`first_of_each_collection()`): semantic on the retrieval order, unified on
+the blended score, before MMR. MMR alone does not do this -- sequels are near-identical in
+embedding space and a relevant one still wins a slot beside its sibling. Measured before the rule:
+20% of semantic pages and 12% of unified pages repeated a franchise. The hand-written gold set
+lists several entries of some franchises, so this costs a little NDCG (0.4909 -> 0.4770 unified,
+inside the noise). `scripts/add_collections.py` backfills the field without a corpus rebuild.
+
 ### Everything is deliberately non-deterministic
 
 Three independent randomness sources, all intentional: Gaussian score perturbation scaled to the pool's score spread (`corpus.py`, `unified_recommender.py`), weighted sampling without replacement over the top pool (`recommender.py`), and a ±0.08 jitter on the MMR lambda. **Never write a test asserting a specific movie ordering** — assert on shape, count, and membership instead. `temperature=0` is the deterministic escape hatch and is now threaded through `semantic_search()`, `recommend_movies_advanced()` and `recommend_unified_semantic()` — all three take `seed`/`temperature`, and `temperature=0` disables sampling and MMR jitter as well as score noise. `make eval` relies on this.

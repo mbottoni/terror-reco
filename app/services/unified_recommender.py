@@ -245,6 +245,31 @@ def _lexical_sim_matrix(items: list[dict[str, Any]]) -> np.ndarray:
     return matrix
 
 
+def first_of_each_collection(items: list[dict[str, Any]]) -> list[int]:
+    """Indices of *items* to keep so no franchise appears twice.
+
+    *items* must already be best-first: the highest-ranked entry of each TMDB
+    collection survives and its sequels are dropped. Films outside any
+    collection are always kept.
+
+    MMR cannot do this job. Sequels share keywords, genre and plot vocabulary,
+    so they sit close in embedding space, but MMR only trades similarity
+    against relevance; a strongly relevant sequel still wins a slot beside its
+    sibling. On a six-film page, two entries from one franchise is a visibly
+    poor set.
+    """
+    seen: set[Any] = set()
+    keep: list[int] = []
+    for index, item in enumerate(items):
+        collection = item.get("collection_id")
+        if collection is not None:
+            if collection in seen:
+                continue
+            seen.add(collection)
+        keep.append(index)
+    return keep
+
+
 def _mmr(
     items: list[dict[str, Any]],
     sims: np.ndarray,
@@ -450,6 +475,10 @@ def recommend_unified_semantic(
         lambda_ = diversity_lambda
 
     order = np.argsort(-blended_noisy)
+    # One film per franchise, decided on the blended score: the unified
+    # ranker, not the retriever, chooses which entry represents a series.
+    ranked = [items[i] for i in order]
+    order = order[first_of_each_collection(ranked)]
     pool_idx = order[: max(10, limit * 5)]
     pool = [items[i] for i in pool_idx]
     pool_scores = blended_noisy[pool_idx]

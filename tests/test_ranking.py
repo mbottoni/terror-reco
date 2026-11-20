@@ -226,3 +226,109 @@ class TestEmbeddingText:
     def test_missing_fields_are_skipped_cleanly(self) -> None:
         text = embedding_text({"title": "Solo", "overview": "", "genre": None})
         assert text == "Solo"
+
+
+class TestFranchiseDeduplication:
+    """No more than one film per TMDB collection on a results page."""
+
+    def test_keeps_the_best_ranked_entry_of_each_collection(self) -> None:
+        from app.services.unified_recommender import first_of_each_collection
+
+        items = [
+            {"title": "Saw", "collection_id": 656},
+            {"title": "Standalone A", "collection_id": None},
+            {"title": "Saw II", "collection_id": 656},
+            {"title": "Scream", "collection_id": 2602},
+            {"title": "Standalone B"},
+            {"title": "Scream 2", "collection_id": 2602},
+            {"title": "Saw III", "collection_id": 656},
+        ]
+        kept = [items[i]["title"] for i in first_of_each_collection(items)]
+        assert kept == ["Saw", "Standalone A", "Scream", "Standalone B"]
+
+    def test_films_outside_any_collection_are_never_dropped(self) -> None:
+        from app.services.unified_recommender import first_of_each_collection
+
+        items = [{"title": f"F{i}", "collection_id": None} for i in range(5)]
+        assert first_of_each_collection(items) == [0, 1, 2, 3, 4]
+        assert first_of_each_collection([]) == []
+
+    def test_shipped_corpus_carries_collections(self) -> None:
+        from app.services.corpus import load_corpus
+
+        corpus = load_corpus()
+        if not corpus:
+            pytest.skip("corpus not built in this environment")
+        assert all("collection_id" in m for m in corpus), "run scripts/add_collections.py"
+        in_collection = sum(1 for m in corpus if m.get("collection_id"))
+        assert in_collection > len(corpus) * 0.2
+
+    def test_unified_results_never_repeat_a_franchise(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Nine near-identical sequels and three other films: at most one sequel."""
+        import app.services.unified_recommender as unified
+
+        sequels = [
+            _movie(f"Slash {i}", overview="masked killer stalks teens", collection_id=7)
+            for i in range(9)
+        ]
+        others = [_movie(f"Other {i}", overview="masked killer stalks teens") for i in range(3)]
+        items = sequels + others
+        rng = np.random.default_rng(0)
+
+        def _fake(texts: list[str]) -> np.ndarray:
+            vecs = rng.normal(size=(len(texts), 8)).astype(np.float32)
+            return vecs / np.linalg.norm(vecs, axis=1, keepdims=True)
+
+        monkeypatch.setattr(unified, "_embed_sbert", _fake)
+        monkeypatch.setattr(unified, "_QUERY_CACHE", unified.OrderedDict())
+        for seed in range(5):
+            picked = recommend_unified_semantic(
+                mood="masked killer", items=[dict(m) for m in items], limit=4, seed=seed
+            )
+            from_series = [m for m in picked if m.get("collection_id") == 7]
+            assert len(from_series) <= 1
+            assert len(picked) == 4
+
+    def test_semantic_results_never_repeat_a_franchise(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import app.services.corpus as corpus_mod
+        import app.services.unified_recommender as unified
+        from app.services.recommender import recommend_movies_advanced
+
+        corpus = [
+            {"imdb_id": f"tt{i}", "title": f"Slash {i}", "overview": "p", "collection_id": 7}
+            for i in range(10)
+        ] + [{"imdb_id": f"tt9{i}", "title": f"Other {i}", "overview": "p"} for i in range(10)]
+        vecs = np.ones((len(corpus), 4), dtype=np.float32)
+        monkeypatch.setattr(corpus_mod, "get_corpus_and_embeddings", lambda: (corpus, vecs))
+        monkeypatch.setattr(
+            unified, "_embed_sbert", lambda texts: np.ones((len(texts), 4), dtype=np.float32)
+        )
+        monkeypatch.setattr(unified, "_QUERY_CACHE", unified.OrderedDict())
+        for seed in range(5):
+            picked = recommend_movies_advanced(mood="x", limit=6, seed=seed)
+            assert sum(1 for m in picked if m.get("collection_id") == 7) <= 1
+            assert len(picked) == 6
+
+    def test_raw_pool_for_the_unified_ranker_is_not_deduplicated(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import app.services.corpus as corpus_mod
+        import app.services.unified_recommender as unified
+        from app.services.recommender import recommend_movies_advanced
+
+        corpus = [
+            {"imdb_id": f"tt{i}", "title": f"Slash {i}", "overview": "p", "collection_id": 7}
+            for i in range(10)
+        ]
+        vecs = np.ones((len(corpus), 4), dtype=np.float32)
+        monkeypatch.setattr(corpus_mod, "get_corpus_and_embeddings", lambda: (corpus, vecs))
+        monkeypatch.setattr(
+            unified, "_embed_sbert", lambda texts: np.ones((len(texts), 4), dtype=np.float32)
+        )
+        monkeypatch.setattr(unified, "_QUERY_CACHE", unified.OrderedDict())
+        pool = recommend_movies_advanced(mood="x", limit=60, keep_internal=True, temperature=0)
+        assert len(pool) == 10

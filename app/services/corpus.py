@@ -59,6 +59,19 @@ def save_corpus(corpus: list[dict[str, Any]]) -> None:
 
 
 # ------------------------------------------------------------------- mapping
+def collection_fields(detail: dict[str, Any]) -> dict[str, Any]:
+    """Franchise membership from a TMDB movie payload.
+
+    ``collection_id`` is what results are de-duplicated on; the name is kept
+    for humans reading the corpus. Both are None for a standalone film.
+    """
+    collection = detail.get("belongs_to_collection") or {}
+    return {
+        "collection_id": collection.get("id"),
+        "collection": collection.get("name"),
+    }
+
+
 def _first(values: list[str], limit: int | None = None) -> str | None:
     """Join non-empty strings, or return None when there are none."""
     cleaned = [v for v in values if v]
@@ -110,6 +123,7 @@ def map_tmdb_to_corpus(detail: dict[str, Any], *, image_base: str) -> dict[str, 
     runtime = detail.get("runtime")
 
     return {
+        **collection_fields(detail),
         "imdb_id": imdb_id,
         "tmdb_id": detail.get("id"),
         "title": detail.get("title") or detail.get("original_title") or "",
