@@ -2,12 +2,13 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BeforeValidator, Field
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -409,6 +410,22 @@ def refine_context(
 
 DEFAULT_RESULT_LIMIT = 6
 
+
+def _blank_to(default: Any) -> BeforeValidator:
+    return BeforeValidator(lambda v: default if isinstance(v, str) and not v.strip() else v)
+
+
+# A browser submits every field of a GET form, filled in or not, so the home
+# page's search arrives as ``min_year=&max_year=&min_rating=``. Read literally,
+# an empty string is not a number and the whole search was answered with a 422.
+# A filter left blank means "no filter".
+_BLANK_IS_UNSET = _blank_to(None)
+_BLANK_IS_DEFAULT_LIMIT = _blank_to(DEFAULT_RESULT_LIMIT)
+# The bounds sit on the inner type: placed on the optional one, they are
+# applied to the None a blank field becomes.
+_Year = Annotated[int, Field(ge=1900, le=2100)]
+_Rating = Annotated[float, Field(ge=0, le=10)]
+
 # One-click nudges to how much fame counts. The value replaces the unified
 # ranking's popularity weight (0.20 by default). Measured on the corpus: the
 # median IMDb vote count of results is about 136k at 0.0, 194k at the default
@@ -457,14 +474,16 @@ async def ui_recommendations(
     request: Request,
     mood: str = Query(..., min_length=1),
     strategy: str | None = Query(default=None),
-    min_year: int | None = Query(default=None, ge=1900, le=2100),
-    max_year: int | None = Query(default=None, ge=1900, le=2100),
-    min_rating: float | None = Query(default=None, ge=0, le=10),
-    limit: int = Query(default=DEFAULT_RESULT_LIMIT, ge=1, le=20),
-    english: int | None = Query(default=None),
-    seed: int | None = Query(
-        default=None, description="reproducible results; also disables sampling noise"
-    ),
+    min_year: Annotated[_Year | None, _BLANK_IS_UNSET, Query()] = None,
+    max_year: Annotated[_Year | None, _BLANK_IS_UNSET, Query()] = None,
+    min_rating: Annotated[_Rating | None, _BLANK_IS_UNSET, Query()] = None,
+    limit: Annotated[int, _BLANK_IS_DEFAULT_LIMIT, Query(ge=1, le=20)] = DEFAULT_RESULT_LIMIT,
+    english: Annotated[int | None, _BLANK_IS_UNSET, Query()] = None,
+    seed: Annotated[
+        int | None,
+        _BLANK_IS_UNSET,
+        Query(description="reproducible results; also disables sampling noise"),
+    ] = None,
     tilt: str | None = Query(
         default=None, description="'mainstream' or 'obscure': how much popularity counts"
     ),
