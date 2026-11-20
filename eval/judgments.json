@@ -5,7 +5,7 @@
   "1": "defensible: fits in part, or fits a looser reading of the mood",
   "0": "does not fit"
  },
- "pool": "Union of: semantic top 12, unified top 12, keyword-only top 8, five noisy unified pages, and the hand-written gold films. Built by scripts/graded_eval.py pool. Extended on the same day with the films returned once keyword vectors were mixed in (239 more pairs, judged blind to which ranker returned them). Extended again with the films returned once descriptive tags were added (146 more pairs, judged from title and TMDB keywords without sight of the tags).",
+ "pool": "Union of: semantic top 12, unified top 12, keyword-only top 8, five noisy unified pages, and the hand-written gold films. Built by scripts/graded_eval.py pool. Extended on the same day with the films returned once keyword vectors were mixed in (239 more pairs, judged blind to which ranker returned them). Extended again with the films returned once descriptive tags were added (146 more pairs, judged from title and TMDB keywords without sight of the tags). Extended a third time with the films the production paths return with their randomness on, ten visits per mood (693 more pairs).",
  "judgments": {
   "slow-burn psychological dread": [
    {
@@ -26,6 +26,11 @@
    {
     "imdb_id": "tt3235888",
     "title": "It Follows (2015)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0099871",
+    "title": "Jacob's Ladder (1990)",
     "grade": 2
    },
    {
@@ -56,6 +61,11 @@
    {
     "imdb_id": "tt2321549",
     "title": "The Babadook (2014)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0057129",
+    "title": "The Haunting (1963)",
     "grade": 2
    },
    {
@@ -94,8 +104,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt5606664",
+    "title": "Doctor Sleep (2019)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0119167",
     "title": "Funny Games (1997)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt3748172",
+    "title": "Gerald's Game (2017)",
     "grade": 1
    },
    {
@@ -119,6 +139,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0054215",
+    "title": "Psycho (1960)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0289765",
+    "title": "Red Dragon (2002)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0089905",
+    "title": "Return (1985)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1922777",
     "title": "Sinister (2012)",
     "grade": 1
@@ -126,6 +161,11 @@
    {
     "imdb_id": "tt15474916",
     "title": "Smile (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4972582",
+    "title": "Split (2017)",
     "grade": 1
    },
    {
@@ -139,6 +179,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0391198",
+    "title": "The Grudge (2004)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4003440",
+    "title": "The House That Jack Built (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1051906",
+    "title": "The Invisible Man (2020)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt5109784",
     "title": "mother! (2017)",
     "grade": 1
@@ -146,6 +201,21 @@
    {
     "imdb_id": "tt0087800",
     "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1314655",
+    "title": "Devil (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1127180",
+    "title": "Drag Me to Hell (2009)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt9619824",
+    "title": "Final Destination Bloodlines (2025)",
     "grade": 0
    },
    {
@@ -199,6 +269,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt7349950",
+    "title": "It Chapter Two (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7958736",
     "title": "Ma (2019)",
     "grade": 0
@@ -206,6 +281,11 @@
    {
     "imdb_id": "tt3811906",
     "title": "Malignant (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1029234",
+    "title": "Martyrs (2008)",
     "grade": 0
    },
    {
@@ -266,6 +346,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt1428538",
+    "title": "Hansel & Gretel: Witch Hunters (2013)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0089885",
     "title": "Re-Animator (1985)",
     "grade": 2
@@ -306,6 +391,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0359013",
+    "title": "Blade: Trinity (2004)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0077402",
+    "title": "Dawn of the Dead (1978)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1288558",
     "title": "Evil Dead (2013)",
     "grade": 1
@@ -318,6 +413,11 @@
    {
     "imdb_id": "tt0083972",
     "title": "Friday the 13th Part III (1982)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0095179",
+    "title": "Friday the 13th Part VII - The New Blood (1988)",
     "grade": 1
    },
    {
@@ -346,6 +446,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0295700",
+    "title": "Wrong Turn (2003)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1853739",
     "title": "You're Next (2013)",
     "grade": 1
@@ -358,6 +463,11 @@
    {
     "imdb_id": "tt0389722",
     "title": "30 Days of Night (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2944198",
+    "title": "Backcountry (2015)",
     "grade": 0
    },
    {
@@ -381,6 +491,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0398913",
+    "title": "DOA: Dead or Alive (2006)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1020530",
+    "title": "Eden Lake (2008)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0119167",
     "title": "Funny Games (1997)",
     "grade": 0
@@ -388,6 +508,11 @@
    {
     "imdb_id": "tt0450278",
     "title": "Hostel (2006)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0263488",
+    "title": "Jeepers Creepers (2001)",
     "grade": 0
    },
    {
@@ -401,6 +526,21 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt8772262",
+    "title": "Midsommar (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1714915",
+    "title": "Only Lovers Left Alive (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0822847",
+    "title": "Priest (2011)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0089905",
     "title": "Return (1985)",
     "grade": 0
@@ -408,6 +548,11 @@
    {
     "imdb_id": "tt0387564",
     "title": "Saw (2004)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0072271",
+    "title": "The Texas Chain Saw Massacre (1974)",
     "grade": 0
    },
    {
@@ -508,6 +653,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt1703199",
+    "title": "Grave Encounters (2011)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0095294",
     "title": "Hellbound: Hellraiser II (1988)",
     "grade": 1
@@ -525,6 +675,11 @@
    {
     "imdb_id": "tt1446714",
     "title": "Prometheus (2012)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0286106",
+    "title": "Signs (2002)",
     "grade": 1
    },
    {
@@ -553,8 +708,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt5606664",
+    "title": "Doctor Sleep (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt5886046",
     "title": "Escape Room (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0120681",
+    "title": "From Hell (2001)",
     "grade": 0
    },
    {
@@ -565,6 +730,11 @@
    {
     "imdb_id": "tt7958736",
     "title": "Ma (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2388715",
+    "title": "Oculus (2014)",
     "grade": 0
    },
    {
@@ -590,8 +760,18 @@
   ],
   "haunted house with dark secrets": [
    {
+    "imdb_id": "tt0053925",
+    "title": "House of Usher (1960)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0084516",
     "title": "Poltergeist (1982)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt1922777",
+    "title": "Sinister (2012)",
     "grade": 2
    },
    {
@@ -612,6 +792,11 @@
    {
     "imdb_id": "tt1457767",
     "title": "The Conjuring (2013)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0391198",
+    "title": "The Grudge (2004)",
     "grade": 2
    },
    {
@@ -655,6 +840,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt6195094",
+    "title": "Ghostland (2018)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0076162",
     "title": "House (1977)",
     "grade": 1
@@ -680,6 +875,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt2023587",
+    "title": "Mama (2013)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1179904",
     "title": "Paranormal Activity (2007)",
     "grade": 1
@@ -687,6 +892,11 @@
    {
     "imdb_id": "tt3387520",
     "title": "Scary Stories to Tell in the Dark (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0384537",
+    "title": "Silent Hill (2006)",
     "grade": 1
    },
    {
@@ -882,9 +1092,19 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0080040",
+    "title": "Tourist Trap (1979)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt1853739",
     "title": "You're Next (2013)",
     "grade": 2
+   },
+   {
+    "imdb_id": "tt0067656",
+    "title": "A Bay of Blood (1971)",
+    "grade": 1
    },
    {
     "imdb_id": "tt0087800",
@@ -922,6 +1142,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt2428170",
+    "title": "Creep (2014)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0329101",
     "title": "Freddy vs. Jason (2003)",
     "grade": 1
@@ -937,8 +1162,23 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0397065",
+    "title": "House of Wax (2005)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0119345",
+    "title": "I Know What You Did Last Summer (1997)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt4281724",
     "title": "Terrifier (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt10403420",
+    "title": "Terrifier 2 (2022)",
     "grade": 1
    },
    {
@@ -955,6 +1195,11 @@
     "imdb_id": "tt13560574",
     "title": "X (2022)",
     "grade": 1
+   },
+   {
+    "imdb_id": "tt1241317",
+    "title": "Death Note (2017)",
+    "grade": 0
    },
    {
     "imdb_id": "tt0068611",
@@ -982,6 +1227,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1788391",
+    "title": "Kill List (2011)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7958736",
     "title": "Ma (2019)",
     "grade": 0
@@ -989,6 +1239,26 @@
    {
     "imdb_id": "tt0387564",
     "title": "Saw (2004)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0432348",
+    "title": "Saw II (2005)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0890870",
+    "title": "Saw IV (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1132626",
+    "title": "Saw V (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0061655",
+    "title": "The Fearless Vampire Killers (1967)",
     "grade": 0
    },
    {
@@ -1006,6 +1276,11 @@
    {
     "imdb_id": "tt0289043",
     "title": "28 Days Later (2002)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0463854",
+    "title": "28 Weeks Later (2007)",
     "grade": 2
    },
    {
@@ -1031,6 +1306,11 @@
    {
     "imdb_id": "tt0063350",
     "title": "Night of the Living Dead (1968)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt8850222",
+    "title": "Peninsula (2020)",
     "grade": 2
    },
    {
@@ -1074,8 +1354,23 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0993840",
+    "title": "Army of the Dead (2021)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0103873",
     "title": "Braindead (1992)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0076590",
+    "title": "Rabid (1977)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0120804",
+    "title": "Resident Evil (2002)",
     "grade": 1
    },
    {
@@ -1089,6 +1384,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt6920084",
+    "title": "Resident Evil: Welcome to Raccoon City (2021)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0073705",
+    "title": "Shivers (1975)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0069895",
+    "title": "The Crazies (1973)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt8695030",
     "title": "The Dead Don't Die (2019)",
     "grade": 1
@@ -1096,6 +1406,11 @@
    {
     "imdb_id": "tt0058700",
     "title": "The Last Man on Earth (1964)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0089907",
+    "title": "The Return of the Living Dead (1985)",
     "grade": 1
    },
    {
@@ -1114,8 +1429,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt1179933",
+    "title": "10 Cloverfield Lane (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1396484",
     "title": "It (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0387564",
+    "title": "Saw (2004)",
     "grade": 0
    },
    {
@@ -1184,6 +1509,16 @@
     "imdb_id": "tt1161864",
     "title": "The Rite (2011)",
     "grade": 2
+   },
+   {
+    "imdb_id": "tt3322940",
+    "title": "Annabelle (2014)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt8350360",
+    "title": "Annabelle Comes Home (2019)",
+    "grade": 1
    },
    {
     "imdb_id": "tt5140878",
@@ -1261,6 +1596,26 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0093777",
+    "title": "Prince of Darkness (1987)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0063522",
+    "title": "Rosemary's Baby (1968)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0078767",
+    "title": "The Amityville Horror (1979)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4913966",
+    "title": "The Curse of La Llorona (2019)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0066993",
     "title": "The Devils (1971)",
     "grade": 1
@@ -1281,8 +1636,33 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0075005",
+    "title": "The Omen (1976)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0095294",
+    "title": "Hellbound: Hellraiser II (1988)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0093177",
+    "title": "Hellraiser (1987)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1396484",
     "title": "It (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0084516",
+    "title": "Poltergeist (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0089905",
+    "title": "Return (1985)",
     "grade": 0
    },
    {
@@ -1291,8 +1671,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0171363",
+    "title": "The Haunting (1999)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0298130",
     "title": "The Ring (2002)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0081505",
+    "title": "The Shining (1980)",
     "grade": 0
    },
    {
@@ -1348,6 +1738,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt4361050",
+    "title": "Ouija: Origin of Evil (2016)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0084516",
     "title": "Poltergeist (1982)",
     "grade": 2
@@ -1355,6 +1750,11 @@
    {
     "imdb_id": "tt1922777",
     "title": "Sinister (2012)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt2321549",
+    "title": "The Babadook (2014)",
     "grade": 2
    },
    {
@@ -1403,6 +1803,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0093629",
+    "title": "A Nightmare on Elm Street 3: Dream Warriors (1987)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt8350360",
     "title": "Annabelle Comes Home (2019)",
     "grade": 1
@@ -1413,8 +1818,33 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0103956",
+    "title": "Child's Play 3 (1991)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt6195094",
+    "title": "Ghostland (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1051904",
+    "title": "Goosebumps (2015)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0373883",
     "title": "Halloween (2007)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1591095",
+    "title": "Insidious (2011)",
     "grade": 1
    },
    {
@@ -1448,6 +1878,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0384806",
+    "title": "The Amityville Horror (2005)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt7144666",
     "title": "The Black Phone (2022)",
     "grade": 1
@@ -1465,6 +1900,16 @@
    {
     "imdb_id": "tt3065204",
     "title": "The Conjuring 2 (2016)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4913966",
+    "title": "The Curse of La Llorona (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0070047",
+    "title": "The Exorcist (1973)",
     "grade": 1
    },
    {
@@ -1493,6 +1938,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3748172",
     "title": "Gerald's Game (2017)",
     "grade": 0
@@ -1500,6 +1950,11 @@
    {
     "imdb_id": "tt7958736",
     "title": "Ma (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
     "grade": 0
    },
    {
@@ -1590,6 +2045,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt3567288",
+    "title": "The Visit (2015)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt3713166",
     "title": "Unfriended (2014)",
     "grade": 2
@@ -1615,6 +2075,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt8332922",
+    "title": "A Quiet Place Part II (2021)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0118583",
     "title": "Alien Resurrection (1997)",
     "grade": 0
@@ -1625,8 +2090,33 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0091251",
+    "title": "Come and See (1985)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0083767",
     "title": "Creepshow (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0077651",
+    "title": "Halloween (1978)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0373883",
+    "title": "Halloween (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1502407",
+    "title": "Halloween (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1591095",
+    "title": "Insidious (2011)",
     "grade": 0
    },
    {
@@ -1640,8 +2130,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1788391",
+    "title": "Kill List (2011)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7958736",
     "title": "Ma (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1029234",
+    "title": "Martyrs (2008)",
     "grade": 0
    },
    {
@@ -1665,6 +2165,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt10638522",
+    "title": "Talk to Me (2023)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt4281724",
     "title": "Terrifier (2018)",
     "grade": 0
@@ -1675,8 +2180,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt2400463",
+    "title": "The Invitation (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt4263482",
     "title": "The Witch (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0086541",
+    "title": "Videodrome (1983)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0111686",
+    "title": "Wes Craven's New Nightmare (1994)",
     "grade": 0
    },
    {
@@ -1686,6 +2206,11 @@
    }
   ],
   "survival horror isolated in nature": [
+   {
+    "imdb_id": "tt2932536",
+    "title": "47 Meters Down (2017)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt2944198",
     "title": "Backcountry (2015)",
@@ -1762,6 +2287,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt3748172",
+    "title": "Gerald's Game (2017)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt5022702",
     "title": "Hush (2016)",
     "grade": 1
@@ -1794,6 +2324,11 @@
    {
     "imdb_id": "tt7984734",
     "title": "The Lighthouse (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0100814",
+    "title": "Tremors (1990)",
     "grade": 1
    },
    {
@@ -1842,8 +2377,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0063759",
+    "title": "Hour of the Wolf (1968)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1396484",
     "title": "It (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt15679400",
+    "title": "Knock at the Cabin (2023)",
     "grade": 0
    },
    {
@@ -1909,6 +2454,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0829150",
+    "title": "Dracula Untold (2014)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0089175",
     "title": "Fright Night (1985)",
     "grade": 1
@@ -1926,6 +2476,11 @@
    {
     "imdb_id": "tt0079641",
     "title": "Nosferatu the Vampyre (1979)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0162661",
+    "title": "Sleepy Hollow (1999)",
     "grade": 1
    },
    {
@@ -1949,6 +2504,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0338526",
+    "title": "Van Helsing (2004)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0120611",
     "title": "Blade (1998)",
     "grade": 0
@@ -1964,8 +2524,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0360486",
+    "title": "Constantine (2005)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1396484",
     "title": "It (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3235888",
+    "title": "It Follows (2015)",
     "grade": 0
    },
    {
@@ -2001,6 +2571,11 @@
   ],
   "body horror and grotesque transformation": [
    {
+    "imdb_id": "tt2798920",
+    "title": "Annihilation (2018)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0091083",
     "title": "From Beyond (1986)",
     "grade": 2
@@ -2008,6 +2583,11 @@
    {
     "imdb_id": "tt0093177",
     "title": "Hellraiser (1987)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt3811906",
+    "title": "Malignant (2021)",
     "grade": 2
    },
    {
@@ -2043,6 +2623,11 @@
    {
     "imdb_id": "tt1467304",
     "title": "The Human Centipede (First Sequence) (2009)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt1189073",
+    "title": "The Skin I Live In (2011)",
     "grade": 2
    },
    {
@@ -2096,6 +2681,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0022913",
+    "title": "Freaks (1932)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0045888",
+    "title": "House of Wax (1953)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt7349950",
+    "title": "It Chapter Two (2019)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1131734",
     "title": "Jennifer's Body (2009)",
     "grade": 1
@@ -2123,6 +2723,21 @@
    {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0057603",
+    "title": "Black Sabbath (1963)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0110148",
+    "title": "Interview with the Vampire (1994)",
     "grade": 0
    },
    {
@@ -2208,6 +2823,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0092563",
+    "title": "Angel Heart (1987)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0054067",
     "title": "Black Sunday (1960)",
     "grade": 1
@@ -2233,6 +2853,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0384537",
+    "title": "Silent Hill (2006)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1922777",
+    "title": "Sinister (2012)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1034415",
+    "title": "Suspiria (2018)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0185937",
     "title": "The Blair Witch Project (1999)",
     "grade": 1
@@ -2243,8 +2878,43 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt1320244",
+    "title": "The Last Exorcism (2010)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5606664",
+    "title": "Doctor Sleep (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0076009",
+    "title": "Exorcist II: The Heretic (1977)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1428538",
     "title": "Hansel & Gretel: Witch Hunters (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2226417",
+    "title": "Insidious: Chapter 2 (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3195644",
+    "title": "Insidious: Chapter 3 (2015)",
     "grade": 0
    },
    {
@@ -2270,6 +2940,11 @@
    {
     "imdb_id": "tt1179904",
     "title": "Paranormal Activity (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0084516",
+    "title": "Poltergeist (1982)",
     "grade": 0
    },
    {
@@ -2303,6 +2978,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1457767",
+    "title": "The Conjuring (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt7069210",
+    "title": "The Conjuring: The Devil Made Me Do It (2021)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt4913966",
     "title": "The Curse of La Llorona (2019)",
     "grade": 0
@@ -2318,13 +3003,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0080749",
+    "title": "The Fog (1980)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0057129",
     "title": "The Haunting (1963)",
     "grade": 0
    },
    {
+    "imdb_id": "tt0142688",
+    "title": "The Ninth Gate (1999)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt5814060",
     "title": "The Nun (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1161864",
+    "title": "The Rite (2011)",
     "grade": 0
    },
    {
@@ -2335,6 +3035,11 @@
    {
     "imdb_id": "tt6857112",
     "title": "Us (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3416742",
+    "title": "What We Do in the Shadows (2014)",
     "grade": 0
    }
   ],
@@ -2347,6 +3052,11 @@
    {
     "imdb_id": "tt0119167",
     "title": "Funny Games (1997)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt6195094",
+    "title": "Ghostland (2018)",
     "grade": 2
    },
    {
@@ -2377,6 +3087,11 @@
    {
     "imdb_id": "tt6857112",
     "title": "Us (2019)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0080130",
+    "title": "When a Stranger Calls (1979)",
     "grade": 2
    },
    {
@@ -2435,6 +3150,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0230600",
+    "title": "The Others (2001)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt13433802",
     "title": "A Quiet Place: Day One (2024)",
     "grade": 0
@@ -2467,6 +3187,16 @@
    {
     "imdb_id": "tt23289160",
     "title": "Godzilla Minus One (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0348836",
+    "title": "Gothika (2003)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1703199",
+    "title": "Grave Encounters (2011)",
     "grade": 0
    },
    {
@@ -2540,8 +3270,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0054167",
+    "title": "Peeping Tom (1960)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0084516",
     "title": "Poltergeist (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0082933",
+    "title": "Possession (1981)",
     "grade": 0
    },
    {
@@ -2555,8 +3295,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt3387520",
+    "title": "Scary Stories to Tell in the Dark (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1922777",
     "title": "Sinister (2012)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0070698",
+    "title": "Sisters (1973)",
     "grade": 0
    },
    {
@@ -2572,6 +3322,11 @@
    {
     "imdb_id": "tt0078767",
     "title": "The Amityville Horror (1979)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1457767",
+    "title": "The Conjuring (2013)",
     "grade": 0
    },
    {
@@ -2615,6 +3370,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0464141",
+    "title": "The Orphanage (2007)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt2975578",
     "title": "The Purge: Anarchy (2014)",
     "grade": 0
@@ -2622,6 +3382,11 @@
    {
     "imdb_id": "tt4094724",
     "title": "The Purge: Election Year (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0081505",
+    "title": "The Shining (1980)",
     "grade": 0
    },
    {
@@ -2697,6 +3462,21 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0079714",
+    "title": "Phantasm (1979)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0070531",
+    "title": "Phase IV (1974)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1051906",
+    "title": "The Invisible Man (2020)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0084787",
     "title": "The Thing (1982)",
     "grade": 1
@@ -2747,6 +3527,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt4160708",
+    "title": "Don't Breathe (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0288477",
     "title": "Ghost Ship (2002)",
     "grade": 0
@@ -2759,6 +3544,11 @@
    {
     "imdb_id": "tt0095444",
     "title": "Killer Klowns from Outer Space (1988)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
     "grade": 0
    },
    {
@@ -2777,6 +3567,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0387564",
+    "title": "Saw (2004)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0073705",
     "title": "Shivers (1975)",
     "grade": 0
@@ -2789,6 +3584,11 @@
    {
     "imdb_id": "tt0051418",
     "title": "The Blob (1958)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0083907",
+    "title": "The Evil Dead (1982)",
     "grade": 0
    },
    {
@@ -2824,8 +3624,18 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt9639470",
+    "title": "Last Night in Soho (2021)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0065143",
     "title": "The Bird with the Crystal Plumage (1970)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0065761",
+    "title": "The Cat o' Nine Tails (1971)",
     "grade": 2
    },
    {
@@ -2839,8 +3649,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0057603",
+    "title": "Black Sabbath (1963)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0080661",
     "title": "Dressed to Kill (1980)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0119345",
+    "title": "I Know What You Did Last Summer (1997)",
     "grade": 1
    },
    {
@@ -2849,8 +3669,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0054215",
+    "title": "Psycho (1960)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt11245972",
     "title": "Scream (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0120082",
+    "title": "Scream 2 (1997)",
     "grade": 1
    },
    {
@@ -2859,8 +3689,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0076786",
+    "title": "Suspiria (1977)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt2428170",
     "title": "Creep (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1241317",
+    "title": "Death Note (2017)",
     "grade": 0
    },
    {
@@ -2869,8 +3709,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt9619824",
+    "title": "Final Destination Bloodlines (2025)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0068611",
     "title": "Frenzy (1972)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4062536",
+    "title": "Green Room (2016)",
     "grade": 0
    },
    {
@@ -2881,6 +3731,16 @@
    {
     "imdb_id": "tt5308322",
     "title": "Happy Death Day (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3348730",
+    "title": "Jigsaw (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1788391",
+    "title": "Kill List (2011)",
     "grade": 0
    },
    {
@@ -2899,8 +3759,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt10638522",
+    "title": "Talk to Me (2023)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3289956",
     "title": "The Autopsy of Jane Doe (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0075809",
+    "title": "The Car (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4003440",
+    "title": "The House That Jack Built (2018)",
     "grade": 0
    },
    {
@@ -2911,6 +3786,11 @@
    {
     "imdb_id": "tt1724572",
     "title": "The Murder at Road Hill House (2011)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0062467",
+    "title": "Wait Until Dark (1967)",
     "grade": 0
    }
   ],
@@ -2926,8 +3806,18 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0338526",
+    "title": "Van Helsing (2004)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0040068",
     "title": "Bud Abbott and Lou Costello Meet Frankenstein (1948)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0034587",
+    "title": "Cat People (1942)",
     "grade": 1
    },
    {
@@ -2946,8 +3836,28 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0087800",
+    "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0093629",
+    "title": "A Nightmare on Elm Street 3: Dream Warriors (1987)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3322940",
+    "title": "Annabelle (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0187738",
+    "title": "Blade II (2002)",
     "grade": 0
    },
    {
@@ -2961,8 +3871,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0051554",
+    "title": "Dracula (1958)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0829150",
     "title": "Dracula Untold (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0021884",
+    "title": "Frankenstein (1931)",
     "grade": 0
    },
    {
@@ -2976,8 +3896,58 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0091083",
+    "title": "From Beyond (1986)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1502407",
+    "title": "Halloween (2018)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7784604",
     "title": "Hereditary (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2226417",
+    "title": "Insidious: Chapter 2 (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0110148",
+    "title": "Interview with the Vampire (1994)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0263488",
+    "title": "Jeepers Creepers (2001)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4786282",
+    "title": "Lights Out (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0077889",
+    "title": "Magic (1978)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0077914",
+    "title": "Martin (1978)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5040012",
+    "title": "Nosferatu (2024)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt11866324",
+    "title": "Prey (2022)",
     "grade": 0
    },
    {
@@ -3001,8 +3971,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt15474916",
+    "title": "Smile (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0114508",
     "title": "Species (1995)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1017460",
+    "title": "Splice (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt10638522",
+    "title": "Talk to Me (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0185937",
+    "title": "The Blair Witch Project (1999)",
     "grade": 0
    },
    {
@@ -3013,6 +4003,11 @@
    {
     "imdb_id": "tt7069210",
     "title": "The Conjuring: The Devil Made Me Do It (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0115963",
+    "title": "The Craft (1996)",
     "grade": 0
    },
    {
@@ -3031,6 +4026,21 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0084787",
+    "title": "The Thing (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4255304",
+    "title": "The Void (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0070917",
+    "title": "The Wicker Man (1973)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0080040",
     "title": "Tourist Trap (1979)",
     "grade": 0
@@ -3039,12 +4049,22 @@
     "imdb_id": "tt3099498",
     "title": "Tusk (2014)",
     "grade": 0
+   },
+   {
+    "imdb_id": "tt0111686",
+    "title": "Wes Craven's New Nightmare (1994)",
+    "grade": 0
    }
   ],
   "creature feature with a monster in the water": [
    {
     "imdb_id": "tt2932536",
     "title": "47 Meters Down (2017)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0118615",
+    "title": "Anaconda (1997)",
     "grade": 2
    },
    {
@@ -3088,6 +4108,16 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0076504",
+    "title": "Orca (1977)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0078087",
+    "title": "Piranha (1978)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0464154",
     "title": "Piranha 3D (2010)",
     "grade": 2
@@ -3123,13 +4153,28 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt23289160",
+    "title": "Godzilla Minus One (2023)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0100814",
     "title": "Tremors (1990)",
     "grade": 1
    },
    {
+    "imdb_id": "tt0080057",
+    "title": "Zombie Flesh Eaters (1979)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0026138",
     "title": "Bride of Frankenstein (1935)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0288477",
+    "title": "Ghost Ship (2002)",
     "grade": 0
    },
    {
@@ -3148,8 +4193,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0074751",
+    "title": "King Kong (1976)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0051418",
+    "title": "The Blob (1958)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0884328",
     "title": "The Mist (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0084787",
+    "title": "The Thing (1982)",
     "grade": 0
    },
    {
@@ -3159,6 +4219,11 @@
    }
   ],
   "psychological horror where reality unravels": [
+   {
+    "imdb_id": "tt0074486",
+    "title": "Eraserhead (1977)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt6195094",
     "title": "Ghostland (2018)",
@@ -3177,6 +4242,16 @@
    {
     "imdb_id": "tt0057129",
     "title": "The Haunting (1963)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt7984734",
+    "title": "The Lighthouse (2019)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0081505",
+    "title": "The Shining (1980)",
     "grade": 2
    },
    {
@@ -3200,6 +4275,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt3748172",
+    "title": "Gerald's Game (2017)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt4687108",
     "title": "In the Tall Grass (2019)",
     "grade": 1
@@ -3207,6 +4287,11 @@
    {
     "imdb_id": "tt4695012",
     "title": "It Comes at Night (2017)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt3811906",
+    "title": "Malignant (2021)",
     "grade": 1
    },
    {
@@ -3230,6 +4315,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt10638522",
+    "title": "Talk to Me (2023)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0384806",
     "title": "The Amityville Horror (2005)",
     "grade": 1
@@ -3247,6 +4337,11 @@
    {
     "imdb_id": "tt2400463",
     "title": "The Invitation (2016)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0167404",
+    "title": "The Sixth Sense (1999)",
     "grade": 1
    },
    {
@@ -3295,6 +4390,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0298130",
+    "title": "The Ring (2002)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0482606",
     "title": "The Strangers (2008)",
     "grade": 0
@@ -3309,6 +4409,16 @@
    {
     "imdb_id": "tt0083767",
     "title": "Creepshow (1982)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0058279",
+    "title": "Kwaidan (1965)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0069341",
+    "title": "Tales from the Crypt (1972)",
     "grade": 2
    },
    {
@@ -3327,6 +4437,26 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0087800",
+    "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0082010",
+    "title": "An American Werewolf in London (1981)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt8350360",
+    "title": "Annabelle Comes Home (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5140878",
+    "title": "Annabelle: Creation (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
     "grade": 0
@@ -3339,6 +4469,21 @@
    {
     "imdb_id": "tt0087363",
     "title": "Gremlins (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0085636",
+    "title": "Halloween III: Season of the Witch (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4687108",
+    "title": "In the Tall Grass (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2226417",
+    "title": "Insidious: Chapter 2 (2013)",
     "grade": 0
    },
    {
@@ -3357,6 +4502,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1179904",
     "title": "Paranormal Activity (2007)",
     "grade": 0
@@ -3364,6 +4514,11 @@
    {
     "imdb_id": "tt0084516",
     "title": "Poltergeist (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0117571",
+    "title": "Scream (1996)",
     "grade": 0
    },
    {
@@ -3397,17 +4552,77 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1259521",
+    "title": "The Cabin in the Woods (2012)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0083907",
     "title": "The Evil Dead (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0070047",
+    "title": "The Exorcist (1973)",
     "grade": 0
    },
    {
     "imdb_id": "tt0080749",
     "title": "The Fog (1980)",
     "grade": 0
+   },
+   {
+    "imdb_id": "tt0116365",
+    "title": "The Frighteners (1996)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0057129",
+    "title": "The Haunting (1963)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0171363",
+    "title": "The Haunting (1999)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt7984734",
+    "title": "The Lighthouse (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5638642",
+    "title": "The Ritual (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0100814",
+    "title": "Tremors (1990)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0020530",
+    "title": "Un Chien Andalou (1929)",
+    "grade": 0
    }
   ],
   "horror comedy that is actually funny": [
+   {
+    "imdb_id": "tt0103873",
+    "title": "Braindead (1992)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0092991",
+    "title": "Evil Dead II (1987)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt0089175",
     "title": "Fright Night (1985)",
@@ -3454,6 +4669,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt4225622",
+    "title": "The Babysitter (2017)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt1259521",
     "title": "The Cabin in the Woods (2012)",
     "grade": 2
@@ -3474,8 +4694,23 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0080391",
+    "title": "Attack of the Killer Tomatoes! (1978)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt2049403",
+    "title": "Beetlejuice Beetlejuice (2024)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt2428170",
+    "title": "Creep (2014)",
     "grade": 1
    },
    {
@@ -3484,8 +4719,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0078087",
+    "title": "Piranha (1978)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt8695030",
     "title": "The Dead Don't Die (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0061655",
+    "title": "The Fearless Vampire Killers (1967)",
     "grade": 1
    },
    {
@@ -3501,6 +4746,16 @@
    {
     "imdb_id": "tt0119167",
     "title": "Funny Games (1997)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0097474",
+    "title": "Halloween 5: The Revenge of Michael Myers (1989)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0120694",
+    "title": "Halloween H20: 20 Years Later (1998)",
     "grade": 0
    },
    {
@@ -3561,6 +4816,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0464141",
+    "title": "The Orphanage (2007)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0230600",
     "title": "The Others (2001)",
     "grade": 2
@@ -3568,6 +4828,11 @@
    {
     "imdb_id": "tt0012364",
     "title": "The Phantom Carriage (1921)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0167404",
+    "title": "The Sixth Sense (1999)",
     "grade": 2
    },
    {
@@ -3596,8 +4861,23 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt1596365",
+    "title": "The Woman in Black (2012)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1187064",
+    "title": "Triangle (2009)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt2326554",
     "title": "A Girl Walks Home Alone at Night (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0057603",
+    "title": "Black Sabbath (1963)",
     "grade": 0
    },
    {
@@ -3628,6 +4908,11 @@
    {
     "imdb_id": "tt0113409",
     "title": "In the Mouth of Madness (1995)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4687108",
+    "title": "In the Tall Grass (2019)",
     "grade": 0
    },
    {
@@ -3666,6 +4951,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1922777",
+    "title": "Sinister (2012)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15474916",
     "title": "Smile (2022)",
     "grade": 0
@@ -3681,8 +4971,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt3882082",
+    "title": "The Boy (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0070047",
     "title": "The Exorcist (1973)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0080749",
+    "title": "The Fog (1980)",
     "grade": 0
    },
    {
@@ -3693,6 +4993,21 @@
    {
     "imdb_id": "tt5638642",
     "title": "The Ritual (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0081505",
+    "title": "The Shining (1980)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0054443",
+    "title": "Village of the Damned (1960)",
     "grade": 0
    }
   ],
@@ -3728,6 +5043,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt1034415",
+    "title": "Suspiria (2018)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0115963",
     "title": "The Craft (1996)",
     "grade": 2
@@ -3753,6 +5073,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt8772262",
+    "title": "Midsommar (2019)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0185937",
     "title": "The Blair Witch Project (1999)",
     "grade": 1
@@ -3768,13 +5093,33 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0070917",
+    "title": "The Wicker Man (1973)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5140878",
+    "title": "Annabelle: Creation (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt6217306",
     "title": "Apostle (2018)",
     "grade": 0
    },
    {
+    "imdb_id": "tt0071222",
+    "title": "Black Christmas (1974)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0360486",
     "title": "Constantine (2005)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0076009",
+    "title": "Exorcist II: The Heretic (1977)",
     "grade": 0
    },
    {
@@ -3788,6 +5133,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4361050",
+    "title": "Ouija: Origin of Evil (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7798634",
     "title": "Ready or Not (2019)",
     "grade": 0
@@ -3795,6 +5150,21 @@
    {
     "imdb_id": "tt0098354",
     "title": "Society (1990)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt10638522",
+    "title": "Talk to Me (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3065204",
+    "title": "The Conjuring 2 (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0070047",
+    "title": "The Exorcist (1973)",
     "grade": 0
    },
    {
@@ -3815,6 +5185,21 @@
    {
     "imdb_id": "tt10160976",
     "title": "The Nun II (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0075005",
+    "title": "The Omen (1976)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0230600",
+    "title": "The Others (2001)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1161864",
+    "title": "The Rite (2011)",
     "grade": 0
    },
    {
@@ -3875,6 +5260,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0077889",
+    "title": "Magic (1978)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt3882082",
     "title": "The Boy (2016)",
     "grade": 2
@@ -3905,13 +5295,53 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1179056",
+    "title": "A Nightmare on Elm Street (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0097981",
+    "title": "A Nightmare on Elm Street: The Dream Child (1989)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0078748",
+    "title": "Alien (1979)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0071222",
+    "title": "Black Christmas (1974)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0103873",
+    "title": "Braindead (1992)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1127180",
+    "title": "Drag Me to Hell (2009)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0074486",
     "title": "Eraserhead (1977)",
     "grade": 0
    },
    {
+    "imdb_id": "tt1288558",
+    "title": "Evil Dead (2013)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0076009",
     "title": "Exorcist II: The Heretic (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0068611",
+    "title": "Frenzy (1972)",
     "grade": 0
    },
    {
@@ -3925,8 +5355,48 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0082495",
+    "title": "Halloween II (1981)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt7784604",
+    "title": "Hereditary (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0076162",
+    "title": "House (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0045888",
+    "title": "House of Wax (1953)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1591095",
     "title": "Insidious (2011)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3195644",
+    "title": "Insidious: Chapter 3 (2015)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0263488",
+    "title": "Jeepers Creepers (2001)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3811906",
+    "title": "Malignant (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2023587",
+    "title": "Mama (2013)",
     "grade": 0
    },
    {
@@ -3935,8 +5405,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0082933",
+    "title": "Possession (1981)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt5918982",
     "title": "Possessor (2020)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0117571",
+    "title": "Scream (1996)",
     "grade": 0
    },
    {
@@ -3960,8 +5440,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0078908",
+    "title": "The Brood (1979)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0070047",
     "title": "The Exorcist (1973)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0091064",
+    "title": "The Fly (1986)",
     "grade": 0
    },
    {
@@ -4032,6 +5522,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0075005",
+    "title": "The Omen (1976)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5140878",
+    "title": "Annabelle: Creation (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0106308",
+    "title": "Army of Darkness (1992)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0078935",
     "title": "Cannibal Holocaust (1980)",
     "grade": 0
@@ -4062,6 +5567,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0367959",
+    "title": "Hannibal Rising (2007)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0093177",
     "title": "Hellraiser (1987)",
     "grade": 0
@@ -4082,6 +5592,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0118971",
+    "title": "The Devil's Advocate (1997)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0066993",
     "title": "The Devils (1971)",
     "grade": 0
@@ -4089,6 +5604,11 @@
    {
     "imdb_id": "tt0083907",
     "title": "The Evil Dead (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0070047",
+    "title": "The Exorcist (1973)",
     "grade": 0
    },
    {
@@ -4124,6 +5644,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0120804",
+    "title": "Resident Evil (2002)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0073705",
     "title": "Shivers (1975)",
     "grade": 2
@@ -4149,8 +5674,18 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt5700672",
+    "title": "Train to Busan (2016)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0816711",
     "title": "World War Z (2013)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt1038988",
+    "title": "[REC] (2007)",
     "grade": 2
    },
    {
@@ -4169,6 +5704,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt7323600",
+    "title": "Hagazussa (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0077745",
+    "title": "Invasion of the Body Snatchers (1978)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt5040012",
     "title": "Nosferatu (2024)",
     "grade": 1
@@ -4176,6 +5721,16 @@
    {
     "imdb_id": "tt0079641",
     "title": "Nosferatu the Vampyre (1979)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1446714",
+    "title": "Prometheus (2012)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1220634",
+    "title": "Resident Evil: Afterlife (2010)",
     "grade": 1
    },
    {
@@ -4189,8 +5744,43 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0080057",
+    "title": "Zombie Flesh Eaters (1979)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt4731136",
     "title": "A Cure for Wellness (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2375574",
+    "title": "A Field in England (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0091251",
+    "title": "Come and See (1985)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0076009",
+    "title": "Exorcist II: The Heretic (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0021884",
+    "title": "Frankenstein (1931)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0120681",
+    "title": "From Hell (2001)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0095294",
+    "title": "Hellbound: Hellraiser II (1988)",
     "grade": 0
    },
    {
@@ -4204,8 +5794,53 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1029234",
+    "title": "Martyrs (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4954522",
+    "title": "Raw (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0089885",
+    "title": "Re-Animator (1985)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0059646",
+    "title": "Repulsion (1965)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0066740",
     "title": "The Abominable Dr. Phibes (1971)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0070047",
+    "title": "The Exorcist (1973)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt6133466",
+    "title": "The First Purge (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1392170",
+    "title": "The Hunger Games (2012)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5814060",
+    "title": "The Nun (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt10160976",
+    "title": "The Nun II (2023)",
     "grade": 0
    },
    {
@@ -4221,6 +5856,11 @@
    {
     "imdb_id": "tt1161864",
     "title": "The Rite (2011)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4263482",
+    "title": "The Witch (2016)",
     "grade": 0
    }
   ],
@@ -4258,6 +5898,11 @@
    {
     "imdb_id": "tt0119167",
     "title": "Funny Games (1997)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0367959",
+    "title": "Hannibal Rising (2007)",
     "grade": 1
    },
    {
@@ -4306,8 +5951,43 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0072271",
+    "title": "The Texas Chain Saw Massacre (1974)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0067656",
+    "title": "A Bay of Blood (1971)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0087800",
+    "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0094862",
     "title": "Child's Play (1988)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1241317",
+    "title": "Death Note (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0066735",
+    "title": "Four Flies on Grey Velvet (1971)",
     "grade": 0
    },
    {
@@ -4346,6 +6026,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0134084",
+    "title": "Scream 3 (2000)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt17663992",
     "title": "Scream VI (2023)",
     "grade": 0
@@ -4358,6 +6043,16 @@
    {
     "imdb_id": "tt7144666",
     "title": "The Black Phone (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0116365",
+    "title": "The Frighteners (1996)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0324216",
+    "title": "The Texas Chainsaw Massacre (2003)",
     "grade": 0
    }
   ],
@@ -4393,6 +6088,16 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0044121",
+    "title": "The Thing from Another World (1951)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0034398",
+    "title": "The Wolf Man (1941)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0047573",
     "title": "Them! (1954)",
     "grade": 2
@@ -4408,6 +6113,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0074751",
+    "title": "King Kong (1976)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0051418",
     "title": "The Blob (1958)",
     "grade": 1
@@ -4415,6 +6125,11 @@
    {
     "imdb_id": "tt0100814",
     "title": "Tremors (1990)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0338526",
+    "title": "Van Helsing (2004)",
     "grade": 1
    },
    {
@@ -4428,6 +6143,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0118615",
+    "title": "Anaconda (1997)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0080391",
     "title": "Attack of the Killer Tomatoes! (1978)",
     "grade": 0
@@ -4435,6 +6155,26 @@
    {
     "imdb_id": "tt0078935",
     "title": "Cannibal Holocaust (1980)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1060277",
+    "title": "Cloverfield (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0090887",
+    "title": "Critters (1986)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0074486",
+    "title": "Eraserhead (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0092991",
+    "title": "Evil Dead II (1987)",
     "grade": 0
    },
    {
@@ -4448,8 +6188,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0095444",
+    "title": "Killer Klowns from Outer Space (1988)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0464154",
     "title": "Piranha 3D (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1077258",
+    "title": "Planet Terror (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt11866324",
+    "title": "Prey (2022)",
     "grade": 0
    },
    {
@@ -4463,6 +6218,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0094761",
+    "title": "The Blob (1988)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1259521",
+    "title": "The Cabin in the Woods (2012)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1457767",
     "title": "The Conjuring (2013)",
     "grade": 0
@@ -4473,6 +6238,26 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0077681",
+    "title": "The Hills Have Eyes (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0454841",
+    "title": "The Hills Have Eyes (2006)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt8244784",
+    "title": "The Hunt (2020)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2345759",
+    "title": "The Mummy (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0072271",
     "title": "The Texas Chain Saw Massacre (1974)",
     "grade": 0
@@ -4480,6 +6265,11 @@
    {
     "imdb_id": "tt0092076",
     "title": "The Texas Chainsaw Massacre 2 (1986)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1465522",
+    "title": "Tucker and Dale vs. Evil (2010)",
     "grade": 0
    },
    {
@@ -4505,6 +6295,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0091083",
+    "title": "From Beyond (1986)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0089885",
     "title": "Re-Animator (1985)",
     "grade": 2
@@ -4512,6 +6307,11 @@
    {
     "imdb_id": "tt0094761",
     "title": "The Blob (1988)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0083907",
+    "title": "The Evil Dead (1982)",
     "grade": 2
    },
    {
@@ -4523,6 +6323,21 @@
     "imdb_id": "tt0086541",
     "title": "Videodrome (1983)",
     "grade": 2
+   },
+   {
+    "imdb_id": "tt0067656",
+    "title": "A Bay of Blood (1971)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0089686",
+    "title": "A Nightmare on Elm Street Part 2: Freddy's Revenge (1985)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0090605",
+    "title": "Aliens (1986)",
+    "grade": 1
    },
    {
     "imdb_id": "tt0078935",
@@ -4565,13 +6380,33 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0439815",
+    "title": "Slither (2006)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt13560574",
     "title": "X (2022)",
     "grade": 1
    },
    {
+    "imdb_id": "tt1179056",
+    "title": "A Nightmare on Elm Street (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0080391",
+    "title": "Attack of the Killer Tomatoes! (1978)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt2428170",
     "title": "Creep (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4062536",
+    "title": "Green Room (2016)",
     "grade": 0
    },
    {
@@ -4587,6 +6422,11 @@
    {
     "imdb_id": "tt10954984",
     "title": "Nope (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1179904",
+    "title": "Paranormal Activity (2007)",
     "grade": 0
    },
    {
@@ -4615,6 +6455,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0185937",
+    "title": "The Blair Witch Project (1999)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7069210",
     "title": "The Conjuring: The Devil Made Me Do It (2021)",
     "grade": 0
@@ -4637,6 +6482,11 @@
    {
     "imdb_id": "tt0072271",
     "title": "The Texas Chain Saw Massacre (1974)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0324216",
+    "title": "The Texas Chainsaw Massacre (2003)",
     "grade": 0
    },
    {
@@ -4712,6 +6562,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt15474916",
+    "title": "Smile (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt10638522",
+    "title": "Talk to Me (2023)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0377109",
     "title": "The Ring Two (2005)",
     "grade": 1
@@ -4722,6 +6582,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt5140878",
+    "title": "Annabelle: Creation (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0078935",
+    "title": "Cannibal Holocaust (1980)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt2428170",
     "title": "Creep (2014)",
     "grade": 0
@@ -4729,6 +6599,11 @@
    {
     "imdb_id": "tt0455760",
     "title": "Dead Silence (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1314655",
+    "title": "Devil (2010)",
     "grade": 0
    },
    {
@@ -4747,8 +6622,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0013257",
+    "title": "Häxan (1922)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt2226417",
     "title": "Insidious: Chapter 2 (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5726086",
+    "title": "Insidious: The Last Key (2018)",
     "grade": 0
    },
    {
@@ -4772,6 +6657,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0054167",
+    "title": "Peeping Tom (1960)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0384806",
     "title": "The Amityville Horror (2005)",
     "grade": 0
@@ -4789,6 +6679,21 @@
    {
     "imdb_id": "tt3065204",
     "title": "The Conjuring 2 (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0057129",
+    "title": "The Haunting (1963)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1320244",
+    "title": "The Last Exorcism (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3567288",
+    "title": "The Visit (2015)",
     "grade": 0
    },
    {
@@ -4834,6 +6739,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0468492",
+    "title": "The Host (2006)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0298130",
+    "title": "The Ring (2002)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt2326554",
     "title": "A Girl Walks Home Alone at Night (2014)",
     "grade": 0
@@ -4864,13 +6779,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0068713",
+    "title": "Horror Express (1972)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1588170",
     "title": "I Saw the Devil (2010)",
     "grade": 0
    },
    {
+    "imdb_id": "tt1396484",
+    "title": "It (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1204977",
     "title": "Ouija (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4361050",
+    "title": "Ouija: Origin of Evil (2016)",
     "grade": 0
    },
    {
@@ -4881,6 +6811,11 @@
    {
     "imdb_id": "tt8850222",
     "title": "Peninsula (2020)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0079714",
+    "title": "Phantasm (1979)",
     "grade": 0
    },
    {
@@ -4904,6 +6839,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1922777",
+    "title": "Sinister (2012)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15474916",
     "title": "Smile (2022)",
     "grade": 0
@@ -4916,6 +6856,26 @@
    {
     "imdb_id": "tt0384806",
     "title": "The Amityville Horror (2005)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1259521",
+    "title": "The Cabin in the Woods (2012)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1457767",
+    "title": "The Conjuring (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3065204",
+    "title": "The Conjuring 2 (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0171363",
+    "title": "The Haunting (1999)",
     "grade": 0
    },
    {
@@ -4951,6 +6911,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt2494362",
+    "title": "Bone Tomahawk (2015)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0091251",
     "title": "Come and See (1985)",
     "grade": 1
@@ -4963,6 +6928,11 @@
    {
     "imdb_id": "tt0367959",
     "title": "Hannibal Rising (2007)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0450278",
+    "title": "Hostel (2006)",
     "grade": 1
    },
    {
@@ -4996,6 +6966,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0091209",
+    "title": "The Hitcher (1986)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt9764362",
     "title": "The Menu (2022)",
     "grade": 1
@@ -5011,13 +6986,48 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0067656",
+    "title": "A Bay of Blood (1971)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt7752126",
+    "title": "Brightburn (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt2554274",
     "title": "Crimson Peak (2015)",
     "grade": 0
    },
    {
+    "imdb_id": "tt0074486",
+    "title": "Eraserhead (1977)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0092991",
+    "title": "Evil Dead II (1987)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0120681",
     "title": "From Hell (2001)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3748172",
+    "title": "Gerald's Game (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5052448",
+    "title": "Get Out (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0095294",
+    "title": "Hellbound: Hellraiser II (1988)",
     "grade": 0
    },
    {
@@ -5031,8 +7041,33 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt4695012",
+    "title": "It Comes at Night (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt18925334",
+    "title": "Pearl (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt7798634",
+    "title": "Ready or Not (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt15474916",
+    "title": "Smile (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt10327252",
     "title": "The Forever Purge (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1392170",
+    "title": "The Hunger Games (2012)",
     "grade": 0
    },
    {
@@ -5103,8 +7138,48 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt2377322",
+    "title": "Deliver Us from Evil (2014)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1127180",
+    "title": "Drag Me to Hell (2009)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0076009",
     "title": "Exorcist II: The Heretic (1977)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0095294",
+    "title": "Hellbound: Hellraiser II (1988)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt2274648",
+    "title": "Hellboy (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0013257",
+    "title": "Häxan (1922)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1038686",
+    "title": "Legion (2010)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0071994",
+    "title": "Phantom of the Paradise (1974)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt7798634",
+    "title": "Ready or Not (2019)",
     "grade": 1
    },
    {
@@ -5115,6 +7190,11 @@
    {
     "imdb_id": "tt0066993",
     "title": "The Devils (1971)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0070047",
+    "title": "The Exorcist (1973)",
     "grade": 1
    },
    {
@@ -5130,6 +7210,11 @@
    {
     "imdb_id": "tt0348836",
     "title": "Gothika (2003)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0093177",
+    "title": "Hellraiser (1987)",
     "grade": 0
    },
    {
@@ -5150,6 +7235,16 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt4062536",
+    "title": "Green Room (2016)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt5022702",
+    "title": "Hush (2016)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0387564",
     "title": "Saw (2004)",
     "grade": 2
@@ -5163,6 +7258,26 @@
     "imdb_id": "tt7144666",
     "title": "The Black Phone (2022)",
     "grade": 2
+   },
+   {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt2428170",
+    "title": "Creep (2014)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5886046",
+    "title": "Escape Room (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0097388",
+    "title": "Friday the 13th Part VIII: Jason Takes Manhattan (1989)",
+    "grade": 1
    },
    {
     "imdb_id": "tt0089173",
@@ -5180,8 +7295,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0450278",
+    "title": "Hostel (2006)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt3348730",
     "title": "Jigsaw (2017)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1132626",
+    "title": "Saw V (2008)",
     "grade": 1
    },
    {
@@ -5200,6 +7325,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0080661",
+    "title": "Dressed to Kill (1980)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0329101",
     "title": "Freddy vs. Jason (2003)",
     "grade": 0
@@ -5207,6 +7337,11 @@
    {
     "imdb_id": "tt0068611",
     "title": "Frenzy (1972)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0120681",
+    "title": "From Hell (2001)",
     "grade": 0
    },
    {
@@ -5255,6 +7390,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0134084",
+    "title": "Scream 3 (2000)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt17663992",
     "title": "Scream VI (2023)",
     "grade": 0
@@ -5275,12 +7415,22 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1724572",
+    "title": "The Murder at Road Hill House (2011)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt8368406",
     "title": "Vivarium (2019)",
     "grade": 0
    }
   ],
   "aliens abducting or invading": [
+   {
+    "imdb_id": "tt6644200",
+    "title": "A Quiet Place (2018)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt8332922",
     "title": "A Quiet Place Part II (2021)",
@@ -5304,6 +7454,11 @@
    {
     "imdb_id": "tt0095444",
     "title": "Killer Klowns from Outer Space (1988)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt10954984",
+    "title": "Nope (2022)",
     "grade": 2
    },
    {
@@ -5337,13 +7492,33 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0090887",
+    "title": "Critters (1986)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt11866324",
     "title": "Prey (2022)",
     "grade": 1
    },
    {
+    "imdb_id": "tt0114508",
+    "title": "Species (1995)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0084787",
     "title": "The Thing (1982)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0905372",
+    "title": "The Thing (2011)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0044121",
+    "title": "The Thing from Another World (1951)",
     "grade": 1
    },
    {
@@ -5387,8 +7562,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt5052448",
+    "title": "Get Out (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5442430",
+    "title": "Life (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1188729",
+    "title": "Pandorum (2009)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0070531",
     "title": "Phase IV (1974)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1446714",
+    "title": "Prometheus (2012)",
     "grade": 0
    },
    {
@@ -5422,6 +7617,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0047573",
+    "title": "Them! (1954)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt6857112",
+    "title": "Us (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0080130",
     "title": "When a Stranger Calls (1979)",
     "grade": 0
@@ -5441,6 +7646,11 @@
    {
     "imdb_id": "tt0053459",
     "title": "Eyes Without a Face (1960)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0099582",
+    "title": "Flatliners (1990)",
     "grade": 2
    },
    {
@@ -5464,6 +7674,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0078908",
+    "title": "The Brood (1979)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0050280",
     "title": "The Curse of Frankenstein (1957)",
     "grade": 2
@@ -5476,6 +7691,11 @@
    {
     "imdb_id": "tt0091064",
     "title": "The Fly (1986)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt1467304",
+    "title": "The Human Centipede (First Sequence) (2009)",
     "grade": 2
    },
    {
@@ -5514,8 +7734,23 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0081455",
+    "title": "Scanners (1981)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0073705",
     "title": "Shivers (1975)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0066740",
+    "title": "The Abominable Dr. Phibes (1971)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0010323",
+    "title": "The Cabinet of Dr. Caligari (1920)",
     "grade": 1
    },
    {
@@ -5529,13 +7764,38 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt4255304",
+    "title": "The Void (2016)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0047573",
+    "title": "Them! (1954)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt2798920",
     "title": "Annihilation (2018)",
     "grade": 0
    },
    {
+    "imdb_id": "tt0092610",
+    "title": "Bad Taste (1987)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt4954522",
+    "title": "Raw (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0065761",
     "title": "The Cat o' Nine Tails (1971)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0084787",
+    "title": "The Thing (1982)",
     "grade": 0
    }
   ],
@@ -5606,6 +7866,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1179056",
+    "title": "A Nightmare on Elm Street (2010)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0089686",
     "title": "A Nightmare on Elm Street Part 2: Freddy's Revenge (1985)",
     "grade": 0
@@ -5618,6 +7883,16 @@
    {
     "imdb_id": "tt10731256",
     "title": "Don't Worry Darling (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0758746",
+    "title": "Friday the 13th (2009)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0082418",
+    "title": "Friday the 13th Part 2 (1981)",
     "grade": 0
    },
    {
@@ -5641,6 +7916,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt7349950",
+    "title": "It Chapter Two (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3235888",
     "title": "It Follows (2015)",
     "grade": 0
@@ -5656,8 +7936,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1148204",
+    "title": "Orphan (2009)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1204977",
     "title": "Ouija (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0387564",
+    "title": "Saw (2004)",
     "grade": 0
    },
    {
@@ -5708,9 +7998,24 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt8364368",
+    "title": "Crawl (2019)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0088993",
+    "title": "Day of the Dead (1985)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt0435625",
     "title": "The Descent (2005)",
     "grade": 2
+   },
+   {
+    "imdb_id": "tt0450385",
+    "title": "1408 (2007)",
+    "grade": 1
    },
    {
     "imdb_id": "tt2932536",
@@ -5753,8 +8058,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt4062536",
+    "title": "Green Room (2016)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0450278",
     "title": "Hostel (2006)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4687108",
+    "title": "In the Tall Grass (2019)",
     "grade": 1
    },
    {
@@ -5770,6 +8085,21 @@
    {
     "imdb_id": "tt1446714",
     "title": "Prometheus (2012)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0059646",
+    "title": "Repulsion (1965)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt7144666",
+    "title": "The Black Phone (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1259521",
+    "title": "The Cabin in the Woods (2012)",
     "grade": 1
    },
    {
@@ -5790,6 +8120,11 @@
    {
     "imdb_id": "tt0084787",
     "title": "The Thing (1982)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4255304",
+    "title": "The Void (2016)",
     "grade": 1
    },
    {
@@ -5828,6 +8163,16 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt5073642",
+    "title": "Color Out of Space (2020)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2428170",
+    "title": "Creep (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt6246322",
     "title": "Don't Breathe 2 (2021)",
     "grade": 0
@@ -5863,6 +8208,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1179904",
     "title": "Paranormal Activity (2007)",
     "grade": 0
@@ -5888,12 +8238,27 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt5638642",
+    "title": "The Ritual (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0081505",
     "title": "The Shining (1980)",
     "grade": 0
    }
   ],
   "something scary but not gory for a first-timer": [
+   {
+    "imdb_id": "tt0087363",
+    "title": "Gremlins (1984)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0178868",
+    "title": "Ring (1998)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt3387520",
     "title": "Scary Stories to Tell in the Dark (2019)",
@@ -5940,8 +8305,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0119345",
+    "title": "I Know What You Did Last Summer (1997)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1396484",
     "title": "It (2017)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4695012",
+    "title": "It Comes at Night (2017)",
     "grade": 1
    },
    {
@@ -5975,6 +8350,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0051418",
+    "title": "The Blob (1958)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt2345759",
     "title": "The Mummy (2017)",
     "grade": 1
@@ -5992,6 +8372,16 @@
    {
     "imdb_id": "tt0080040",
     "title": "Tourist Trap (1979)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0100814",
+    "title": "Tremors (1990)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt6772950",
+    "title": "Truth or Dare (2018)",
     "grade": 1
    },
    {
@@ -6025,6 +8415,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt15474916",
+    "title": "Smile (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt10638522",
     "title": "Talk to Me (2023)",
     "grade": 0
@@ -6047,6 +8442,11 @@
    {
     "imdb_id": "tt1467304",
     "title": "The Human Centipede (First Sequence) (2009)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0963794",
+    "title": "The Ruins (2008)",
     "grade": 0
    },
    {
@@ -6137,6 +8537,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt4589218",
+    "title": "Five Nights at Freddy's (2023)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0099582",
     "title": "Flatliners (1990)",
     "grade": 1
@@ -6147,8 +8552,28 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt3748172",
+    "title": "Gerald's Game (2017)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt6195094",
     "title": "Ghostland (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt7784604",
+    "title": "Hereditary (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4687108",
+    "title": "In the Tall Grass (2019)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt2226417",
+    "title": "Insidious: Chapter 2 (2013)",
     "grade": 1
    },
    {
@@ -6164,6 +8589,21 @@
    {
     "imdb_id": "tt3811906",
     "title": "Malignant (2021)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt15474916",
+    "title": "Smile (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4003440",
+    "title": "The House That Jack Built (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5638642",
+    "title": "The Ritual (2017)",
     "grade": 1
    },
    {
@@ -6187,6 +8627,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1314655",
+    "title": "Devil (2010)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0195714",
     "title": "Final Destination (2000)",
     "grade": 0
@@ -6197,8 +8642,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt4786282",
+    "title": "Lights Out (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0077889",
     "title": "Magic (1978)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1029234",
+    "title": "Martyrs (2008)",
     "grade": 0
    },
    {
@@ -6214,6 +8669,21 @@
    {
     "imdb_id": "tt0387564",
     "title": "Saw (2004)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0384806",
+    "title": "The Amityville Horror (2005)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3882082",
+    "title": "The Boy (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0080749",
+    "title": "The Fog (1980)",
     "grade": 0
    },
    {
@@ -6254,8 +8724,18 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt3850590",
     "title": "Krampus (2015)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1156398",
+    "title": "Zombieland (2009)",
     "grade": 1
    },
    {
@@ -6269,8 +8749,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt3322940",
+    "title": "Annabelle (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt5140878",
     "title": "Annabelle: Creation (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0026138",
+    "title": "Bride of Frankenstein (1935)",
     "grade": 0
    },
    {
@@ -6304,6 +8794,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0087363",
+    "title": "Gremlins (1984)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0077651",
     "title": "Halloween (1978)",
     "grade": 0
@@ -6329,8 +8824,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0091419",
+    "title": "Little Shop of Horrors (1986)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt8760708",
+    "title": "M3GAN (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0077889",
     "title": "Magic (1978)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1179904",
+    "title": "Paranormal Activity (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0093777",
+    "title": "Prince of Darkness (1987)",
     "grade": 0
    },
    {
@@ -6344,8 +8859,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0120082",
+    "title": "Scream 2 (1997)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15474916",
     "title": "Smile (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0098354",
+    "title": "Society (1990)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0066740",
+    "title": "The Abominable Dr. Phibes (1971)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0118971",
+    "title": "The Devil's Advocate (1997)",
     "grade": 0
    },
    {
@@ -6354,8 +8889,33 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0116365",
+    "title": "The Frighteners (1996)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0468492",
+    "title": "The Host (2006)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0058333",
+    "title": "The Masque of the Red Death (1964)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0075005",
     "title": "The Omen (1976)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt13375076",
+    "title": "The Pope's Exorcist (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
     "grade": 0
    },
    {
@@ -6365,6 +8925,16 @@
    }
   ],
   "animals attack": [
+   {
+    "imdb_id": "tt2932536",
+    "title": "47 Meters Down (2017)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0118615",
+    "title": "Anaconda (1997)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt2944198",
     "title": "Backcountry (2015)",
@@ -6383,6 +8953,11 @@
    {
     "imdb_id": "tt0073195",
     "title": "Jaws (1975)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0077766",
+    "title": "Jaws 2 (1978)",
     "grade": 2
    },
    {
@@ -6421,8 +8996,18 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0034587",
+    "title": "Cat People (1942)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt11866324",
     "title": "Prey (2022)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0884328",
+    "title": "The Mist (2007)",
     "grade": 1
    },
    {
@@ -6466,8 +9051,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0077402",
+    "title": "Dawn of the Dead (1978)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0069019",
     "title": "Don't Torture a Duckling (1972)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0367959",
+    "title": "Hannibal Rising (2007)",
     "grade": 0
    },
    {
@@ -6483,6 +9078,11 @@
    {
     "imdb_id": "tt4530422",
     "title": "Overlord (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0837563",
+    "title": "Pet Sematary (2019)",
     "grade": 0
    },
    {
@@ -6504,6 +9104,16 @@
     "imdb_id": "tt4094724",
     "title": "The Purge: Election Year (2016)",
     "grade": 0
+   },
+   {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1853739",
+    "title": "You're Next (2013)",
+    "grade": 0
    }
   ],
   "grief and trauma as the monster": [
@@ -6520,6 +9130,11 @@
    {
     "imdb_id": "tt7784604",
     "title": "Hereditary (2018)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0098084",
+    "title": "Pet Sematary (1989)",
     "grade": 2
    },
    {
@@ -6558,6 +9173,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0099582",
+    "title": "Flatliners (1990)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt6195094",
     "title": "Ghostland (2018)",
     "grade": 1
@@ -6565,6 +9185,11 @@
    {
     "imdb_id": "tt1502407",
     "title": "Halloween (2018)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0367959",
+    "title": "Hannibal Rising (2007)",
     "grade": 1
    },
    {
@@ -6593,6 +9218,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0059646",
+    "title": "Repulsion (1965)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt4972582",
     "title": "Split (2017)",
     "grade": 1
@@ -6605,6 +9235,11 @@
    {
     "imdb_id": "tt0087800",
     "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
     "grade": 0
    },
    {
@@ -6623,8 +9258,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0091083",
+    "title": "From Beyond (1986)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0119167",
     "title": "Funny Games (1997)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0348836",
+    "title": "Gothika (2003)",
     "grade": 0
    },
    {
@@ -6643,6 +9288,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt3811906",
+    "title": "Malignant (2021)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0076590",
     "title": "Rabid (1977)",
     "grade": 0
@@ -6658,6 +9308,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0387564",
+    "title": "Saw (2004)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1038988",
     "title": "[REC] (2007)",
     "grade": 0
@@ -6669,6 +9324,16 @@
    }
   ],
   "twisty mind-bending horror with a big reveal": [
+   {
+    "imdb_id": "tt0055830",
+    "title": "Carnival of Souls (1962)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt1788391",
+    "title": "Kill List (2011)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt3811906",
     "title": "Malignant (2021)",
@@ -6690,6 +9355,16 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt1259521",
+    "title": "The Cabin in the Woods (2012)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt2798920",
+    "title": "Annihilation (2018)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
     "grade": 1
@@ -6697,6 +9372,21 @@
    {
     "imdb_id": "tt0077355",
     "title": "Coma (1978)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0073582",
+    "title": "Deep Red (1975)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0074486",
+    "title": "Eraserhead (1977)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5308322",
+    "title": "Happy Death Day (2017)",
     "grade": 1
    },
    {
@@ -6745,6 +9435,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0298130",
+    "title": "The Ring (2002)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0080040",
     "title": "Tourist Trap (1979)",
     "grade": 1
@@ -6755,6 +9450,16 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0111686",
+    "title": "Wes Craven's New Nightmare (1994)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1060277",
+    "title": "Cloverfield (2008)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0373883",
     "title": "Halloween (2007)",
     "grade": 0
@@ -6762,6 +9467,11 @@
    {
     "imdb_id": "tt1502407",
     "title": "Halloween (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0093177",
+    "title": "Hellraiser (1987)",
     "grade": 0
    },
    {
@@ -6785,6 +9495,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0263488",
+    "title": "Jeepers Creepers (2001)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7958736",
     "title": "Ma (2019)",
     "grade": 0
@@ -6797,6 +9512,11 @@
    {
     "imdb_id": "tt1179904",
     "title": "Paranormal Activity (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0073705",
+    "title": "Shivers (1975)",
     "grade": 0
    },
    {
@@ -6815,6 +9535,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1457767",
+    "title": "The Conjuring (2013)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3065204",
     "title": "The Conjuring 2 (2016)",
     "grade": 0
@@ -6822,6 +9547,11 @@
    {
     "imdb_id": "tt0070047",
     "title": "The Exorcist (1973)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0391198",
+    "title": "The Grudge (2004)",
     "grade": 0
    },
    {
@@ -6849,6 +9579,16 @@
    {
     "imdb_id": "tt0077713",
     "title": "Day of the Woman (1978)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0119167",
+    "title": "Funny Games (1997)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt1588170",
+    "title": "I Saw the Devil (2010)",
     "grade": 2
    },
    {
@@ -6882,6 +9622,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt4160708",
     "title": "Don't Breathe (2016)",
     "grade": 1
@@ -6904,6 +9649,11 @@
    {
     "imdb_id": "tt4954522",
     "title": "Raw (2017)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0059646",
+    "title": "Repulsion (1965)",
     "grade": 1
    },
    {
@@ -6937,6 +9687,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1179904",
+    "title": "Paranormal Activity (2007)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt18925334",
     "title": "Pearl (2022)",
     "grade": 0
@@ -6952,6 +9707,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0498381",
+    "title": "Rings (2017)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1922777",
     "title": "Sinister (2012)",
     "grade": 0
@@ -6959,6 +9719,11 @@
    {
     "imdb_id": "tt10638522",
     "title": "Talk to Me (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0185937",
+    "title": "The Blair Witch Project (1999)",
     "grade": 0
    },
    {
@@ -7009,8 +9774,28 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0103874",
+    "title": "Bram Stoker's Dracula (1992)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0045888",
     "title": "House of Wax (1953)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0051744",
+    "title": "House on Haunted Hill (1959)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0110148",
+    "title": "Interview with the Vampire (1994)",
     "grade": 1
    },
    {
@@ -7029,8 +9814,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0162661",
+    "title": "Sleepy Hollow (1999)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt3882082",
     "title": "The Boy (2016)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0080516",
+    "title": "The Changeling (1980)",
     "grade": 1
    },
    {
@@ -7054,6 +9849,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt5814060",
+    "title": "The Nun (2018)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt10160976",
     "title": "The Nun II (2023)",
     "grade": 1
@@ -7061,6 +9861,11 @@
    {
     "imdb_id": "tt0464141",
     "title": "The Orphanage (2007)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt4263482",
+    "title": "The Witch (2016)",
     "grade": 1
    },
    {
@@ -7074,8 +9879,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt15791034",
+    "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7323600",
     "title": "Hagazussa (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt7784604",
+    "title": "Hereditary (2018)",
     "grade": 0
    },
    {
@@ -7091,6 +9906,21 @@
    {
     "imdb_id": "tt3387520",
     "title": "Scary Stories to Tell in the Dark (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0384806",
+    "title": "The Amityville Horror (2005)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1457767",
+    "title": "The Conjuring (2013)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3065204",
+    "title": "The Conjuring 2 (2016)",
     "grade": 0
    },
    {
@@ -7156,8 +9986,23 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0105665",
+    "title": "Twin Peaks: Fire Walk with Me (1992)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0103919",
+    "title": "Candyman (1992)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0113409",
     "title": "In the Mouth of Madness (1995)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt8772262",
+    "title": "Midsommar (2019)",
     "grade": 1
    },
    {
@@ -7176,6 +10021,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0185937",
+    "title": "The Blair Witch Project (1999)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0075809",
     "title": "The Car (1977)",
     "grade": 1
@@ -7188,6 +10038,11 @@
    {
     "imdb_id": "tt0093437",
     "title": "The Lost Boys (1987)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0298130",
+    "title": "The Ring (2002)",
     "grade": 1
    },
    {
@@ -7233,6 +10088,11 @@
    {
     "imdb_id": "tt4687108",
     "title": "In the Tall Grass (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt18925334",
+    "title": "Pearl (2022)",
     "grade": 0
    },
    {
@@ -7293,6 +10153,21 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0329101",
+    "title": "Freddy vs. Jason (2003)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5022702",
+    "title": "Hush (2016)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1242432",
+    "title": "I Spit on Your Grave (2010)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0263488",
     "title": "Jeepers Creepers (2001)",
     "grade": 1
@@ -7308,8 +10183,38 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt8244784",
+    "title": "The Hunt (2020)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5638642",
+    "title": "The Ritual (2017)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0324216",
+    "title": "The Texas Chainsaw Massacre (2003)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0087800",
+    "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0071222",
+    "title": "Black Christmas (1974)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0094862",
     "title": "Child's Play (1988)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0068611",
+    "title": "Frenzy (1972)",
     "grade": 0
    },
    {
@@ -7320,6 +10225,16 @@
    {
     "imdb_id": "tt0373883",
     "title": "Halloween (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0120694",
+    "title": "Halloween H20: 20 Years Later (1998)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt10665338",
+    "title": "Halloween Kills (2021)",
     "grade": 0
    },
    {
@@ -7338,13 +10253,43 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt3235888",
+    "title": "It Follows (2015)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3348730",
     "title": "Jigsaw (2017)",
     "grade": 0
    },
    {
+    "imdb_id": "tt1788391",
+    "title": "Kill List (2011)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0091474",
     "title": "Manhunter (1986)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt8772262",
+    "title": "Midsommar (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0054167",
+    "title": "Peeping Tom (1960)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0289765",
+    "title": "Red Dragon (2002)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0387564",
+    "title": "Saw (2004)",
     "grade": 0
    },
    {
@@ -7363,8 +10308,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0096734",
+    "title": "The 'Burbs (1989)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3289956",
+    "title": "The Autopsy of Jane Doe (2016)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7144666",
     "title": "The Black Phone (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3713166",
+    "title": "Unfriended (2014)",
     "grade": 0
    },
    {
@@ -7430,6 +10390,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt4062536",
+    "title": "Green Room (2016)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0049366",
     "title": "Invasion of the Body Snatchers (1956)",
     "grade": 1
@@ -7450,8 +10415,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0070698",
+    "title": "Sisters (1973)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0096734",
     "title": "The 'Burbs (1989)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1051906",
+    "title": "The Invisible Man (2020)",
     "grade": 1
    },
    {
@@ -7462,6 +10437,11 @@
    {
     "imdb_id": "tt17526714",
     "title": "The Substance (2024)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5700672",
+    "title": "Train to Busan (2016)",
     "grade": 1
    },
    {
@@ -7480,13 +10460,38 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1939659",
+    "title": "Carrie (2013)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0073582",
     "title": "Deep Red (1975)",
     "grade": 0
    },
    {
+    "imdb_id": "tt5022702",
+    "title": "Hush (2016)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt15679400",
+    "title": "Knock at the Cabin (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1139797",
+    "title": "Let the Right One In (2008)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt10954652",
     "title": "Old (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0054215",
+    "title": "Psycho (1960)",
     "grade": 0
    },
    {
@@ -7502,6 +10507,11 @@
    {
     "imdb_id": "tt7144666",
     "title": "The Black Phone (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0077588",
+    "title": "The Fury (1978)",
     "grade": 0
    },
    {
@@ -7542,6 +10552,11 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt5606664",
+    "title": "Doctor Sleep (2019)",
+    "grade": 2
+   },
+   {
     "imdb_id": "tt3748172",
     "title": "Gerald's Game (2017)",
     "grade": 2
@@ -7552,6 +10567,16 @@
     "grade": 2
    },
    {
+    "imdb_id": "tt0081505",
+    "title": "The Shining (1980)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt2326554",
+    "title": "A Girl Walks Home Alone at Night (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1179056",
     "title": "A Nightmare on Elm Street (2010)",
     "grade": 0
@@ -7559,6 +10584,16 @@
    {
     "imdb_id": "tt0095742",
     "title": "A Nightmare on Elm Street 4: The Dream Master (1988)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0089686",
+    "title": "A Nightmare on Elm Street Part 2: Freddy's Revenge (1985)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0090605",
+    "title": "Aliens (1986)",
     "grade": 0
    },
    {
@@ -7584,6 +10619,11 @@
    {
     "imdb_id": "tt6246322",
     "title": "Don't Breathe 2 (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5052448",
+    "title": "Get Out (2017)",
     "grade": 0
    },
    {
@@ -7632,6 +10672,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0024216",
+    "title": "King Kong (1933)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0074751",
     "title": "King Kong (1976)",
     "grade": 0
@@ -7672,6 +10717,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0822847",
+    "title": "Priest (2011)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0289765",
     "title": "Red Dragon (2002)",
     "grade": 0
@@ -7699,6 +10749,11 @@
    {
     "imdb_id": "tt5638642",
     "title": "The Ritual (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0111686",
+    "title": "Wes Craven's New Nightmare (1994)",
     "grade": 0
    },
    {
@@ -7779,13 +10834,38 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0067656",
+    "title": "A Bay of Blood (1971)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0094862",
+    "title": "Child's Play (1988)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0398913",
     "title": "DOA: Dead or Alive (2006)",
     "grade": 0
    },
    {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0092991",
+    "title": "Evil Dead II (1987)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0309593",
     "title": "Final Destination 2 (2003)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0414982",
+    "title": "Final Destination 3 (2006)",
     "grade": 0
    },
    {
@@ -7799,8 +10879,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0329101",
+    "title": "Freddy vs. Jason (2003)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3748172",
     "title": "Gerald's Game (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5308322",
+    "title": "Happy Death Day (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1588170",
+    "title": "I Saw the Devil (2010)",
     "grade": 0
    },
    {
@@ -7814,13 +10909,38 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0120804",
+    "title": "Resident Evil (2002)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1220634",
     "title": "Resident Evil: Afterlife (2010)",
     "grade": 0
    },
    {
+    "imdb_id": "tt0432021",
+    "title": "Resident Evil: Extinction (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0365748",
+    "title": "Shaun of the Dead (2004)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt8695030",
     "title": "The Dead Don't Die (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0083907",
+    "title": "The Evil Dead (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1144884",
+    "title": "The Final Destination (2009)",
     "grade": 0
    },
    {
@@ -7836,6 +10956,31 @@
    {
     "imdb_id": "tt0298130",
     "title": "The Ring (2002)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0072271",
+    "title": "The Texas Chain Saw Massacre (1974)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0324216",
+    "title": "The Texas Chainsaw Massacre (2003)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0295700",
+    "title": "Wrong Turn (2003)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1156398",
+    "title": "Zombieland (2009)",
     "grade": 0
    }
   ],
@@ -7866,6 +11011,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0455760",
+    "title": "Dead Silence (2007)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt1127180",
     "title": "Drag Me to Hell (2009)",
     "grade": 1
@@ -7876,8 +11026,38 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0076009",
+    "title": "Exorcist II: The Heretic (1977)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0098084",
     "title": "Pet Sematary (1989)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0093777",
+    "title": "Prince of Darkness (1987)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0178868",
+    "title": "Ring (1998)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0066740",
+    "title": "The Abominable Dr. Phibes (1971)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt1457767",
+    "title": "The Conjuring (2013)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt7069210",
+    "title": "The Conjuring: The Devil Made Me Do It (2021)",
     "grade": 1
    },
    {
@@ -7886,8 +11066,18 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0080749",
+    "title": "The Fog (1980)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0391198",
     "title": "The Grudge (2004)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt5814060",
+    "title": "The Nun (2018)",
     "grade": 1
    },
    {
@@ -7901,8 +11091,28 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt2798920",
+    "title": "Annihilation (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0078935",
+    "title": "Cannibal Holocaust (1980)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5606664",
+    "title": "Doctor Sleep (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt7323600",
     "title": "Hagazussa (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0095294",
+    "title": "Hellbound: Hellraiser II (1988)",
     "grade": 0
    },
    {
@@ -7913,6 +11123,16 @@
    {
     "imdb_id": "tt0013257",
     "title": "Häxan (1922)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3811906",
+    "title": "Malignant (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5040012",
+    "title": "Nosferatu (2024)",
     "grade": 0
    },
    {
@@ -7931,8 +11151,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1179904",
+    "title": "Paranormal Activity (2007)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1446714",
     "title": "Prometheus (2012)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0289765",
+    "title": "Red Dragon (2002)",
     "grade": 0
    },
    {
@@ -7961,6 +11191,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0078908",
+    "title": "The Brood (1979)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt3065204",
     "title": "The Conjuring 2 (2016)",
     "grade": 0
@@ -7971,12 +11206,27 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1320244",
+    "title": "The Last Exorcism (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0142688",
+    "title": "The Ninth Gate (1999)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0298130",
     "title": "The Ring (2002)",
     "grade": 0
    }
   ],
   "cannibals": [
+   {
+    "imdb_id": "tt2494362",
+    "title": "Bone Tomahawk (2015)",
+    "grade": 2
+   },
    {
     "imdb_id": "tt0078935",
     "title": "Cannibal Holocaust (1980)",
@@ -8005,6 +11255,11 @@
    {
     "imdb_id": "tt0092076",
     "title": "The Texas Chainsaw Massacre 2 (1986)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0295700",
+    "title": "Wrong Turn (2003)",
     "grade": 2
    },
    {
@@ -8043,8 +11298,33 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt2798920",
+    "title": "Annihilation (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0106308",
+    "title": "Army of Darkness (1992)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0080391",
+    "title": "Attack of the Killer Tomatoes! (1978)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0103873",
     "title": "Braindead (1992)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0083767",
+    "title": "Creepshow (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0450278",
+    "title": "Hostel (2006)",
     "grade": 0
    },
    {
@@ -8058,6 +11338,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt8772262",
+    "title": "Midsommar (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0076504",
     "title": "Orca (1977)",
     "grade": 0
@@ -8065,6 +11350,11 @@
    {
     "imdb_id": "tt0078087",
     "title": "Piranha (1978)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0076590",
+    "title": "Rabid (1977)",
     "grade": 0
    },
    {
@@ -8080,6 +11370,16 @@
    {
     "imdb_id": "tt0387564",
     "title": "Saw (2004)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0073705",
+    "title": "Shivers (1975)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0439815",
+    "title": "Slither (2006)",
     "grade": 0
    },
    {
@@ -8138,6 +11438,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1156398",
+    "title": "Zombieland (2009)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1038988",
     "title": "[REC] (2007)",
     "grade": 0
@@ -8147,6 +11452,11 @@
    {
     "imdb_id": "tt2932536",
     "title": "47 Meters Down (2017)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0046876",
+    "title": "Creature from the Black Lagoon (1954)",
     "grade": 2
    },
    {
@@ -8162,6 +11472,11 @@
    {
     "imdb_id": "tt0073195",
     "title": "Jaws (1975)",
+    "grade": 2
+   },
+   {
+    "imdb_id": "tt0085750",
+    "title": "Jaws 3-D (1983)",
     "grade": 2
    },
    {
@@ -8182,6 +11497,11 @@
    {
     "imdb_id": "tt0078748",
     "title": "Alien (1979)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt2316204",
+    "title": "Alien: Covenant (2017)",
     "grade": 1
    },
    {
@@ -8210,6 +11530,11 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt1446714",
+    "title": "Prometheus (2012)",
+    "grade": 1
+   },
+   {
     "imdb_id": "tt0080749",
     "title": "The Fog (1980)",
     "grade": 1
@@ -8225,8 +11550,28 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt0087800",
+    "title": "A Nightmare on Elm Street (1984)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0055830",
+    "title": "Carnival of Souls (1962)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt6195094",
+    "title": "Ghostland (2018)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0068713",
+    "title": "Horror Express (1972)",
     "grade": 0
    },
    {
@@ -8235,8 +11580,23 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt7958736",
+    "title": "Ma (2019)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt10954652",
     "title": "Old (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt1204977",
+    "title": "Ouija (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0387564",
+    "title": "Saw (2004)",
     "grade": 0
    },
    {
@@ -8257,6 +11617,36 @@
    {
     "imdb_id": "tt7984734",
     "title": "The Lighthouse (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0298130",
+    "title": "The Ring (2002)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5638642",
+    "title": "The Ritual (2017)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0081505",
+    "title": "The Shining (1980)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0905372",
+    "title": "The Thing (2011)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt10944760",
+    "title": "Titane (2021)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5109784",
+    "title": "mother! (2017)",
     "grade": 0
    }
   ],
@@ -8280,6 +11670,16 @@
     "imdb_id": "tt3850590",
     "title": "Krampus (2015)",
     "grade": 2
+   },
+   {
+    "imdb_id": "tt2049403",
+    "title": "Beetlejuice Beetlejuice (2024)",
+    "grade": 1
+   },
+   {
+    "imdb_id": "tt0083767",
+    "title": "Creepshow (1982)",
+    "grade": 1
    },
    {
     "imdb_id": "tt0373883",
@@ -8322,8 +11722,33 @@
     "grade": 1
    },
    {
+    "imdb_id": "tt1179056",
+    "title": "A Nightmare on Elm Street (2010)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt3322940",
+    "title": "Annabelle (2014)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt15791034",
     "title": "Barbarian (2022)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2428170",
+    "title": "Creep (2014)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0288477",
+    "title": "Ghost Ship (2002)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt6195094",
+    "title": "Ghostland (2018)",
     "grade": 0
    },
    {
@@ -8337,6 +11762,11 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt2226417",
+    "title": "Insidious: Chapter 2 (2013)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1396484",
     "title": "It (2017)",
     "grade": 0
@@ -8344,6 +11774,16 @@
    {
     "imdb_id": "tt7349950",
     "title": "It Chapter Two (2019)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt15679400",
+    "title": "Knock at the Cabin (2023)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt0091419",
+    "title": "Little Shop of Horrors (1986)",
     "grade": 0
    },
    {
@@ -8377,8 +11817,18 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt1259521",
+    "title": "The Cabin in the Woods (2012)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0083907",
     "title": "The Evil Dead (1982)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt2345759",
+    "title": "The Mummy (2017)",
     "grade": 0
    },
    {
@@ -8387,13 +11837,28 @@
     "grade": 0
    },
    {
+    "imdb_id": "tt0482606",
+    "title": "The Strangers (2008)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt0080040",
     "title": "Tourist Trap (1979)",
     "grade": 0
    },
    {
+    "imdb_id": "tt1187064",
+    "title": "Triangle (2009)",
+    "grade": 0
+   },
+   {
     "imdb_id": "tt1038988",
     "title": "[REC] (2007)",
+    "grade": 0
+   },
+   {
+    "imdb_id": "tt5109784",
+    "title": "mother! (2017)",
     "grade": 0
    }
   ]

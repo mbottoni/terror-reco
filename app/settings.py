@@ -32,8 +32,11 @@ class AppSettings(BaseSettings):
     DEBUG: bool = Field(default=False)
 
     # Unified recommender toggles
-    # Make "unified" the strategy used when the UI does not specify one.
-    USE_UNIFIED_RECOMMENDER: bool = Field(default=False)
+    # Which strategy a request gets when it names none (or an unknown one).
+    # Unified is the default because it is measurably better as served:
+    # +0.063 NDCG@6 over semantic, 95% interval [+0.036, +0.090], on the graded
+    # benchmark with production randomness on (docs/evaluation-baseline.md).
+    USE_UNIFIED_RECOMMENDER: bool = Field(default=True)
     # Rerank the shortlist with a cross-encoder. Off by default: measured at
     # +0.0026 NDCG (inside run-to-run noise), *worse* precision, and ~1.1s of
     # extra latency per query. See docs/evaluation-baseline.md.

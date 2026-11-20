@@ -66,6 +66,9 @@ def _titles(page: str) -> list[str]:
 
 
 def _search(client: Any, mood: str = "folk horror", **params: Any) -> list[str]:
+    # Semantic unless a test says otherwise: the `demotions` fixture records
+    # what that path is told, and the default strategy is unified.
+    params.setdefault("strategy", "semantic")
     resp = client.get("/recommend", params={"mood": mood, **params}, headers=BROWSER)
     assert resp.status_code == 200
     return _titles(resp.text)

@@ -28,7 +28,7 @@ The results page.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `mood` | string, required | -- | Free-text description of what to watch |
-| `strategy` | string | `semantic` | `semantic` or `unified`. Anything else falls back to the default |
+| `strategy` | string | `unified` | `unified` or `semantic`. Anything else falls back to the default |
 | `min_year`, `max_year` | int | none | Release year bounds (1900 to 2100) |
 | `min_rating` | float | none | Minimum IMDb rating (0 to 10) |
 | `limit` | int | `6` | Number of films (1 to 20) |

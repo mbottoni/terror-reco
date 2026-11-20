@@ -21,8 +21,8 @@ Caddy (TLS)  -->  FastAPI (app/main.py)
    +-- CSRF check on every state-changing route (security.py)
    |
    +-- Strategy router (ui_recommendations)
+   |      +-- "unified"  --> recommend_movies_advanced() --> recommend_unified_semantic()   (default)
    |      +-- "semantic" --> recommend_movies_advanced()
-   |      +-- "unified"  --> recommend_movies_advanced() --> recommend_unified_semantic()
    |      +-- ids=...    --> films_by_ids()            (a shared link: no ranking)
    |
    +-- Filters before ranking (year range, minimum IMDb rating, English only)
@@ -102,8 +102,8 @@ No network I/O. The corpus is built offline.
 ### `app/services/recommender.py`: the semantic strategy
 
 `recommend_movies_advanced()` filters the corpus first, runs semantic search,
-keeps one film per franchise, then samples from the top of the pool so repeat
-searches vary. It also provides `similar_movies()`, `films_by_ids()` (shared
+keeps one film per franchise and returns the top of that ranking. Repeat
+searches vary through score noise and by demoting films just shown. It also provides `similar_movies()`, `films_by_ids()` (shared
 links), `explain_match()` (the keyword chips on each card) and
 `films_without_each_filter()` (the empty-state explanation).
 
@@ -171,8 +171,8 @@ from a fingerprinted URL; the Inter font is self-hosted.
 1. The search form submits `GET /recommend` with the mood, strategy and filters.
 2. Rate limiting and the session middleware run; the handler loads the user.
 3. Filters are applied to the corpus, then the chosen strategy ranks what is left.
-4. One film per franchise is kept and the final set is drawn from the top of
-   the pool. With `seed` set and `temperature=0` the draw is deterministic,
+4. One film per franchise is kept and the page is the top of the ranking.
+   With `seed` set the request runs at `temperature=0` and is reproducible,
    which the eval relies on.
 5. For a signed-in user the search is saved to history; for any real visitor
    an anonymous impression is recorded (preview crawlers are skipped).

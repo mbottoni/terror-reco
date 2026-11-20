@@ -271,7 +271,11 @@ def recommend_movies_advanced(
         mood,
         corpus,
         embeddings,
-        top_k=max(limit * 10, 60),
+        # 60 leaves room for the franchise rule and for demoted films. It
+        # must not grow with ``limit``: the unified strategy asks for a pool of
+        # 60, and ten times that made the pool the whole corpus, which widens
+        # the score spread that semantic_search() scales its noise by.
+        top_k=max(limit, 60),
         temperature=temperature,
         seed=seed,
     )
@@ -305,24 +309,13 @@ def recommend_movies_advanced(
             m for m in filtered if m.get("imdb_id") in demote_ids
         ]
 
-    # Weighted random sampling from the top pool so that the final
-    # selection varies between requests while remaining relevant.
-    pool_size = min(len(filtered), max(limit * 3, 18))
-    pool = filtered[:pool_size]
-    if len(pool) <= limit:
-        return pool
-
-    # temperature=0 means "no randomness anywhere", so skip sampling too --
-    # otherwise a deterministic search would still be shuffled at this stage.
-    if temperature <= 0:
-        return pool[:limit]
-
-    # Scores decay linearly from 1.0 (best) to 0.3 (end of pool)
-    weights = [1.0 - 0.7 * i / (len(pool) - 1) for i in range(len(pool))]
-    total = sum(weights)
-    probs = [w / total for w in weights]
-
-    rng = np.random.default_rng(seed)
-    chosen_idx = rng.choice(len(pool), size=limit, replace=False, p=probs)
-    chosen_idx.sort()  # preserve rough relevance order
-    return [pool[int(i)] for i in chosen_idx]
+    # The best-ranked films, in order. Variety between visits comes from the
+    # score noise in semantic_search() and from demoting what was just shown.
+    #
+    # This used to draw `limit` films at random from the top 3 x limit, with
+    # weights falling only to 0.3. Measured on the graded benchmark as actually
+    # served, that cost a third of the page's quality (NDCG@6 0.43 against
+    # 0.62 without the draw) to show 24 different films over ten visits where
+    # 13 is plenty. It also ran on the unified strategy's candidate pool,
+    # handing the re-ranker a random 60 of the top 180 films.
+    return filtered[:limit]

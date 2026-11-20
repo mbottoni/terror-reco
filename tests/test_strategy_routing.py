@@ -66,3 +66,42 @@ class TestSearchForm:
         assert 'value="keyword"' not in html
         assert 'name="kind"' not in html
         assert "/loading" not in html
+
+    def test_unified_is_the_preselected_strategy(self, client: TestClient) -> None:
+        html = client.get("/").text
+        assert '<option value="unified" selected>' in html
+        assert '<option value="semantic">' in html
+
+
+class TestDefaultStrategy:
+    """A request that names no strategy gets unified, the better one as served."""
+
+    @pytest.fixture()
+    def unified_calls(self, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+        import app.main as main_mod
+
+        seen: list[str] = []
+
+        def _unified(**kwargs: Any) -> list[dict[str, Any]]:
+            seen.append(kwargs["mood"])
+            return []
+
+        monkeypatch.setattr(main_mod, "recommend_movies_advanced", lambda **kw: [])
+        monkeypatch.setattr(main_mod, "recommend_unified_semantic", _unified)
+        return seen
+
+    def test_no_strategy_means_unified(self, client: TestClient, unified_calls: list[str]) -> None:
+        client.get("/recommend", params={"mood": "tense"})
+        assert unified_calls == ["tense"]
+
+    def test_an_unknown_strategy_means_unified(
+        self, client: TestClient, unified_calls: list[str]
+    ) -> None:
+        client.get("/recommend", params={"mood": "tense", "strategy": "keyword"})
+        assert unified_calls == ["tense"]
+
+    def test_semantic_is_still_available_by_name(
+        self, client: TestClient, unified_calls: list[str]
+    ) -> None:
+        client.get("/recommend", params={"mood": "tense", "strategy": "semantic"})
+        assert unified_calls == []

@@ -486,3 +486,52 @@ Final comparison, after judging the 146 films the change newly surfaced
 - Together with the keyword vector, the day's two changes took the unified
   ranker from 0.599 to 0.702 on the judgments as they now stand.
 
+## What visitors were actually served (2026-11-20)
+
+Every number above calls the ranking functions directly. A visitor's request
+goes through `recommend_movies_advanced()`, which did one more thing after
+ranking: it drew the page at random from the top 18 films, with weights that
+fell only to 0.3. Nothing measured that step, because `make eval` and the
+graded benchmark both run with `temperature=0`, which skipped it.
+
+Measured through the request path with its randomness on, ten visits per mood,
+after judging the 693 films those paths returned (no holes):
+
+| What is served | NDCG@6 | Fits | Fits squarely | Different films over 10 visits |
+|----------------|-------:|-----:|--------------:|-------------------------------:|
+| semantic, 6 drawn from the top 18 (was live, and the default) | 0.456 | 61% | 30% | 24.4 |
+| semantic, 6 drawn from the top 12 | 0.524 | 66% | 37% | 18.5 |
+| semantic, 6 drawn from the top 9, steeper weights | 0.594 | 71% | 44% | 13.8 |
+| **semantic, top 6, score noise only (now live)** | 0.609 | 72% | 46% | 12.6 |
+| semantic, top 6, no randomness at all | 0.632 | 74% | 49% | 6.0 |
+| unified, as it was live | 0.556 | 67% | 39% | 23.7 |
+| **unified, re-ranking the top 60 (now live, and the default)** | 0.672 | 77% | 52% | 11.3 |
+
+Two defects, one cause:
+
+- **The default page was a third worse than the ranking behind it.** The draw
+  bought variety nobody needed: the score noise alone shows about 13 different
+  films over ten visits, and a repeat search already demotes what was just
+  shown.
+- **The unified strategy re-ranked a random 60 of the top 180 films.** It asks
+  `recommend_movies_advanced()` for a pool of 60; that function retrieved ten
+  times its limit and then ran the same random draw on the pool.
+
+Changes:
+
+- The page is the top of the ranking. Variety comes from the score noise and
+  from demoting recently shown films.
+- The candidate pool no longer grows with the limit.
+- **Unified is the default strategy.** As served it beats semantic by +0.063
+  NDCG@6, 95% interval [+0.036, +0.090], the first time the two have been
+  told apart. (Deterministically it is +0.035, [+0.003, +0.066].)
+- `/api/recommendations?seed=` is now reproducible, as its documentation said.
+- `graded_eval.py score` gained "as served" arms that go through the request
+  path, so this step cannot go unmeasured again.
+
+The combined effect on the default search page, on today's judgments: NDCG@6
+from 0.456 to 0.672, and films that fit the mood from 61% to 77% of the page.
+
+The lesson is the one this document keeps relearning: a number measured with
+the randomness switched off describes a system nobody uses.
+

@@ -150,7 +150,27 @@ def make_rankers(
         )
         return ranked
 
-    return {"semantic": semantic, "unified": unified}
+    def served(mood: str, strategy: str, seed: int) -> list[dict[str, Any]]:
+        """Exactly what a visitor gets: the request path's calls, randomness on.
+
+        The arms above call the ranking functions directly. This one goes
+        through ``recommend_movies_advanced`` as the route does, so anything
+        that function adds (it once drew the page at random from the top 18)
+        is measured and not assumed away.
+        """
+        from app.services.recommender import recommend_movies_advanced
+
+        if strategy == "semantic":
+            return recommend_movies_advanced(mood=mood, limit=K, seed=seed, temperature=1.0)
+        pool = recommend_movies_advanced(
+            mood=mood, limit=POOL_K, seed=seed, temperature=1.0, keep_internal=True
+        )
+        ranked: list[dict[str, Any]] = recommend_unified_semantic(
+            mood=mood, items=pool, limit=K, seed=seed, temperature=1.0
+        )
+        return ranked
+
+    return {"semantic": semantic, "unified": unified, "served": served}
 
 
 def load_ranking_inputs() -> tuple[list[dict[str, Any]], np.ndarray]:
@@ -279,6 +299,17 @@ def cmd_score(args: argparse.Namespace) -> int:
             ]
         ),
     }
+    for strategy in ("semantic", "unified"):
+        arms[f"{strategy}, as served (n={args.runs})"] = _average_runs(
+            [
+                score_arm(
+                    lambda mood, s=seed, st=strategy: rankers["served"](mood, st, s),
+                    moods,
+                    judgments,
+                )
+                for seed in range(args.runs)
+            ]
+        )
     compare = json.loads(args.compare) if args.compare else None
     if compare:
         arms[f"variant {args.compare}"] = score_arm(
@@ -308,8 +339,9 @@ def cmd_score(args: argparse.Namespace) -> int:
     print("  " + "-" * 86)
     _print_paired("semantic -> unified (det.)", arms[names[0]], arms[names[1]])
     _print_paired("unified det. -> noisy", arms[names[1]], arms[names[2]])
+    _print_paired("as served: semantic -> unified", arms[names[3]], arms[names[4]])
     if compare:
-        _print_paired("unified (det.) -> variant", arms[names[1]], arms[names[3]])
+        _print_paired("unified (det.) -> variant", arms[names[1]], arms[names[5]])
 
     if args.per_mood:
         print(f"\n  {'mood':<52}{'semantic':>9}{'unified':>9}{'judged':>8}{'2s':>5}")
