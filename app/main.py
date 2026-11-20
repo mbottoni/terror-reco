@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BeforeValidator, Field
 from sqlalchemy.orm import Session
@@ -447,6 +447,17 @@ STRATEGY_LABELS: dict[str, str] = {
 
 # Bumped by hand whenever the text of the privacy page changes.
 PRIVACY_UPDATED = "20 November 2026"
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> FileResponse:
+    """Browsers ask for this path whatever the page links to (and so do feed
+    readers and bookmarks), so it is served here and not only under /static."""
+    return FileResponse(
+        STATIC_DIR / "favicon.ico",
+        media_type="image/x-icon",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @app.get("/privacy", response_class=HTMLResponse)
