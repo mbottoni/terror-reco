@@ -2,6 +2,10 @@
 
 {% block title %}Results — TerrorReco{% endblock %}
 
+{# A pasted results link should say what it is: the mood, and the films. #}
+{% block og_title %}Horror picks for &ldquo;{{ mood | truncate(80, true, "…") }}&rdquo;{% endblock %}
+{% block og_description %}{% if movies %}{{ movies | map(attribute="title") | select | join(", ") | truncate(190, false, "…") }}{% else %}Describe a mood and get horror films that fit it.{% endif %}{% endblock %}
+
 {% block content %}
 <div class="container" style="padding-top:32px">
   <a href="/" class="back-link">
