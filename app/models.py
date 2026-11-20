@@ -160,3 +160,38 @@ class Payment(Base):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class SetFeedback(Base):
+    """A verdict on a whole result set: "good picks" or not.
+
+    Per-film likes need the modal opened and a judgement made, so almost
+    nobody leaves them. One click on the page is cheap, and the set is the
+    thing the eval actually scores (NDCG@6 is a set-level metric).
+
+    Self-contained on purpose: it stores the mood and the films that were on
+    screen, so it works for signed-out visitors, who have no SearchHistory
+    row to point at. ``visitor_id`` is a random per-session value, used only
+    so one visitor's repeat clicks update their verdict instead of stacking.
+    """
+
+    __tablename__ = "set_feedback"
+    __table_args__ = (
+        UniqueConstraint("visitor_id", "result_key", name="uq_set_feedback_visitor_result"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    visitor_id: Mapped[str] = mapped_column(String(32), index=True)
+    # sha256 of mood + ordered film ids: identifies "this set for this mood".
+    result_key: Mapped[str] = mapped_column(String(64), index=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    mood: Mapped[str] = mapped_column(String(512))
+    strategy: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    imdb_ids: Mapped[list[str]] = mapped_column(JSON)  # in the order shown
+    verdict: Mapped[int] = mapped_column()  # +1 = good picks, -1 = not
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )

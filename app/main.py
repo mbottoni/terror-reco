@@ -21,8 +21,8 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
-from .models import MovieFeedback, User, WatchlistItem
-from .schemas import FeedbackIn, FeedbackOut
+from .models import MovieFeedback, SetFeedback, User, WatchlistItem
+from .schemas import FeedbackIn, FeedbackOut, SetFeedbackIn, SetFeedbackOut
 from .security import poster_variant, require_csrf, safe_url, session_csrf_token
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
@@ -517,6 +517,67 @@ async def submit_feedback(
     db.add(fb)
     db.commit()
     return {"status": "created", "imdb_id": imdb_id, "rating": rating}
+
+
+def set_result_key(mood: str, imdb_ids: list[str]) -> str:
+    """Identifies one result set for one mood, order included."""
+    import hashlib
+
+    return hashlib.sha256("\x00".join([mood.strip().lower(), *imdb_ids]).encode()).hexdigest()
+
+
+@app.post("/api/set-feedback", response_model=SetFeedbackOut, dependencies=[Depends(require_csrf)])
+async def submit_set_feedback(
+    payload: SetFeedbackIn,
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Record "good picks" (+1) or not (-1) for a whole result set.
+
+    Open to signed-out visitors: that is most of the audience, and the point
+    is to collect any signal at all. Pressing the same verdict again removes
+    it; pressing the other one switches it.
+
+    The films are taken on trust from the page. Nothing here proves they were
+    really shown for that mood, so the export treats this as weak evidence and
+    keeps only ids that exist in the corpus.
+    """
+    import secrets as _secrets
+
+    visitor_id = request.session.get("vid")
+    if not visitor_id:
+        visitor_id = _secrets.token_hex(16)
+        request.session["vid"] = visitor_id
+
+    key = set_result_key(payload.mood, payload.imdb_ids)
+    existing = (
+        db.query(SetFeedback)
+        .filter(SetFeedback.visitor_id == visitor_id, SetFeedback.result_key == key)
+        .first()
+    )
+    if existing:
+        if existing.verdict == payload.verdict:
+            db.delete(existing)
+            db.commit()
+            return {"status": "removed", "verdict": 0}
+        existing.verdict = payload.verdict
+        db.commit()
+        return {"status": "updated", "verdict": payload.verdict}
+
+    db.add(
+        SetFeedback(
+            visitor_id=visitor_id,
+            result_key=key,
+            user_id=user.id if user else None,
+            mood=payload.mood[:512],
+            strategy=payload.strategy[:64] if payload.strategy else None,
+            imdb_ids=list(payload.imdb_ids),
+            verdict=payload.verdict,
+        )
+    )
+    db.commit()
+    return {"status": "created", "verdict": payload.verdict}
 
 
 # Routers

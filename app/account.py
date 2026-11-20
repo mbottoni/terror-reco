@@ -25,7 +25,7 @@ from .auth import (
     start_session,
 )
 from .db import get_db
-from .models import MovieFeedback, Payment, SearchHistory, User, WatchlistItem
+from .models import MovieFeedback, Payment, SearchHistory, SetFeedback, User, WatchlistItem
 from .security import hash_password, require_csrf, verify_password
 
 logger = logging.getLogger(__name__)
@@ -168,6 +168,10 @@ def export_user_data(db: Session, user: User) -> dict[str, Any]:
         "watchlist": [
             {"imdb_id": w.imdb_id, "title": w.title, "saved_at": when(w.created_at)} for w in saved
         ],
+        "set_verdicts": [
+            {"mood": v.mood, "verdict": v.verdict, "films": v.imdb_ids, "at": when(v.created_at)}
+            for v in db.query(SetFeedback).filter(SetFeedback.user_id == user.id).all()
+        ],
         "payments": [
             {
                 "amount": p.amount_total / 100,
@@ -209,6 +213,8 @@ async def delete_account(
     # Payments are a financial record and outlive the account, unlinked. Done
     # explicitly because SQLite does not enforce the FK's ON DELETE SET NULL.
     db.query(Payment).filter(Payment.user_id == user_id).update({Payment.user_id: None})
+    # Set-level verdicts stay as anonymous eval data, with the link removed.
+    db.query(SetFeedback).filter(SetFeedback.user_id == user_id).update({SetFeedback.user_id: None})
     # ORM delete, so the cascades on history, feedback and watchlist run (and
     # history's cascade removes its result rows). A bulk DELETE would skip them.
     db.delete(user)

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 
 # Matches the String(20) imdb_id columns.
 ImdbId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=20)]
@@ -39,3 +39,15 @@ class WatchlistToggleOut(BaseModel):
     status: Literal["added", "removed"]
     imdb_id: str
     saved: bool
+
+
+class SetFeedbackIn(BaseModel):
+    mood: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+    imdb_ids: Annotated[list[ImdbId], Field(min_length=1, max_length=20)]
+    verdict: Literal[1, -1]
+    strategy: str | None = None
+
+
+class SetFeedbackOut(BaseModel):
+    status: Literal["created", "updated", "removed"]
+    verdict: Literal[1, 0, -1]
