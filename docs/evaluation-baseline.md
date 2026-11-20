@@ -283,3 +283,73 @@ There is **no before/after comparison**. The previous 21-film corpus was never c
 recovered. Given that corpus consisted mostly of films with "Horror" in the title and
 would have contained almost none of the 127 gold titles, its NDCG would necessarily have
 been near zero — but that is reasoning, not a measurement, and is not claimed as one.
+
+## The graded benchmark (2026-11-20)
+
+The benchmark above could not decide anything: 15 moods give an interval of
+about ±0.06 on NDCG@6, and a film that fits a mood but is missing from its
+hand-written list counts as a miss. `scripts/graded_eval.py` is a second
+benchmark built to fix both.
+
+- **55 moods** (`eval/moods.json`): the original 15 plus 40 new ones, covering
+  subgenres, tones, settings and plain requests ("something scary but not gory
+  for a first-timer").
+- **Pooled judgments** (`eval/judgments.json`): for each mood, the union of
+  what four kinds of ranker return (semantic, the unified blend, keyword only,
+  and five noisy production pages) plus the hand-written gold films. 1,271
+  mood-film pairs, each graded 2 (squarely fits), 1 (defensible) or 0.
+- **The judge was an AI model, not a person.** Four independent passes, one
+  per quarter of the moods. The grades are in a readable file, sorted by grade,
+  so anyone can correct one. Treat the absolute numbers with that in mind;
+  comparisons between rankers judged by the same judge are the sturdier use.
+
+Baseline, `make eval-graded`:
+
+| Arm | NDCG@6 | 95% CI | fits@6 | square@6 |
+|-----|-------:|:------:|-------:|---------:|
+| semantic, deterministic | 0.6047 | [0.539, 0.671] | 0.691 | 0.430 |
+| unified, deterministic | 0.6255 | [0.571, 0.678] | 0.697 | 0.424 |
+| unified, with production noise (n=5) | 0.6076 | [0.554, 0.659] | 0.674 | 0.410 |
+
+Paired, over moods:
+
+| Comparison | Mean difference | 95% CI | Verdict |
+|------------|----------------:|:------:|---------|
+| semantic to unified | +0.0208 | [-0.0135, +0.0544] | indistinguishable |
+| unified, deterministic to noisy | -0.0178 | [-0.0333, -0.0012] | noise costs a little |
+
+What this says:
+
+- **The interval on a paired comparison is now about ±0.034**, down from
+  ±0.06. A ranking change needs to clear that, not 0.06.
+- **Unified is still not shown to beat plain semantic search.** The point
+  estimate favours it; the interval includes zero.
+- **About 70% of a page fits the mood and about 42% fits it squarely.** That is
+  the first absolute statement about quality this project has had.
+- **The variety noise costs about 0.018 NDCG**, a real but small price for
+  repeat searches differing.
+- The weakest moods are tonal or contextual, not topical: "campy fun with lots
+  of blood" (0.04), "ghost story that is sad more than scary", "self-aware teen
+  horror from the 90s", "extreme, disturbing, hard to watch", "80s practical
+  effects gore". This is the missing tone vocabulary of issue #27, seen again.
+
+Limits:
+
+- **Holes.** A film a ranker returns that was never judged scores 0 and is
+  counted. A new ranker must be pooled and judged first (`make eval-pool`
+  lists what is missing; `pool --weights` adds a variant) or its score is an
+  underestimate. The report prints the hole count for every arm.
+- **Shallow pools.** The ideal page is built from judged films only. Where
+  retrieval is poor the pool is too: "Stephen King adaptation" has two films
+  graded 2, though the corpus holds many more that no ranker surfaced.
+- **One judge**, with no second opinion to measure agreement against.
+
+### Queries with no right answer
+
+`graded_eval.py nulls` compares the best cosine score for the 55 moods against
+eight queries a horror corpus cannot serve. They do not separate: "documentary
+about the ocean" scores 0.49 and "romantic comedy for date night" 0.43, while
+the weakest real mood ("animals attack") scores 0.30 and eight real moods fall
+below 0.48. Only nonsense ("asdf qwerty", "best pizza recipe", about 0.2) is
+clearly apart. A "we are not sure about this one" notice based on a similarity
+threshold would therefore fire on real moods; it was not built.

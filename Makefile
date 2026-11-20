@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval eval-gate eval-export providers tune requirements migrate migration migrate-check
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval eval-graded eval-pool eval-gate eval-export providers tune requirements migrate migration migrate-check
 
 
 setup:
@@ -75,6 +75,14 @@ eval:
 # Refresh the where-to-watch snapshot (availability goes stale within weeks)
 providers:
 	.venv/bin/python scripts/fetch_watch_providers.py
+
+# Score against the pooled graded judgments in eval/judgments.json (55 moods)
+eval-graded:
+	.venv/bin/python scripts/graded_eval.py score --per-mood
+
+# List films the rankers return that nobody has judged yet (eval/to_judge.json)
+eval-pool:
+	.venv/bin/python scripts/graded_eval.py pool
 
 # Rebuild the frozen eval slice that CI replays (tests/test_eval_gate.py).
 # Needed after any intended change to corpus text or embedding_text().
