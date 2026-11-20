@@ -38,6 +38,7 @@ data/*
 !data/watch_providers.json
 # Descriptive tags per film, from a fixed vocabulary (see docs/evaluation-baseline.md)
 !data/film_tags.json
+!data/corpus_growth.json
 
 # Local sentence-transformer model weights (downloaded via scripts/download_model.py)
 models/

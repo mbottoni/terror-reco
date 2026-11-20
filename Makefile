@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval eval-graded eval-pool eval-gate eval-export providers tune requirements migrate migration migrate-check
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus grow corpus-validate eval eval-graded eval-pool eval-gate eval-export providers tune requirements migrate migration migrate-check
 
 
 setup:
@@ -40,6 +40,12 @@ test:
 corpus:
 	set -a; source .env; set +a; \
 	.venv/bin/python scripts/build_corpus.py --target 500 --resume
+
+# Add the next most-voted horror films the corpus lacks (see scripts/grow_corpus.py).
+# Spends one OMDb request per film; the free key allows 1,000 a day.
+grow:
+	set -a; source .env; set +a; \
+	.venv/bin/python scripts/grow_corpus.py --add 40
 
 corpus-validate:
 	.venv/bin/python scripts/build_corpus.py --validate-only

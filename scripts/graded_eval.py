@@ -198,13 +198,15 @@ def build_pool(weights: dict[str, float] | None = None) -> dict[str, list[dict[s
     by_id = {str(m["imdb_id"]): m for m in corpus}
 
     pool: dict[str, list[dict[str, Any]]] = {}
-    for mood in moods["hand"] + moods["pooled"]:
+    # Title queries are pooled too: a grown catalogue changes their pages as well.
+    for mood in moods["hand"] + moods["pooled"] + moods["title"]:
         ids: list[str] = []
         ids += _ids(rankers["semantic"](mood, POOL_DEPTH))
         ids += _ids(rankers["unified"](mood, POOL_DEPTH))
         ids += _ids(rankers["unified"](mood, 8, weights=KEYWORD_ONLY))
         for seed in range(5):
             ids += _ids(rankers["unified"](mood, K, temperature=1.0, seed=seed))
+            ids += _ids(rankers["served"](mood, "unified", seed))
         if weights:
             ids += _ids(rankers["unified"](mood, POOL_DEPTH, weights=weights))
         ids += [
@@ -356,6 +358,62 @@ def cmd_score(args: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------- nulls
+def cmd_add(args: argparse.Namespace) -> int:
+    """Merge newly graded films into the judgments file.
+
+    The input is ``{query: [{"imdb_id": ..., "grade": 0|1|2}, ...]}``, the shape
+    a judge is asked to write. Existing grades are never overwritten. For a
+    query that names a film, the rubric is enforced here and not left to the
+    judge: the named film is 0 and the rest of its franchise at most 1.
+    """
+    from app.services.corpus import load_corpus
+    from app.services.title_reference import find_title_references
+
+    corpus = load_corpus()
+    by_id = {str(m["imdb_id"]): m for m in corpus}
+    raw = json.loads(JUDGMENTS_FILE.read_text())
+    known = load_moods()
+    titles = set(known["title"])
+    allowed = set(known["hand"] + known["pooled"]) | titles
+    added = corrected = 0
+    for path in args.files:
+        for query, rows in json.loads(Path(path).read_text()).items():
+            if query not in allowed:
+                print(f"  skipped, not a benchmark query: {query!r}")
+                continue
+            reference = find_title_references(query, corpus) if query in titles else None
+            have = {row["imdb_id"] for row in raw["judgments"].setdefault(query, [])}
+            for row in rows:
+                imdb_id, grade = str(row["imdb_id"]), int(row["grade"])
+                if imdb_id in have or imdb_id not in by_id or grade not in (0, 1, 2):
+                    continue
+                if reference is not None:
+                    ceiling = (
+                        0
+                        if imdb_id in reference.imdb_ids
+                        else 1 if imdb_id in reference.exclude_ids else 2
+                    )
+                    if grade > ceiling:
+                        grade, corrected = ceiling, corrected + 1
+                film = by_id[imdb_id]
+                raw["judgments"][query].append(
+                    {
+                        "imdb_id": imdb_id,
+                        "title": f"{film['title']} ({film.get('year')})",
+                        "grade": grade,
+                    }
+                )
+                have.add(imdb_id)
+                added += 1
+            raw["judgments"][query].sort(key=lambda row: (-row["grade"], row["title"]))
+    if args.note:
+        raw["pool"] = raw["pool"].rstrip() + " " + args.note.strip()
+    JUDGMENTS_FILE.write_text(json.dumps(raw, indent=1) + "\n")
+    total = sum(len(rows) for rows in raw["judgments"].values())
+    print(f"added {added} grades ({corrected} lowered by the title rubric); {total} in the file")
+    return 0
+
+
 def cmd_titles(args: argparse.Namespace) -> int:
     """Queries that name a film, under three treatments of the title.
 
@@ -491,6 +549,11 @@ def main() -> int:
     score.add_argument("--compare", help="JSON blend weights of a variant to compare")
     score.add_argument("--per-mood", action="store_true")
     score.set_defaults(func=cmd_score)
+    add = sub.add_parser("add", help="merge newly graded films into the judgments file")
+    add.add_argument("files", nargs="+", help="JSON files of {query: [{imdb_id, grade}]}")
+    add.add_argument("--note", help="a sentence for the file's record of how the pool grew")
+    add.set_defaults(func=cmd_add)
+
     titles = sub.add_parser("titles", help="score the queries that name a film")
     titles.add_argument("--runs", type=int, default=5, help="noisy repetitions")
     titles.add_argument("--sweep", action="store_true", help="also vary the blend settings")

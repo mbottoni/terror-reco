@@ -1,0 +1,111 @@
+name: Grow the corpus
+
+# Adds the next most-voted horror films the catalogue does not hold yet, gives
+# them predicted tags, runs the tests, commits to main and starts a deploy.
+#
+# API budget per run: TMDB has no daily quota (one request per page scanned,
+# two per film). OMDb's free key allows 1,000 requests a day and every film
+# costs one; a run spends at most `omdb_budget` (default 200) and stops cleanly
+# if OMDb says the quota is gone.
+#
+# GitHub may run a schedule late, and stops scheduling a repository after 60
+# days without a commit. This job commits, so it keeps itself alive while it
+# finds films to add.
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      add:
+        description: "Films to add at most"
+        default: "40"
+      omdb_budget:
+        description: "OMDb requests at most (free key: 1,000 a day)"
+        default: "200"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: grow-corpus
+  cancel-in-progress: false
+
+jobs:
+  grow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install deps (locked)
+        run: uv sync --extra dev --frozen
+
+      # The tag predictor embeds film text, so it needs the model.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-mpnet-base-v2
+
+      - name: Add films
+        id: grow
+        env:
+          TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+        run: |
+          uv run python scripts/grow_corpus.py \
+            --add "${{ inputs.add || '40' }}" \
+            --omdb-budget "${{ inputs.omdb_budget || '200' }}" | tee grow.log
+          if git diff --quiet -- data/horror_corpus.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "summary=$(grep -E '^added [0-9]+' grow.log | tail -1)" >> "$GITHUB_OUTPUT"
+          rm -f grow.log
+
+      # Nothing is committed unless the whole suite passes on the grown corpus.
+      - name: Tests on the grown corpus
+        if: steps.grow.outputs.changed == 'true'
+        env:
+          OMDB_API_KEY: dummy
+        run: |
+          uv run python scripts/build_corpus.py --validate-only
+          uv run pytest -q
+
+      - name: Commit
+        if: steps.grow.outputs.changed == 'true'
+        env:
+          SUMMARY: ${{ steps.grow.outputs.summary }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/horror_corpus.json data/film_tags.json data/watch_providers.json data/corpus_growth.json
+          git commit -m "grow the corpus: $SUMMARY"
+          git push origin HEAD:main
+
+      # A push made with the workflow token does not trigger other workflows,
+      # so the pipeline that builds and deploys the image is started by hand.
+      - name: Build and deploy
+        if: steps.grow.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref main
+
+      # Declined films and the run log are worth keeping even on a day that
+      # added nothing, but they are not worth a deploy.
+      - name: Record a run that added nothing
+        if: steps.grow.outputs.changed != 'true'
+        run: |
+          if git diff --quiet -- data/corpus_growth.json; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/corpus_growth.json
+          git commit -m "grow the corpus: nothing added"
+          git push origin HEAD:main

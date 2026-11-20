@@ -1,0 +1,116 @@
+{
+ "about": "State of scripts/grow_corpus.py: films it declined (and why), and a log of its runs. Committed so a scheduled run remembers what the last one did.",
+ "rejected": {
+  "1423191": {
+   "title": "Resident Evil",
+   "why": "no IMDb rating",
+   "on": "2026-11-20"
+  },
+  "14836": {
+   "title": "Coraline",
+   "why": "listed as family",
+   "on": "2026-11-20"
+  },
+  "9297": {
+   "title": "Monster House",
+   "why": "listed as family",
+   "on": "2026-11-20"
+  },
+  "62214": {
+   "title": "Frankenweenie",
+   "why": "listed as family",
+   "on": "2026-11-20"
+  },
+  "463821": {
+   "title": "The House with a Clock in Its Walls",
+   "why": "listed as family",
+   "on": "2026-11-20"
+  },
+  "92060": {
+   "title": "Michael Jackson's Thriller",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "37793": {
+   "title": "Ghosts",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "116322": {
+   "title": "The Legend of La Llorona",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-20"
+  },
+  "13151": {
+   "title": "Scooby-Doo on Zombie Island",
+   "why": "listed as family",
+   "on": "2026-11-20"
+  },
+  "27040": {
+   "title": "Meshes of the Afternoon",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "43650": {
+   "title": "The Legend of Sleepy Hollow",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "203101": {
+   "title": "High School of the Dead: Drifters of the Dead",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-20"
+  },
+  "1307118": {
+   "title": "Soulm8te",
+   "why": "no IMDb rating",
+   "on": "2026-11-20"
+  },
+  "88018": {
+   "title": "The Skeleton Dance",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "259761": {
+   "title": "Lights Out",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "421467": {
+   "title": "The Return of Godzilla",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-20"
+  },
+  "246355": {
+   "title": "Saw",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  },
+  "532814": {
+   "title": "The Bad Seed",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-20"
+  },
+  "461955": {
+   "title": "Rakka",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-20"
+  }
+ },
+ "runs": [
+  {
+   "on": "2026-11-20",
+   "added": 95,
+   "declined": 1,
+   "omdb_requests": 101,
+   "corpus_size": 595
+  },
+  {
+   "on": "2026-11-20",
+   "added": 55,
+   "declined": 14,
+   "omdb_requests": 69,
+   "corpus_size": 650
+  }
+ ]
+}
