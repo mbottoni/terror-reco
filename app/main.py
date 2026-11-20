@@ -384,6 +384,10 @@ async def ui_recommendations(
     # a seed gives the recipient a different one.
     shared = await run_in_threadpool(films_by_ids, ids.split(",")) if ids else []
 
+    # A repeat of the same search should bring different films. Not applied
+    # to a seeded request, which must stay reproducible.
+    just_seen = recently_shown(request, mood) if seed is None and not shared else set()
+
     if shared:
         movies = shared
     elif strategy_key == "unified":
@@ -421,7 +425,7 @@ async def ui_recommendations(
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
             taste_vector=taste.taste_vector,
-            demote_ids=taste.demote_ids,
+            demote_ids=taste.demote_ids | just_seen,
             use_cross_encoder=settings.UNIFIED_USE_CROSS_ENCODER,
         )
     else:
@@ -436,7 +440,11 @@ async def ui_recommendations(
             english_only=bool(english),
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
+            demote_ids=just_seen,
         )
+
+    if movies and seed is None and not shared:
+        remember_shown(request, mood, movies)
 
     # When ranking was personalised, say which liked film a result resembles.
     # Like every other part of personalisation, this must never break search.
@@ -636,6 +644,51 @@ async def submit_feedback(
     db.add(fb)
     db.commit()
     return {"status": "created", "imdb_id": imdb_id, "rating": rating}
+
+
+# How many recently shown films are remembered per mood, and for how many
+# moods. Three pages' worth: a film sits out about three repeats of a search,
+# then becomes eligible again. Small on purpose, because this lives in the
+# session cookie.
+RECENT_FILMS_PER_MOOD = 18
+RECENT_MOODS = 3
+
+
+def _mood_key(mood: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(mood.strip().lower().encode()).hexdigest()[:16]
+
+
+def recently_shown(request: Request, mood: str) -> set[str]:
+    """Films this visitor was just shown for this same mood.
+
+    Scoped to the mood on purpose. Searching again for the same thing should
+    bring different films; searching for something else should not be denied
+    its best match because it happened to appear a minute ago.
+    """
+    seen = request.session.get("seen")
+    if not isinstance(seen, dict):
+        return set()
+    ids = seen.get(_mood_key(mood))
+    return {str(i) for i in ids} if isinstance(ids, list) else set()
+
+
+def remember_shown(request: Request, mood: str, movies: list[dict[str, Any]]) -> None:
+    """Add the films just shown to the session's short per-mood memory."""
+    seen = request.session.get("seen")
+    if not isinstance(seen, dict):
+        seen = {}
+    key = _mood_key(mood)
+    previous = seen.pop(key, [])
+    previous = previous if isinstance(previous, list) else []
+    shown = [str(m["imdb_id"]) for m in movies if m.get("imdb_id")]
+    merged = [i for i in previous if i not in shown] + shown
+    seen[key] = merged[-RECENT_FILMS_PER_MOOD:]
+    # Dicts keep insertion order, so the oldest moods are first.
+    while len(seen) > RECENT_MOODS:
+        seen.pop(next(iter(seen)))
+    request.session["seen"] = seen
 
 
 def visitor_id_for(request: Request) -> str:

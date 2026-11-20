@@ -206,8 +206,13 @@ def recommend_movies_advanced(
     seed: int | None = None,
     temperature: float = 1.0,
     keep_internal: bool = False,
+    demote_ids: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Return horror movies ranked by semantic similarity to *mood*.
+
+    Films in *demote_ids* are moved behind everything else before the final
+    draw. They are demoted, not removed, so the page is still full when most
+    of the good matches have been seen already.
 
     Uses a pre-built corpus of horror movies + sentence-transformer
     embeddings.  The corpus is built offline by ``scripts/build_corpus.py``;
@@ -289,6 +294,13 @@ def recommend_movies_advanced(
         from .unified_recommender import first_of_each_collection
 
         filtered = [filtered[i] for i in first_of_each_collection(filtered)]
+
+    if demote_ids and not keep_internal:
+        # Stable partition: fresh films keep their order, then the demoted
+        # ones in theirs.
+        filtered = [m for m in filtered if m.get("imdb_id") not in demote_ids] + [
+            m for m in filtered if m.get("imdb_id") in demote_ids
+        ]
 
     # Weighted random sampling from the top pool so that the final
     # selection varies between requests while remaining relevant.
