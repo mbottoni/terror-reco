@@ -105,7 +105,11 @@
 
   <hr class="divider">
   <p style="text-align:center;padding-bottom:20px">
+    {% if supporter %}
+    <span class="coffee-link coffee-thanks">☕ Thank you for supporting TerrorReco</span>
+    {% else %}
     <a href="/stripe/coffee" class="coffee-link">☕ Buy me a coffee</a>
+    {% endif %}
   </p>
 </div>
 {% endblock %}

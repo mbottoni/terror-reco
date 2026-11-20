@@ -17,7 +17,7 @@ How TerrorReco is deployed: one server running Docker Compose, shipped by GitHub
 | `STRIPE_PUBLISHABLE_KEY` | Optional | -- | Stripe public key (for payments) |
 | `STRIPE_SECRET_KEY` | Optional | -- | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Optional | -- | Stripe webhook signing secret |
-| `COFFEE_PRICE_ID` | Optional | -- | Stripe Price ID for the coffee product |
+| `COFFEE_PRICE_ID` | Optional | -- | Stripe Price used for the default $3 donation. Other amounts are priced by the app; without this, the default is too |
 
 ### Creating a `.env` file
 

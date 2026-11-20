@@ -712,3 +712,18 @@ select{cursor:pointer}
   border:1px dashed #33333d;background:transparent;
 }
 .suggest-chip:hover{color:#e8e8ec;border-color:#5a5a68;border-style:solid}
+
+/* ---- DONATION AMOUNT ---- */
+.amount-picker{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:4px 0 14px}
+.amount-option{position:relative;cursor:pointer}
+.amount-option input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.amount-option span{
+  display:inline-block;min-width:56px;text-align:center;padding:9px 14px;border-radius:10px;
+  background:#141419;border:1px solid #2c2c36;color:#c8c8d0;font-weight:600;font-size:.95rem;
+}
+.amount-option input:checked + span{border-color:#d32f2f;background:#2a1416;color:#fff}
+.amount-option input:focus-visible + span{outline:2px solid #f87171;outline-offset:2px}
+.amount-input{width:96px;padding:9px 10px;border-radius:10px;background:#0f0f14;border:1px solid #2c2c36;color:#e8e8ec;font-size:.95rem}
+.amount-error{color:#fca5a5;font-size:.82rem;margin:-6px 0 12px}
+.coffee-thanks{cursor:default}
+.supporter-badge{color:#f0c674;font-size:.9rem;margin:-6px 0 18px}

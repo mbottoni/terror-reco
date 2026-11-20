@@ -20,6 +20,7 @@ from starlette.responses import Response
 from .auth import get_current_user
 from .db import get_db
 from .models import Payment, User
+from .schemas import MAX_DONATION, CheckoutIn
 from .security import require_csrf
 from .settings import get_settings
 
@@ -31,6 +32,24 @@ settings = get_settings()
 # Written into every checkout session and checked on the way back, so the
 # success page only thanks someone for a session this app created.
 APP_METADATA = {"app": "terror-reco", "type": "coffee"}
+
+# The amounts offered as buttons, in whole currency units. The first is the
+# default and the one the configured Stripe Price (COFFEE_PRICE_ID) charges.
+DONATION_PRESETS: tuple[int, ...] = (3, 5, 10)
+DONATION_CURRENCY = "usd"
+
+
+def supporter_since(db: Session, user: User | None) -> Any:
+    """When this account first made a payment that still stands, or None."""
+    if user is None:
+        return None
+    first = (
+        db.query(Payment.created_at)
+        .filter(Payment.user_id == user.id, Payment.status == "paid")
+        .order_by(Payment.created_at)
+        .first()
+    )
+    return first[0] if first else None
 
 
 def _page(
@@ -74,7 +93,8 @@ def buy_coffee_page(request: Request, user: User | None = Depends(get_current_us
         "coffee.html",
         {
             "stripe_publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
-            "price_id": settings.COFFEE_PRICE_ID,
+            "presets": DONATION_PRESETS,
+            "max_amount": MAX_DONATION,
         },
         user,
     )
@@ -82,12 +102,31 @@ def buy_coffee_page(request: Request, user: User | None = Depends(get_current_us
 
 @router.post("/create-checkout-session", dependencies=[Depends(require_csrf)])
 def create_checkout_session(
-    request: Request, user: User | None = Depends(get_current_user)
+    request: Request,
+    payload: CheckoutIn | None = None,
+    user: User | None = Depends(get_current_user),
 ) -> dict[str, Any]:
-    """Create a Stripe checkout session for coffee purchase."""
-    if not settings.STRIPE_SECRET_KEY or not settings.COFFEE_PRICE_ID:
+    """Create a Stripe checkout session for a donation of the chosen amount."""
+    if not settings.STRIPE_SECRET_KEY:
         logger.error("Checkout requested but Stripe is not configured")
         raise HTTPException(status_code=503, detail="Payments are not available right now.")
+
+    amount = (payload.amount if payload else None) or DONATION_PRESETS[0]
+    if amount == DONATION_PRESETS[0] and settings.COFFEE_PRICE_ID:
+        # The default amount keeps using the Price configured in the Stripe
+        # dashboard, so its name and receipt text stay under the owner's control.
+        line_item: dict[str, Any] = {"price": settings.COFFEE_PRICE_ID, "quantity": 1}
+    else:
+        # Any other amount is priced here. It was validated server-side
+        # (CheckoutIn), so a tampered page cannot ask for a negative or absurd sum.
+        line_item = {
+            "quantity": 1,
+            "price_data": {
+                "currency": DONATION_CURRENCY,
+                "unit_amount": amount * 100,
+                "product_data": {"name": "Coffee for TerrorReco"},
+            },
+        }
 
     # From configuration, not from the Host header the request arrived with.
     base_url = settings.PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
@@ -95,7 +134,7 @@ def create_checkout_session(
     # dashboard (wallets, local methods), not cards alone.
     params: dict[str, Any] = {
         "api_key": settings.STRIPE_SECRET_KEY,
-        "line_items": [{"price": settings.COFFEE_PRICE_ID, "quantity": 1}],
+        "line_items": [line_item],
         "mode": "payment",
         "success_url": f"{base_url}/stripe/success?session_id={{CHECKOUT_SESSION_ID}}",
         "cancel_url": f"{base_url}/stripe/cancel",
@@ -115,7 +154,7 @@ def create_checkout_session(
             status_code=502, detail="Could not start the payment. Please try again."
         ) from None
 
-    logger.info("Checkout session created: ...%s", checkout_session.id[-6:])
+    logger.info("Checkout session created: ...%s (amount %s)", checkout_session.id[-6:], amount)
     return {"checkout_url": checkout_session.url}
 
 

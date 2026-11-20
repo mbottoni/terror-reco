@@ -63,7 +63,12 @@ class TestCoffeePage:
     def test_renders_when_configured(self, client: TestClient, configured: None) -> None:
         resp = client.get("/stripe/coffee")
         assert resp.status_code == 200
-        assert "pk_test_x" in resp.text
+        for amount in (3, 5, 10):
+            assert f'name="amount" value="{amount}"' in resp.text
+        assert 'id="amount-custom"' in resp.text and 'max="500"' in resp.text
+        # Checkout is a redirect to Stripe's hosted page; no Stripe script or
+        # key is needed in the browser.
+        assert "js.stripe.com" not in resp.text and "pk_test_x" not in resp.text
 
     def test_unconfigured_is_a_page_not_a_500(self, client: TestClient, unconfigured: None) -> None:
         resp = client.get("/stripe/coffee")
@@ -381,3 +386,110 @@ class TestCheckoutCarriesTheUser:
         seen = self._capture(monkeypatch)
         client.post("/stripe/create-checkout-session")
         assert seen["client_reference_id"] == str(db.query(User).one().id)
+
+
+class TestChoosingAnAmount:
+    @pytest.fixture()
+    def created(self, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
+        seen: dict[str, Any] = {}
+
+        def _create(**kwargs: Any) -> SimpleNamespace:
+            seen.clear()
+            seen.update(kwargs)
+            return _session()
+
+        monkeypatch.setattr(stripe.checkout.Session, "create", _create)
+        return seen
+
+    def test_default_amount_uses_the_configured_price(
+        self, client: TestClient, configured: None, created: dict[str, Any]
+    ) -> None:
+        assert client.post("/stripe/create-checkout-session").status_code == 200
+        assert created["line_items"] == [{"price": "price_test", "quantity": 1}]
+        client.post("/stripe/create-checkout-session", json={"amount": 3})
+        assert created["line_items"] == [{"price": "price_test", "quantity": 1}]
+
+    @pytest.mark.parametrize("amount", [1, 5, 10, 42, 500])
+    def test_other_amounts_are_priced_in_minor_units(
+        self, client: TestClient, configured: None, created: dict[str, Any], amount: int
+    ) -> None:
+        resp = client.post("/stripe/create-checkout-session", json={"amount": amount})
+        assert resp.status_code == 200
+        (item,) = created["line_items"]
+        assert item["quantity"] == 1
+        assert item["price_data"]["unit_amount"] == amount * 100
+        assert item["price_data"]["currency"] == "usd"
+        assert item["price_data"]["product_data"]["name"]
+        assert "price" not in item
+
+    def test_default_amount_works_without_a_configured_price(
+        self,
+        client: TestClient,
+        configured: None,
+        created: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(sp.settings, "COFFEE_PRICE_ID", None)
+        assert client.post("/stripe/create-checkout-session").status_code == 200
+        assert created["line_items"][0]["price_data"]["unit_amount"] == 300
+
+    @pytest.mark.parametrize("amount", [0, -5, 501, 1_000_000, 2.5, "ten", None])
+    def test_out_of_range_or_malformed_amounts_never_reach_stripe(
+        self, client: TestClient, configured: None, created: dict[str, Any], amount: Any
+    ) -> None:
+        resp = client.post("/stripe/create-checkout-session", json={"amount": amount})
+        if amount is None:
+            assert resp.status_code == 200  # an explicit null means the default
+            return
+        assert resp.status_code == 422
+        assert created == {}
+
+
+class TestThankingSupporters:
+    def _register(self, client: Any) -> None:
+        import re
+
+        page = client.get("/auth/register").text
+        csrf = re.search(r'name="csrf" value="([^"]+)"', page).group(1)  # type: ignore[union-attr]
+        data = {
+            "email": "giver@example.com",
+            "password": "password123",
+            "confirm_password": "password123",
+            "csrf": csrf,
+        }
+        client.post("/auth/register", data=data)
+
+    def _pay(self, db: Any, status: str = "paid") -> None:
+        user = db.query(User).one()
+        db.add(
+            Payment(
+                checkout_session_id=f"cs_{status}",
+                stripe_event_id="evt",
+                amount_total=500,
+                currency="usd",
+                status=status,
+                user_id=user.id,
+            )
+        )
+        db.commit()
+
+    def test_nobody_is_thanked_before_they_give(self, client: Any, db: Any) -> None:
+        assert "Buy me a coffee" in client.get("/").text
+        self._register(client)
+        home = client.get("/").text
+        assert "Buy me a coffee" in home and "Thank you for supporting" not in home
+        assert "Supporter since" not in client.get("/account/").text
+
+    def test_a_supporter_is_thanked_and_not_asked_again(self, client: Any, db: Any) -> None:
+        self._register(client)
+        self._pay(db)
+        home = client.get("/").text
+        assert "Thank you for supporting TerrorReco" in home
+        assert 'href="/stripe/coffee"' not in home
+        assert "Supporter since" in client.get("/account/").text
+
+    def test_a_refunded_payment_does_not_count(self, client: Any, db: Any) -> None:
+        self._register(client)
+        self._pay(db, status="refunded")
+        assert "Buy me a coffee" in client.get("/").text
+        assert "Supporter since" not in client.get("/account/").text

@@ -11,6 +11,9 @@
 
   <h1 class="page-title">Account</h1>
   <p class="page-subtitle">Signed in as {{ user.email }}</p>
+  {% if supporter_since %}
+  <p class="supporter-badge">☕ Supporter since {{ supporter_since.strftime("%B %Y") }}. Thank you.</p>
+  {% endif %}
 
   {% if flash %}
   <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>

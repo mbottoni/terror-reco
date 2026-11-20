@@ -2,9 +2,6 @@
 
 {% block title %}Support TerrorReco{% endblock %}
 
-{% block head %}
-<script src="https://js.stripe.com/v3/"></script>
-{% endblock %}
 
 {% block content %}
 <div class="support-card">
@@ -14,24 +11,73 @@
     Enjoying TerrorReco? Your support helps keep the spooky recommendations
     coming and lets me keep improving this project.
   </p>
-  <button id="coffee-button" class="btn-coffee">☕ Support with $3</button>
+  {# Choose an amount. The buttons are a radio group so the choice works with
+     the keyboard and is announced; the server validates whatever is sent. #}
+  <div class="amount-picker" role="radiogroup" aria-label="Amount">
+    {% for value in presets %}
+    <label class="amount-option">
+      <input type="radio" name="amount" value="{{ value }}"{% if loop.first %} checked{% endif %}>
+      <span>${{ value }}</span>
+    </label>
+    {% endfor %}
+    <label class="amount-option amount-custom">
+      <input type="radio" name="amount" value="custom" id="amount-custom-radio">
+      <span>Other</span>
+    </label>
+    <input type="number" id="amount-custom" class="amount-input" min="1" max="{{ max_amount }}" step="1"
+           inputmode="numeric" placeholder="$" aria-label="Other amount in dollars" hidden>
+  </div>
+  <p class="amount-error" id="amount-error" role="alert" hidden>
+    Choose a whole amount between $1 and ${{ max_amount }}.
+  </p>
+  <button id="coffee-button" class="btn-coffee">☕ Support with $<span id="coffee-amount">{{ presets[0] }}</span></button>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-var stripe=Stripe('{{ stripe_publishable_key }}');
-var btn=document.getElementById('coffee-button');
-btn.addEventListener('click',async function(){
-  btn.disabled=true;btn.textContent='Processing…';
+var MAX_AMOUNT = {{ max_amount }};
+var btn = document.getElementById('coffee-button');
+var custom = document.getElementById('amount-custom');
+var label = document.getElementById('coffee-amount');
+var err = document.getElementById('amount-error');
+
+// The chosen amount, or null when the custom field does not hold a valid one.
+function chosenAmount(){
+  var picked = document.querySelector('input[name="amount"]:checked');
+  var raw = picked && picked.value === 'custom' ? custom.value : (picked ? picked.value : '');
+  var n = Number(raw);
+  return (Number.isInteger(n) && n >= 1 && n <= MAX_AMOUNT) ? n : null;
+}
+function refresh(){
+  var isCustom = document.getElementById('amount-custom-radio').checked;
+  custom.hidden = !isCustom;
+  var amount = chosenAmount();
+  label.textContent = amount === null ? '…' : String(amount);
+  err.hidden = amount !== null || !isCustom || custom.value === '';
+}
+document.querySelectorAll('input[name="amount"]').forEach(function(el){
+  el.addEventListener('change', function(){ refresh(); if(el.value === 'custom') custom.focus(); });
+});
+custom.addEventListener('input', refresh);
+
+btn.addEventListener('click', async function(){
+  var amount = chosenAmount();
+  if(amount === null){ err.hidden = false; custom.focus(); return; }
+  var original = btn.innerHTML;
+  btn.disabled = true; btn.textContent = 'Processing…';
   try{
-    var res=await fetch('/stripe/create-checkout-session',{method:'POST',headers:csrfHeaders({'Content-Type':'application/json'})});
-    var data=await res.json();
-    if(data.checkout_url)window.location.href=data.checkout_url;
+    var res = await fetch('/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: csrfHeaders({'Content-Type': 'application/json'}),
+      body: JSON.stringify({amount: amount})
+    });
+    var data = await res.json();
+    if(data.checkout_url) window.location.href = data.checkout_url;
     else throw new Error('No checkout URL');
   }catch(e){
-    console.error(e);alert('Something went wrong. Please try again.');
-    btn.disabled=false;btn.textContent='☕ Support with $3';
+    console.error(e); alert('Something went wrong. Please try again.');
+    btn.disabled = false; btn.innerHTML = original;
   }
 });
 </script>

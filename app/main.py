@@ -270,13 +270,25 @@ async def healthz() -> dict[str, Any]:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, user: User | None = Depends(get_current_user)) -> HTMLResponse:
+async def index(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    from .stripe_payments import supporter_since
+
     flash = request.session.pop("flash", None)
     flash_type = request.session.pop("flash_type", "success")
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"flash": flash, "flash_type": flash_type, "user": user},
+        {
+            "flash": flash,
+            "flash_type": flash_type,
+            "user": user,
+            # Someone who has already given is thanked, not asked again.
+            "supporter": supporter_since(db, user) is not None,
+        },
     )
 
 

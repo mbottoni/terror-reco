@@ -61,3 +61,15 @@ class InteractionIn(BaseModel):
 
 class InteractionOut(BaseModel):
     status: Literal["recorded", "duplicate", "ignored"]
+
+
+MIN_DONATION = 1
+MAX_DONATION = 500
+
+
+class CheckoutIn(BaseModel):
+    """Optional body for starting a donation. No body means the default amount."""
+
+    # Whole units of the donation currency. The bounds are deliberate: under
+    # one unit Stripe's fee eats the donation, and the cap stops a typo.
+    amount: Annotated[int, Field(ge=MIN_DONATION, le=MAX_DONATION)] | None = None

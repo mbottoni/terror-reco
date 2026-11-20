@@ -35,6 +35,7 @@ from .models import (
     WatchlistItem,
 )
 from .security import hash_password, require_csrf, verify_password
+from .stripe_payments import supporter_since
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ async def account_page(
         {
             "user": user,
             "counts": counts,
+            "supporter_since": supporter_since(db, user),
             "min_password_length": MIN_PASSWORD_LENGTH,
             "flash": request.session.pop("flash", None),
             "flash_type": request.session.pop("flash_type", "success"),
