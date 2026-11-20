@@ -82,3 +82,56 @@ def load_user_taste(db: Session, user_id: int, corpus: list[dict[str, str]]) -> 
                 taste_vector = (mean / norm).astype(np.float32)
 
     return UserTaste(taste_vector=taste_vector, demote_ids=disliked, liked_ids=liked)
+
+
+# Cosine between a result and the liked film it is credited to. Two unrelated
+# corpus films sit at about 0.27 (99th percentile 0.54), and a film's genuine
+# nearest neighbour at about 0.61, so 0.55 means "closer than chance would
+# put it", not merely "also a horror film".
+BECAUSE_LIKED_MIN_SIMILARITY = 0.55
+
+
+def explain_by_liked_films(
+    movies: list[dict[str, str]],
+    liked_ids: set[str],
+    corpus: list[dict[str, str]],
+    embeddings: np.ndarray | None,
+    min_similarity: float = BECAUSE_LIKED_MIN_SIMILARITY,
+) -> dict[str, str]:
+    """For each result that resembles a film the user liked: that film's title.
+
+    Returns ``{result imdb_id: liked film title}``, only for results whose
+    nearest liked film clears *min_similarity*. A result is never explained by
+    itself, so a liked film that reappears gets no "because you liked it".
+
+    This names the liked film closest to each result. It does not prove the
+    taste signal is what put the result on the page: the ranking blends
+    several signals and uses the mean of all liked films, not the nearest one.
+    The threshold keeps the claim modest by speaking up only for a clear
+    resemblance.
+    """
+    if embeddings is None or not liked_ids or not movies:
+        return {}
+    row_of = {m.get("imdb_id"): i for i, m in enumerate(corpus)}
+    liked_rows = [row_of[i] for i in liked_ids if i in row_of]
+    if not liked_rows:
+        return {}
+    liked_vecs = embeddings[liked_rows]
+
+    explained: dict[str, str] = {}
+    for movie in movies:
+        imdb_id = movie.get("imdb_id")
+        row = row_of.get(imdb_id)
+        if imdb_id is None or row is None:
+            continue
+        sims = liked_vecs @ embeddings[row]
+        for position in np.argsort(-sims):
+            liked_row = liked_rows[int(position)]
+            if liked_row == row:
+                continue  # the result itself; look for the next closest
+            if float(sims[position]) >= min_similarity:
+                title = corpus[liked_row].get("title")
+                if title:
+                    explained[imdb_id] = title
+            break
+    return explained

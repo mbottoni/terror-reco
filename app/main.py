@@ -32,7 +32,7 @@ from .schemas import (
 )
 from .security import poster_variant, require_csrf, safe_url, session_csrf_token
 from .services.corpus import CorpusNotBuiltError
-from .services.personalization import UserTaste, load_user_taste
+from .services.personalization import UserTaste, explain_by_liked_films, load_user_taste
 from .services.recommender import (
     explain_match,
     films_by_ids,
@@ -431,6 +431,23 @@ async def ui_recommendations(
             seed=seed,
             temperature=0.0 if seed is not None else 1.0,
         )
+
+    # When ranking was personalised, say which liked film a result resembles.
+    # Like every other part of personalisation, this must never break search.
+    if movies and not shared and strategy_key == "unified":
+        try:
+            taste_for_page = _load_taste(db, user)
+            if taste_for_page.taste_vector is not None:
+                from .services.corpus import get_corpus_and_embeddings
+
+                corpus_now, embeddings_now = get_corpus_and_embeddings()
+                because = explain_by_liked_films(
+                    movies, taste_for_page.liked_ids, corpus_now, embeddings_now
+                )
+                for movie in movies:
+                    movie["because_liked"] = because.get(str(movie.get("imdb_id") or ""))
+        except Exception:  # noqa: BLE001
+            logger.warning("Could not explain results by liked films", exc_info=True)
 
     # Nothing came back and filters were on: work out which filter did it, so
     # the page can say so instead of blaming the mood.

@@ -105,6 +105,10 @@
              title="Search for {{ term }}">{{ term }}</a>{% endfor %}
         </p>
         {% endif %}
+        {% if m.because_liked %}
+        {# Personalised ranking, made visible: which liked film this resembles. #}
+        <p class="card-because">Because you liked <em>{{ m.because_liked }}</em></p>
+        {% endif %}
       </div>
     </li>
     {% endfor %}
