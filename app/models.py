@@ -28,6 +28,11 @@ class User(Base):
     # Bumping it invalidates every cookie issued before, which is the only
     # way to revoke a signed-cookie session short of rotating SECRET_KEY.
     session_version: Mapped[int] = mapped_column(default=0, server_default="0")
+    # When the owner proved they can read mail at ``email``. Null means never;
+    # it is cleared again when the address changes.
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     history: Mapped[list[SearchHistory]] = relationship(
@@ -256,6 +261,25 @@ class PasswordResetToken(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class EmailVerificationToken(Base):
+    """A single-use link that confirms the owner can read mail at their address.
+
+    Stored hashed, like :class:`PasswordResetToken`. ``email`` records which
+    address the link was sent to, so a link issued before an address change
+    cannot confirm the new one.
+    """
+
+    __tablename__ = "email_verification_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    email: Mapped[str] = mapped_column(String(255))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

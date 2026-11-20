@@ -30,7 +30,10 @@ runs PostgreSQL in a container beside the app. The models are in
 | `email` | Unique. Stored trimmed and lowercased |
 | `password_hash` | Argon2 |
 | `session_version` | Copied into the session at sign-in and checked on every request. Bumping it signs the user out everywhere |
+| `email_verified_at` | When the owner confirmed they can read mail at `email`. Null until then, and again after the address changes. Accounts older than this column were marked confirmed |
 | `created_at` | |
+
+**`email_verification_tokens`** — one row per emailed confirmation link: `user_id`, `token_hash` (SHA-256), `email` (the address it was sent to, so it cannot confirm a later one), `expires_at` (24 hours), `used_at`.
 
 **`password_reset_tokens`** — one row per emailed reset link.
 
@@ -100,6 +103,7 @@ users ─┬─< search_history ──< search_results
        ├─< movie_feedback
        ├─< watchlist
        ├─< password_reset_tokens
+       ├─< email_verification_tokens
        ├─< payments          (user_id nullable, kept on account deletion)
        └─< set_feedback      (user_id nullable, kept on account deletion)
 
@@ -107,7 +111,7 @@ impressions ··· interactions   (joined by result_key and visitor_id; no user)
 ```
 
 Deleting an account removes the user, their history and result rows,
-feedback, watchlist and reset tokens, and unlinks their payments and set
+feedback, watchlist, reset and confirmation tokens, and unlinks their payments and set
 verdicts.
 
 ## Migrations

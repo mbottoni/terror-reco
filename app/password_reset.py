@@ -191,6 +191,9 @@ async def reset(
 
     user.password_hash = hash_password(new_password)
     row.used_at = _now()
+    # The link arrived by email, so its opener can read mail at this address.
+    if user.email_verified_at is None:
+        user.email_verified_at = _now()
     # Whoever had a session with the old password is signed out everywhere.
     revoke_sessions(db, user)
     logger.info("PASSWORD RESET COMPLETED: user_id=%s", user.id)

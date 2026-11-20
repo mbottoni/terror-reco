@@ -43,8 +43,11 @@ filter responsible.
 
 | Route | Purpose |
 |-------|---------|
-| `GET /auth/login`, `POST /auth/login` | Sign in (`email`, `password`) |
-| `GET /auth/register`, `POST /auth/register` | Create an account (`email`, `password`, `confirm_password`). Lands on `/onboarding/` |
+| `GET /auth/login`, `POST /auth/login` | Sign in (`email`, `password`). With an email provider configured, a correct password on an unconfirmed account is held and sent a new confirmation link |
+| `GET /auth/register`, `POST /auth/register` | Create an account (`email`, `password`, `confirm_password`). With an email provider configured it always lands on `/auth/check-email`, whether or not the address already had an account, and the account must be confirmed before it can sign in. Without one it signs in at once and lands on `/onboarding/` |
+| `GET /auth/check-email` | "Check your inbox". The same page for every address |
+| `GET /auth/verify/{token}` | Confirm an email address from its emailed link. Links last 24 hours and work once. Does not sign anyone in |
+| `POST /auth/verify/resend` | Send the signed-in user a new confirmation link (at most one a minute) |
 | `POST /auth/logout` | Sign out on this device |
 | `POST /auth/logout-all` | Sign out on every device |
 | `GET /auth/forgot`, `POST /auth/forgot` | Ask for a password-reset email (`email`). The answer is the same whether or not the address is registered. Unavailable until an email provider is configured |
@@ -52,7 +55,7 @@ filter responsible.
 | `GET /onboarding/`, `POST /onboarding/` | Pick films you love (`imdb_id`, repeated). Each becomes a like |
 | `GET /account/` | Account settings |
 | `POST /account/password` | Change password (`current_password`, `new_password`, `confirm_password`). Signs out other devices |
-| `POST /account/email` | Change email (`new_email`, `current_password`) |
+| `POST /account/email` | Change email (`new_email`, `current_password`). The new address starts unconfirmed and is sent a link |
 | `GET /account/export` | Download your data as JSON |
 | `POST /account/delete` | Delete the account and its data (`current_password`) |
 | `GET /history/` | Your past searches |

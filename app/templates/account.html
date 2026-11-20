@@ -11,6 +11,17 @@
 
   <h1 class="page-title">Account</h1>
   <p class="page-subtitle">Signed in as {{ user.email }}</p>
+  {% if verification_enabled %}
+  {% if email_verified %}
+  <p class="account-note">Email address confirmed.</p>
+  {% else %}
+  <form action="/auth/verify/resend" method="post" class="verify-notice">
+    <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <span>Your email address is not confirmed yet. You will need to confirm it before you can sign in again.</span>
+    <button type="submit" class="btn btn-sm">Send confirmation link</button>
+  </form>
+  {% endif %}
+  {% endif %}
   {% if supporter_since %}
   <p class="supporter-badge">☕ Supporter since {{ supporter_since.strftime("%B %Y") }}. Thank you.</p>
   {% endif %}

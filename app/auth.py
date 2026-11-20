@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 
-from fastapi import APIRouter, Depends, Form, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -109,6 +109,7 @@ async def login_form(request: Request, db: Session = Depends(get_db)) -> Respons
 async def login(
     request: Request,
     response: Response,
+    background: BackgroundTasks,
     email: str = Form(...),
     password: str = Form(...),
     csrf: str = Form(...),
@@ -133,6 +134,20 @@ async def login(
     if not user or not password_ok:
         logger.warning("LOGIN FAIL: invalid credentials")
         _set_flash(request, "Invalid email or password.", "error")
+        return RedirectResponse(url="/auth/login", status_code=303)
+
+    from . import email_verification as ev
+
+    if ev.verification_enabled() and not ev.is_verified(user):
+        # Only someone who knows the password gets this far, so saying the
+        # account exists reveals nothing they did not already have.
+        ev.send_verification(request, background, db, user)
+        logger.info("LOGIN HELD: address not confirmed (user_id=%s)", user.id)
+        _set_flash(
+            request,
+            "Confirm your email address first. We have sent you a link; " "open it, then sign in.",
+            "error",
+        )
         return RedirectResponse(url="/auth/login", status_code=303)
 
     start_session(request, user)
@@ -167,6 +182,7 @@ async def register_form(request: Request, db: Session = Depends(get_db)) -> Resp
 @router.post("/register")
 async def register(
     request: Request,
+    background: BackgroundTasks,
     email: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(""),
@@ -203,7 +219,29 @@ async def register(
         _set_flash(request, "Passwords do not match.", "error")
         return RedirectResponse(url="/auth/register", status_code=303)
 
+    from . import email_verification as ev
+
     existing = db.query(User).filter(User.email == email).first()
+
+    if ev.verification_enabled():
+        # One answer for every address; the difference goes by email. The
+        # password is hashed on both paths so they take the same time.
+        password_hash = hash_password(password)
+        if existing:
+            ev.send_existing_account_notice(request, background, existing)
+            logger.info("REGISTER: address already registered (user_id=%s)", existing.id)
+        else:
+            user = User(email=email, password_hash=password_hash)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            ev.send_verification(request, background, db, user)
+            logger.info("REGISTER OK, awaiting confirmation: user_id=%s", user.id)
+        request.session.pop("auth_email", None)
+        return RedirectResponse(url=ev.CHECK_EMAIL_PATH, status_code=303)
+
+    # No email provider: an address cannot be confirmed, and the only way to
+    # report a taken address is on the page.
     if existing:
         logger.warning("REGISTER FAIL: address already registered (user_id=%s)", existing.id)
         _set_flash(request, "Email already registered. Please sign in.", "error")

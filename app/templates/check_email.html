@@ -1,0 +1,32 @@
+{% extends "_base.html" %}
+
+{% block title %}Check your inbox — TerrorReco{% endblock %}
+
+{% block flash_area %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-brand">Terror<em>Reco</em></div>
+    <h1 class="auth-title">Check your inbox</h1>
+
+    {% if flash %}
+    <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+    {% endif %}
+
+    {# Deliberately the same for a new address and one that already has an
+       account: the difference is in the email, not on this page. #}
+    <p class="auth-subtitle">
+      We have sent a message to the address you entered. Open the link in it to finish, then sign in.
+    </p>
+    <p class="account-note">
+      Nothing after a few minutes? Check your spam folder, or try signing in: if the address
+      still needs confirming we will send the link again.
+    </p>
+
+    <a href="/auth/login" class="btn btn-primary" style="margin-top:16px">Go to sign in</a>
+    <div class="auth-divider">or</div>
+    <p class="auth-footer" style="margin-top:0"><a href="/">Search without an account</a></p>
+  </div>
+</div>
+{% endblock %}
