@@ -211,6 +211,44 @@ def embedding_text(movie: dict[str, Any]) -> str:
     return " ".join(p.strip() for p in parts if p and p.strip())
 
 
+# Share of each film's stored vector that comes from its keywords alone.
+#
+# One concatenated document is mean-pooled, so a 60-word overview outweighs a
+# 6-word keyword list by token count, and the keywords are where the subgenre
+# and tone vocabulary lives. Encoding the keywords a second time, alone, and
+# mixing that vector in gives them a voice of their own. Measured on the graded
+# benchmark (docs/evaluation-baseline.md): +0.038 NDCG@6 for retrieval, 95%
+# interval [+0.014, +0.064]. Fields scored separately (max or mean of title,
+# keywords, overview) were far worse; the concatenated document must stay the
+# larger part.
+#
+# The mix is linear, so it is done once here and stored: a query's cosine
+# against the mixed vector is the blend of its cosines against the two parts.
+# Nothing downstream needs to know there were two.
+KEYWORD_VECTOR_SHARE = 0.3
+EMBEDDING_RECIPE = f"concat+keywords:{KEYWORD_VECTOR_SHARE}"
+
+
+def keyword_text(movie: dict[str, Any]) -> str:
+    """The text of a film's keyword-only vector; empty when it has none."""
+    return (movie.get("keywords") or "").strip()
+
+
+def mix_keyword_vectors(
+    document_vecs: np.ndarray, keyword_vecs: np.ndarray, has_keywords: np.ndarray
+) -> np.ndarray:
+    """Blend each document vector with its keyword vector and re-normalise.
+
+    A film without keywords keeps its document vector unchanged. The result is
+    unit length, which the taste vector, "more like this" and MMR all assume.
+    """
+    keyword_part = np.where(has_keywords[:, None], keyword_vecs, document_vecs)
+    mixed = (1.0 - KEYWORD_VECTOR_SHARE) * document_vecs + KEYWORD_VECTOR_SHARE * keyword_part
+    norms = np.linalg.norm(mixed, axis=1, keepdims=True)
+    result: np.ndarray = (mixed / np.where(norms == 0, 1.0, norms)).astype(np.float32)
+    return result
+
+
 def corpus_fingerprint(corpus: list[dict[str, Any]]) -> str:
     """Content hash of the exact text that gets embedded.
 
@@ -219,6 +257,9 @@ def corpus_fingerprint(corpus: list[dict[str, Any]]) -> str:
     cache automatically.
     """
     h = hashlib.sha256()
+    # How the vectors are built from that text is part of what is cached.
+    h.update(EMBEDDING_RECIPE.encode())
+    h.update(b"\x00")
     for movie in corpus:
         h.update((movie.get("imdb_id") or "").encode())
         h.update(b"\x00")
@@ -267,7 +308,12 @@ def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
 
     texts = [_normalize_text(embedding_text(m)) for m in corpus]
     logger.info("Computing embeddings for %d movies", len(texts))
-    embs = _embed_sbert(texts)
+    has_keywords = np.array([bool(keyword_text(m)) for m in corpus], dtype=bool)
+    keyword_texts = [
+        _normalize_text(keyword_text(m)) if has else text
+        for m, has, text in zip(corpus, has_keywords, texts, strict=True)
+    ]
+    embs = mix_keyword_vectors(_embed_sbert(texts), _embed_sbert(keyword_texts), has_keywords)
 
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
     np.save(EMBEDDINGS_FILE, embs)

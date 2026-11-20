@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from app.services.corpus import (
     apply_omdb_enrichment,
     corpus_fingerprint,
@@ -213,3 +215,59 @@ class TestCorpusIntegrity:
             pytest.skip("corpus not built in this environment")
         sample = corpus[0]
         assert len(embedding_text(sample)) > len(sample.get("overview") or "")
+
+
+class TestKeywordVectorMix:
+    """Each stored vector is the document vector with the keyword vector mixed in."""
+
+    @staticmethod
+    def _unit(*rows: list[float]) -> Any:
+        import numpy as np
+
+        arr = np.array(rows, dtype=np.float32)
+        return arr / np.linalg.norm(arr, axis=1, keepdims=True)
+
+    def test_result_is_unit_length(self) -> None:
+        import numpy as np
+
+        from app.services.corpus import mix_keyword_vectors
+
+        docs = self._unit([1, 0, 0], [0, 1, 0])
+        keys = self._unit([0, 0, 1], [1, 1, 0])
+        mixed = mix_keyword_vectors(docs, keys, np.array([True, True]))
+        assert np.allclose(np.linalg.norm(mixed, axis=1), 1.0, atol=1e-6)
+
+    def test_a_film_without_keywords_keeps_its_document_vector(self) -> None:
+        import numpy as np
+
+        from app.services.corpus import mix_keyword_vectors
+
+        docs = self._unit([1, 2, 3], [3, 2, 1])
+        keys = self._unit([9, 9, 9], [0, 0, 1])
+        mixed = mix_keyword_vectors(docs, keys, np.array([False, True]))
+        assert np.allclose(mixed[0], docs[0], atol=1e-6)
+        assert not np.allclose(mixed[1], docs[1], atol=1e-3)
+
+    def test_the_mix_ranks_like_the_blend_of_the_two_cosines(self) -> None:
+        """Up to the per-film normalisation, q.mixed = 0.7 q.doc + 0.3 q.keywords."""
+        import numpy as np
+
+        from app.services.corpus import KEYWORD_VECTOR_SHARE, mix_keyword_vectors
+
+        docs = self._unit([1, 0, 0])
+        keys = self._unit([0, 1, 0])
+        mixed = mix_keyword_vectors(docs, keys, np.array([True]))[0]
+        query = self._unit([0.2, 0.9, 0.1])[0]
+        blend = (1 - KEYWORD_VECTOR_SHARE) * (docs[0] @ query) + KEYWORD_VECTOR_SHARE * (
+            keys[0] @ query
+        )
+        raw = (1 - KEYWORD_VECTOR_SHARE) * docs[0] + KEYWORD_VECTOR_SHARE * keys[0]
+        assert mixed @ query == pytest.approx(blend / np.linalg.norm(raw), rel=1e-5)
+
+    def test_the_recipe_is_part_of_the_cache_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import app.services.corpus as corpus_mod
+
+        films = [{"imdb_id": "tt1", "title": "A", "overview": "x", "keywords": "k"}]
+        before = corpus_mod.corpus_fingerprint(films)
+        monkeypatch.setattr(corpus_mod, "EMBEDDING_RECIPE", "something-else")
+        assert corpus_mod.corpus_fingerprint(films) != before

@@ -175,6 +175,7 @@ def build() -> int:
         json.dumps(
             {
                 "model": "sentence-transformers/all-mpnet-base-v2",
+                "recipe": corpus_mod.EMBEDDING_RECIPE,
                 "k": K,
                 "tolerance": TOLERANCE,
                 "baseline": {name: round(score, 4) for name, score in baseline.items()},

@@ -65,7 +65,7 @@ A link produced by "Share these results" carries the film ids (`ids=tt...,tt...`
 
 - **Default model:** `sentence-transformers/all-mpnet-base-v2`
 - **Embedding dimension:** 768
-- **Used for:** Encoding the query and each film's composed text (`embedding_text()`: title, genre, keywords and overview) into the same vector space. Keywords matter most: plot summaries contain almost none of the tone and subgenre words people type, and adding them moved NDCG@6 from 0.31 to 0.50.
+- **Used for:** Encoding the query and each film's composed text (`embedding_text()`: title, genre, keywords and overview) into the same vector space. Keywords matter most: plot summaries contain almost none of the tone and subgenre words people type, and adding them moved NDCG@6 from 0.31 to 0.50. The stored vector for a film is that document's vector with 30% of a second vector mixed in, the film's keywords encoded alone, so a short keyword list is not drowned out by a long overview (`mix_keyword_vectors()`; +0.04 NDCG@6 on the graded benchmark).
 - **Similarity metric:** Cosine similarity (embeddings are L2-normalised).
 - **In the image:** the model is downloaded when the Docker image is built, and the container runs with the hub in offline mode. In development it is cached in `models/`.
 
