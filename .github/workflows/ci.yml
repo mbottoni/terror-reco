@@ -118,44 +118,16 @@ jobs:
     permissions:
       contents: read
       packages: read
-    env:
-      HOST: ${{ secrets.DEPLOY_HOST }}
-      APP_DIR: /opt/terror-reco
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure SSH
-        run: |
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-
-      - name: Copy compose file, Caddyfile and backup script
-        run: |
-          scp docker-compose.prod.yml Caddyfile "deploy@$HOST:$APP_DIR/"
-          scp ops/backup.sh "deploy@$HOST:$APP_DIR/backup.sh"
-          ssh "deploy@$HOST" "mkdir -p $APP_DIR/backups"
-
-      # The job's own token authenticates the pull, so the server needs no
-      # long-lived registry credential and the package can stay private.
-      - name: Pull and restart
-        run: |
-          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | ssh "deploy@$HOST" \
-            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin >/dev/null"
-          ssh "deploy@$HOST" "cd $APP_DIR \
-            && export IMAGE_TAG=${{ github.sha }} \
-            && docker compose -f docker-compose.prod.yml --env-file .env.prod pull -q app \
-            && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans \
-            && sed -i '/^IMAGE_TAG=/d' .env.prod && echo IMAGE_TAG=${{ github.sha }} >> .env.prod \
-            ; status=\$?; docker logout ghcr.io >/dev/null; docker image prune -af >/dev/null; exit \$status"
-
-      # A deploy that leaves the site down must fail the run, not pass it.
-      - name: Wait for /healthz
-        run: |
-          for i in $(seq 1 30); do
-            body=$(curl -fsS -m 5 "${{ vars.DEPLOY_URL }}/healthz" || true)
-            if echo "$body" | grep -q '"status":"ok"'; then echo "$body"; exit 0; fi
-            sleep 5
-          done
-          echo "healthz never reported ok: $body"; exit 1
+      # The same steps the manual deploy/rollback workflow runs (deploy.yml).
+      - uses: ./.github/actions/deploy
+        with:
+          image-tag: ${{ github.sha }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          registry-user: ${{ github.actor }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          health-url: ${{ vars.DEPLOY_URL }}

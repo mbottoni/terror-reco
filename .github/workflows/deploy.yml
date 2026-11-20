@@ -1,0 +1,78 @@
+name: Deploy a chosen version
+
+# Manual deploy or rollback: run an image CI has already built, without
+# pushing a commit. Actions tab -> "Deploy a chosen version" -> Run workflow,
+# and give the full commit sha of a green run on main.
+#
+# What this does NOT do: roll the database back. Migrations only run forward.
+# An older image on a newer schema usually works (new tables and columns are
+# ignored), but not across a migration that removed or renamed something the
+# old code uses. Check the migrations between the two commits first.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Full commit sha to deploy (must have a green CI run on main)
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check the tag is a full commit sha
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          echo "$IMAGE_TAG" | grep -Eq '^[0-9a-f]{40}$' \
+            || { echo "image_tag must be a 40-character commit sha"; exit 1; }
+
+      # The compose file and Caddyfile come from that same commit, so the
+      # whole stack is the one that was tested together.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.image_tag }}
+          sparse-checkout: |
+            docker-compose.prod.yml
+            Caddyfile
+            ops
+          sparse-checkout-cone-mode: false
+
+      # The deploy action itself comes from the branch the workflow was
+      # started on, so a rollback uses today's deploy logic, not an old copy.
+      - uses: actions/checkout@v4
+        with:
+          path: .deploy-action
+          sparse-checkout: .github/actions/deploy
+          sparse-checkout-cone-mode: false
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check the image exists
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
+        run: |
+          docker manifest inspect "$IMAGE" >/dev/null \
+            || { echo "No image $IMAGE: that commit never had a green build on main."; exit 1; }
+
+      - uses: ./.deploy-action/.github/actions/deploy
+        with:
+          image-tag: ${{ inputs.image_tag }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known-hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          registry-user: ${{ github.actor }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          health-url: ${{ vars.DEPLOY_URL }}
