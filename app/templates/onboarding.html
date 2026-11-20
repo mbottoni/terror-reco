@@ -1,0 +1,44 @@
+{% extends "_base.html" %}
+
+{% block title %}Pick films you love — TerrorReco{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px">
+  <h1 class="page-title">Pick a few films you love</h1>
+  <p class="page-subtitle">
+    Choose at least {{ min_likes }} and your recommendations will lean towards your taste.
+    You can skip this and come back from your account page.
+  </p>
+
+  {% if flash %}
+  <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+  {% endif %}
+
+  {# Checkboxes and a plain form, so it works without JavaScript. The poster is
+     the label; the tick shows through CSS on :checked. #}
+  <form action="/onboarding/" method="post" class="onboard-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <div class="onboard-groups">
+    {% for group in groups %}
+    <fieldset class="onboard-group">
+      <legend class="onboard-legend">{{ group.label }}</legend>
+      <div class="onboard-grid">
+        {% for m in group.films %}
+        <label class="onboard-film">
+          <input type="checkbox" name="imdb_id" value="{{ m.imdb_id }}"
+                 {% if m.imdb_id in liked %}checked disabled{% endif %}>
+          <img src="{{ m.poster_url | poster_variant('w185') }}" alt="" loading="lazy" decoding="async">
+          <span class="onboard-title">{{ m.title }}{% if m.year %} <span class="onboard-year">({{ m.year }})</span>{% endif %}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+    </div>
+    <div class="onboard-actions">
+      <button type="submit" class="btn btn-primary">Save my picks</button>
+      <a href="/" class="btn">Skip for now</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
