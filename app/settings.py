@@ -69,6 +69,12 @@ class AppSettings(BaseSettings):
     # correct only for a single worker.
     RATE_LIMIT_ENABLED: bool = Field(default=True)
 
+    # Transactional email (password reset). Unset means email features are off.
+    RESEND_API_KEY: str | None = Field(default=None)
+    # e.g. "TerrorReco <noreply@example.com>"; the domain must be verified
+    # with the provider, which a free subdomain such as duckdns.org cannot be.
+    EMAIL_FROM: str | None = Field(default=None)
+
     # Stripe
     STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None)
     STRIPE_SECRET_KEY: str | None = Field(default=None)

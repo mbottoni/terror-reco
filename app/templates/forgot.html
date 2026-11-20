@@ -1,0 +1,38 @@
+{% extends "_base.html" %}
+
+{% block title %}Reset your password — TerrorReco{% endblock %}
+
+{% block flash_area %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-brand">Terror<em>Reco</em></div>
+    <h1 class="auth-title">Forgot your password?</h1>
+
+    {% if flash %}
+    <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+    {% endif %}
+
+    {% if available %}
+    <p class="auth-subtitle">Enter your email address and we will send you a link to choose a new one.</p>
+    <form action="/auth/forgot" method="post" class="auth-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <button type="submit" class="btn btn-primary">Send reset link</button>
+    </form>
+    {% else %}
+    {# No email provider is configured, so no link could be delivered. Say so. #}
+    <p class="auth-subtitle">
+      Password reset by email is not available on this site yet. If you are still signed in on
+      another device, you can change your password from the account page there.
+    </p>
+    {% endif %}
+
+    <p class="auth-footer"><a href="/auth/login">Back to sign in</a></p>
+  </div>
+</div>
+{% endblock %}

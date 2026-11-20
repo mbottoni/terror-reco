@@ -65,7 +65,7 @@ DEFAULT_RULES: tuple[Rule, ...] = (
         "auth",
         frozenset({"POST"}),
         # /account/ too: each of its forms is a password check.
-        ("/auth/login", "/auth/register", "/account/"),
+        ("/auth/login", "/auth/register", "/auth/forgot", "/auth/reset", "/account/"),
         limit=10,
     ),
     Rule("checkout", frozenset({"POST"}), ("/stripe/create-checkout-session",), limit=10),
