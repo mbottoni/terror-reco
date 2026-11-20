@@ -31,7 +31,10 @@ runs PostgreSQL in a container beside the app. The models are in
 | `password_hash` | Argon2 |
 | `session_version` | Copied into the session at sign-in and checked on every request. Bumping it signs the user out everywhere |
 | `email_verified_at` | When the owner confirmed they can read mail at `email`. Null until then, and again after the address changes. Accounts older than this column were marked confirmed |
+| `google_sub` | Google's stable id for the account this user signs in with, if any. Unique |
 | `created_at` | |
+
+`password_hash` holds `!` for an account that has no password (created by signing in with Google); nothing verifies against it.
 
 **`email_verification_tokens`** — one row per emailed confirmation link: `user_id`, `token_hash` (SHA-256), `email` (the address it was sent to, so it cannot confirm a later one), `expires_at` (24 hours), `used_at`.
 

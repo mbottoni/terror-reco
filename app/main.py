@@ -19,6 +19,8 @@ from .auth import get_current_user
 from .auth import router as auth_router
 from .db import get_db, init_db
 from .email_verification import router as email_verification_router
+from .google_auth import google_enabled
+from .google_auth import router as google_router
 from .history import router as history_router
 from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
@@ -174,6 +176,7 @@ templates.env.filters["poster_variant"] = poster_variant
 # Every page embeds the session's CSRF token (see _base.html), so forms and
 # fetch() calls on any page can send it back.
 templates.env.globals["csrf_token"] = session_csrf_token
+templates.env.globals["google_enabled"] = google_enabled
 app.state.templates = templates
 
 
@@ -918,6 +921,7 @@ async def record_interaction(
 # Routers
 app.include_router(auth_router)
 app.include_router(email_verification_router)
+app.include_router(google_router)
 app.include_router(account_router)
 app.include_router(onboarding_router)
 app.include_router(password_reset_router)
