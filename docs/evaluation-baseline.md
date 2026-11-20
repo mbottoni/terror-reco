@@ -376,3 +376,52 @@ the weakest real mood ("animals attack") scores 0.30 and eight real moods fall
 below 0.48. Only nonsense ("asdf qwerty", "best pizza recipe", about 0.2) is
 clearly apart. A "we are not sure about this one" notice based on a similarity
 threshold would therefore fire on real moods; it was not built.
+
+## Keyword vectors mixed into the stored embeddings (2026-11-20)
+
+The first ranking change the graded benchmark could confirm. Each film's
+stored vector is now 70% the vector of its composed document and 30% the
+vector of its keywords encoded alone, re-normalised
+(`mix_keyword_vectors()` in `app/services/corpus.py`). Issue #28 proposed
+scoring fields separately; that was measured first and was far worse.
+
+Retrieval only, against the document-only vectors, before any new judging:
+
+| Variant | NDCG@6 difference | Unjudged films |
+|---------|------------------:|---------------:|
+| max of title, keywords, overview | -0.149 | 125 |
+| mean of the three | -0.116 | 81 |
+| keywords only | -0.196 | 151 |
+| 90% document + 10% keywords | +0.007 | 0 |
+| 80% + 20% | +0.012 | 2 |
+| **70% + 30%** | +0.021 | 11 |
+| 50% + 50% | -0.018 | 43 |
+
+The 70/30 mix was then implemented, and the 239 films it newly surfaced were
+judged blind (the judge did not know which ranker returned them). With no
+holes left in either arm:
+
+| Arm | Before | After | Difference | 95% CI | Dev half | Test half |
+|-----|-------:|------:|-----------:|:------:|---------:|----------:|
+| semantic | 0.5805 | 0.6229 | +0.0424 | [+0.0197, +0.0667] | +0.056 | +0.028 |
+| unified | 0.5988 | 0.6390 | +0.0402 | [+0.0148, +0.0667] | +0.028 | +0.053 |
+| unified, production noise | 0.5826 | 0.6328 | +0.0502 | [+0.0315, +0.0702] | +0.043 | +0.058 |
+
+- The share of a page that fits the mood rose from about 69% to 72-73%, and
+  the share that fits squarely from about 42% to 45-46%.
+- 33 moods improved, 17 got worse, 5 did not move. Largest gains: "Stephen
+  King adaptation" (+0.35), "cursed videotape or haunted technology" (+0.24),
+  "Japanese or Korean ghost horror" (+0.22). Largest losses: "witches and
+  covens", "found footage realistic terror" (-0.13 each).
+- The "before" numbers are lower than the baseline table above (0.605, 0.626)
+  because judging more films found more good ones, which raises the ideal a
+  page is measured against. **The tables above are the numbers at the time;
+  the current baseline is the "After" column here.**
+- On the old 8-mood CI slice the picture is flat: semantic 0.602 to 0.615,
+  unified 0.639 to 0.611. Both movements are inside that slice's ±0.06.
+- The 30% share was picked on all 55 moods, by looking at four values. The
+  dev/test columns show the gain holds on each half, but the share itself was
+  not tuned on one half and confirmed on the other.
+- Not measured: "more like this" and the taste vector use the same stored
+  vectors, so they changed too. Nothing in the benchmark covers them.
+

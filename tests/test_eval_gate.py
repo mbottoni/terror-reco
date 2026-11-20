@@ -68,6 +68,15 @@ class TestFixtureStillDescribesTheCorpus:
             f"so their stored vectors no longer match production. {REBUILD}"
         )
 
+    def test_vectors_were_built_with_the_current_recipe(self, gate: dict[str, Any]) -> None:
+        """The text can be unchanged while the way vectors are made from it is not."""
+        from app.services.corpus import EMBEDDING_RECIPE
+
+        assert gate["meta"].get("recipe") == EMBEDDING_RECIPE, (
+            f"The fixture was built with recipe {gate['meta'].get('recipe')!r}, production "
+            f"uses {EMBEDDING_RECIPE!r}. {REBUILD}"
+        )
+
 
 class TestRankingHasNotCollapsed:
     def test_ndcg_stays_near_the_recorded_baseline(self, gate: dict[str, Any]) -> None:
