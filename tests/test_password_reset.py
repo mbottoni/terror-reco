@@ -102,11 +102,11 @@ class TestRequestingALink:
         known = _forgot(client).text
         unknown = _forgot(client, "nobody@example.com").text
         assert SENT_MESSAGE in unknown
+
         def strip(page: str) -> str:
             # The CSRF token differs per render; everything else must match.
             return re.sub(r'(csrf[^"]*" (?:content|value)=")[^"]+', r"\\1", page)
-            r'(csrf[^"]*" (?:content|value)=")[^"]+', r"\\1", page
-        )  # noqa: E731
+
         assert strip(known) == strip(unknown)
         assert len(outbox) == 1
         assert db.query(PasswordResetToken).count() == 1
