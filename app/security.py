@@ -25,6 +25,16 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
+# Stored in ``password_hash`` for an account that has no password (created by
+# signing in with Google). Not a valid Argon2 hash, so nothing verifies
+# against it.
+NO_PASSWORD = "!"
+
+
+def has_password(password_hash: str) -> bool:
+    return password_hash != NO_PASSWORD
+
+
 # A real Argon2 hash of a random password nobody knows. Login verifies against
 # it when the address is unknown, so that path costs the same as a wrong
 # password instead of returning measurably sooner.

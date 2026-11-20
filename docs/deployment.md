@@ -13,6 +13,7 @@ How TerrorReco is deployed: one server running Docker Compose, shipped by GitHub
 | `DEBUG` | No | `false` | Set to `1` or `true` for development mode |
 | `LOG_LEVEL` | No | `INFO` | Level for the app's own log lines |
 | `SENTRY_DSN` | Optional | -- | Turns on error tracking. Unset means off. No request bodies, cookies or user details are sent |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional | -- | Turn on "Sign in with Google". Create an OAuth client (type: web application) in the Google Cloud console and add `<PUBLIC_BASE_URL>/auth/google/callback` as an authorised redirect URI |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Optional | -- | Turn on email: password reset, address confirmation at sign-up, and a sign-up form that does not reveal which addresses have accounts. The sender's domain must be verified with Resend. **Setting these changes sign-up:** new accounts must open an emailed link before they can sign in |
 | `STRIPE_PUBLISHABLE_KEY` | Optional | -- | Stripe public key (for payments) |
 | `STRIPE_SECRET_KEY` | Optional | -- | Stripe secret key |
