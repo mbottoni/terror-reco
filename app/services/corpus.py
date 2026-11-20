@@ -362,6 +362,24 @@ def get_corpus_embeddings(corpus: list[dict[str, Any]]) -> np.ndarray:
 
 
 # -------------------------------------------------------------- semantic search
+def resolve_query(
+    query: str, corpus: list[dict[str, Any]], corpus_embeddings: np.ndarray
+) -> tuple[np.ndarray, frozenset[str]]:
+    """The vector to search with, shape ``(1, dim)``, and films to leave out.
+
+    Ordinarily the embedded query and nothing excluded. When the query names
+    corpus films, their vectors (see ``title_reference``) and those films.
+    """
+    from .title_reference import find_title_references, reference_vector
+    from .unified_recommender import embed_query
+
+    reference = find_title_references(query, corpus)
+    if reference is None or corpus_embeddings.shape[0] != len(corpus):
+        return embed_query(query), frozenset()  # (1, dim), cached per process
+    vector = reference_vector(reference, corpus_embeddings, embed_query)
+    return vector, reference.exclude_ids
+
+
 def semantic_search(
     query: str,
     corpus: list[dict[str, Any]],
@@ -369,8 +387,16 @@ def semantic_search(
     top_k: int = 60,
     temperature: float = 1.0,
     seed: int | None = None,
+    query_vector: np.ndarray | None = None,
+    exclude_ids: frozenset[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Rank corpus movies by semantic similarity to *any* arbitrary text.
+
+    A query that names a corpus film ("like Hereditary") is searched with that
+    film's vector and the film is left out; see ``title_reference``. A caller
+    that searches a filtered slice of the corpus resolves the query against
+    the whole corpus first and passes ``query_vector`` and ``exclude_ids``,
+    because the named film may not be in the slice.
 
     Parameters
     ----------
@@ -390,14 +416,23 @@ def semantic_search(
         Optional RNG seed.  Together with ``temperature=0`` this makes the
         search reproducible, which offline evaluation depends on.
     """
-    from .unified_recommender import embed_query
-
-    q_emb = embed_query(query)  # (1, dim), cached per process
+    if query_vector is None:
+        query_vector, exclude_ids = resolve_query(query, corpus, corpus_embeddings)
+    q_emb = query_vector
     sims = (q_emb @ corpus_embeddings.T).ravel()  # (n_corpus,)
+    named: list[int] = []
+    if exclude_ids:
+        # Below every real cosine, so the noise step cannot bring them back.
+        named = [i for i, m in enumerate(corpus) if str(m.get("imdb_id") or "") in exclude_ids]
+        sims[named] = -2.0
+        top_k = max(0, min(top_k, len(corpus) - len(named)))
+    available = len(sims) - len(named)
 
     if temperature > 0:
         # Fetch a wider pool, then perturb scores within the relevant band
-        pool_k = min(len(sims), top_k * 3)
+        # Never reaching into the masked films, whose scores would stretch
+        # the spread the noise is scaled by.
+        pool_k = min(available, top_k * 3)
         pool_idx = np.argsort(-sims)[:pool_k]
         pool_sims = sims[pool_idx]
 

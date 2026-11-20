@@ -47,6 +47,16 @@ Then:
 
 Two alternatives were measured and deliberately left off: tuned blend weights and cross-encoder re-ranking. Both gains sat inside the noise; see `docs/evaluation-baseline.md`.
 
+### Queries that name a film
+
+"The Witch", "movies like Midsommar", "like Hereditary but less bleak", "Alien meets The Thing". When a query names a film in the corpus (`find_title_references()` in `app/services/title_reference.py`), both strategies change what they search with:
+
+- The search vector is the named film's stored vector, blended 70/30 with the embedding of the rest of the query when there is any. Two named films are averaged.
+- The unified strategy matches keywords against the named film's tags and keywords plus the rest of the query, never against the title's words.
+- The named film and the rest of its franchise are left out, and the results page says so.
+
+A title counts only where the query's shape says it is one: the whole query (optionally with a year), after a cue such as "like" or "similar to", or at the start before "but", "meets" or "vibes". A single-word title that is also an ordinary word ("Halloween", "Smile", "It") typed alone is read as a mood. Two films with the same title resolve to the stated year, else the better known. On the 24 title queries of the graded benchmark this moved NDCG@6 from 0.20 to 0.61; see `docs/evaluation-baseline.md`.
+
 ### What was removed
 
 Two earlier strategies fetched from OMDb during the request: a TF-IDF ranker (`embedding`) and a title-keyword search (`keyword`). TF-IDF fitted a vectoriser on 30 to 120 documents per request, where IDF is meaningless, and both scored below the corpus pipeline. An old link with `strategy=keyword` now falls back to the default.

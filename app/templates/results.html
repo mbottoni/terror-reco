@@ -76,6 +76,9 @@
     {% endif %}
   </div>
 
+  {% if movies and named_films %}
+  <p class="named-note">Films like <strong>{{ named_films | join(" and ") }}</strong>. {{ "They are" if named_films | length > 1 else "It is" }} left out, along with {{ "their" if named_films | length > 1 else "its" }} sequels and remakes.</p>
+  {% endif %}
   {% if movies %}
   <ul class="grid">
     {% for m in movies %}

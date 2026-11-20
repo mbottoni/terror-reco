@@ -374,15 +374,25 @@ def compute_signals(
     # signal to plot-only text, so unified scored worse than the plain
     # semantic search feeding it.
     from .corpus import embedding_text, embeddings_for, get_corpus_and_embeddings
+    from .title_reference import find_title_references, keyword_query, reference_vector
 
     mood_vec = embed_query(mood)
+    keyword_text = mood
     plot_vecs = None
     try:
-        _, corpus_embeddings = get_corpus_and_embeddings()
+        corpus, corpus_embeddings = get_corpus_and_embeddings()
         if corpus_embeddings.size:
             plot_vecs = embeddings_for(items, corpus_embeddings)
+            # A query that names a film is scored against that film's vector
+            # and vocabulary, as the search that built the pool did.
+            reference = find_title_references(mood, corpus)
+            if reference is not None:
+                mood_vec = reference_vector(reference, corpus_embeddings, embed_query)
+                keyword_text = keyword_query(reference, corpus)
     except Exception:  # noqa: BLE001 - never fail ranking over a cache miss
         plot_vecs = None
+        mood_vec = embed_query(mood)
+        keyword_text = mood
 
     if plot_vecs is None or plot_vecs.shape[-1] != mood_vec.shape[-1]:
         docs = [_normalize_text(embedding_text(m)) for m in items]
@@ -390,7 +400,7 @@ def compute_signals(
 
     signals: dict[str, np.ndarray] = {
         "semantic": _minmax(_cosine(mood_vec, plot_vecs).ravel()),
-        "keyword": _minmax(_bm25_scores(mood, items, stats=corpus_bm25_stats())),
+        "keyword": _minmax(_bm25_scores(keyword_text, items, stats=corpus_bm25_stats())),
         "popularity": _minmax(np.array([_popularity(it) for it in items], dtype=np.float32)),
     }
 

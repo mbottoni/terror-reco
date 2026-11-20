@@ -1,5 +1,5 @@
 {
- "about": "Moods for the graded benchmark (scripts/graded_eval.py). 'hand' moods are the 15 in notebooks/1-evaluation.py; 'pooled' moods have no hand-written gold list and are scored from eval/judgments.json alone. 'null' queries have no right answer in a horror corpus.",
+ "about": "Moods for the graded benchmark (scripts/graded_eval.py). 'hand' moods are the 15 in notebooks/1-evaluation.py; 'pooled' moods have no hand-written gold list and are scored from eval/judgments.json alone. 'null' queries have no right answer in a horror corpus. 'title' queries name a corpus film (\"like Hereditary\"); they are scored separately by `graded_eval.py titles`, with the named film itself graded 0.",
  "hand": [
   "slow-burn psychological dread",
   "campy fun with lots of blood",
@@ -68,5 +68,31 @@
   "asdf qwerty zxcv",
   "quarterly earnings report",
   "courtroom legal drama"
+ ],
+ "title": [
+  "Hereditary",
+  "The Witch",
+  "movies like Midsommar",
+  "something like The Descent",
+  "like Hereditary but less bleak",
+  "Alien meets The Thing",
+  "similar to Get Out",
+  "Rosemary's Baby",
+  "in the vein of Suspiria",
+  "like Scream but scarier",
+  "films like It Follows",
+  "The Texas Chain Saw Massacre",
+  "Night of the Living Dead but funny",
+  "I loved The Babadook, what next?",
+  "like Jaws",
+  "similar to The Conjuring",
+  "Re-Animator vibes",
+  "like The Shining",
+  "movies like Paranormal Activity",
+  "like Saw but smarter",
+  "The Fly (1986)",
+  "fans of Evil Dead",
+  "like A Quiet Place",
+  "something like the ring"
  ]
 }
