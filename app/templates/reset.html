@@ -1,0 +1,39 @@
+{% extends "_base.html" %}
+
+{% block title %}Choose a new password — TerrorReco{% endblock %}
+
+{% block flash_area %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-brand">Terror<em>Reco</em></div>
+    <h1 class="auth-title">Choose a new password</h1>
+
+    {% if flash %}
+    <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+    {% endif %}
+
+    {% if valid %}
+    <form action="/auth/reset/{{ token | urlencode }}" method="post" class="auth-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <div class="form-group">
+        <label for="new-password">New password</label>
+        <input id="new-password" type="password" name="new_password" required
+               minlength="{{ min_password_length }}" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="confirm-password">Confirm new password</label>
+        <input id="confirm-password" type="password" name="confirm_password" required
+               minlength="{{ min_password_length }}" autocomplete="new-password">
+      </div>
+      <p class="account-note">You will be signed out on every device and asked to sign in again.</p>
+      <button type="submit" class="btn btn-primary">Change password</button>
+    </form>
+    {% else %}
+    <p class="auth-subtitle">This reset link has expired or was already used.</p>
+    <p class="auth-footer"><a href="/auth/forgot">Request a new link</a></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
