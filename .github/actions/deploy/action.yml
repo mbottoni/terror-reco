@@ -1,0 +1,96 @@
+name: Deploy to the server
+description: >
+  Copy the compose file, Caddyfile and backup script from the checked-out
+  commit to the server, start the given image tag, and fail unless /healthz
+  reports ok. Used by the automatic deploy in ci.yml and by the manual
+  deploy/rollback workflow, so both ship exactly the same way.
+
+inputs:
+  image-tag:
+    description: Image tag to run (a commit sha that CI has pushed to GHCR)
+    required: true
+  host:
+    description: Server address
+    required: true
+  ssh-key:
+    description: Private key of the deploy user
+    required: true
+  known-hosts:
+    description: known_hosts line(s) for the server
+    required: true
+  registry-user:
+    description: User for ghcr.io
+    required: true
+  registry-token:
+    description: Token allowed to read the package (the job's GITHUB_TOKEN)
+    required: true
+  health-url:
+    description: Site origin, e.g. https://example.com
+    required: true
+  app-dir:
+    description: Directory on the server holding the compose file and .env.prod
+    required: false
+    default: /opt/terror-reco
+
+runs:
+  using: composite
+  steps:
+    - name: Configure SSH
+      shell: bash
+      env:
+        SSH_KEY: ${{ inputs.ssh-key }}
+        KNOWN_HOSTS: ${{ inputs.known-hosts }}
+      run: |
+        install -d -m 700 ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+    - name: Copy compose file, Caddyfile and backup script
+      shell: bash
+      env:
+        HOST: ${{ inputs.host }}
+        APP_DIR: ${{ inputs.app-dir }}
+      run: |
+        scp docker-compose.prod.yml Caddyfile "deploy@$HOST:$APP_DIR/"
+        # Older commits (a rollback target) may predate the backup service.
+        if [ -f ops/backup.sh ]; then
+          scp ops/backup.sh "deploy@$HOST:$APP_DIR/backup.sh"
+          ssh "deploy@$HOST" "mkdir -p $APP_DIR/backups"
+        fi
+
+    # The job's own token authenticates the pull, so the server needs no
+    # long-lived registry credential and the package can stay private.
+    - name: Pull and restart
+      shell: bash
+      env:
+        HOST: ${{ inputs.host }}
+        APP_DIR: ${{ inputs.app-dir }}
+        IMAGE_TAG: ${{ inputs.image-tag }}
+        REGISTRY_USER: ${{ inputs.registry-user }}
+        REGISTRY_TOKEN: ${{ inputs.registry-token }}
+      run: |
+        printf '%s' "$REGISTRY_TOKEN" | ssh "deploy@$HOST" \
+          "docker login ghcr.io -u '$REGISTRY_USER' --password-stdin >/dev/null"
+        # Unused images newer than three days are kept, so the previous
+        # release is still on disk when a rollback is needed.
+        ssh "deploy@$HOST" "cd $APP_DIR \
+          && export IMAGE_TAG=$IMAGE_TAG \
+          && docker compose -f docker-compose.prod.yml --env-file .env.prod pull -q app \
+          && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans \
+          && sed -i '/^IMAGE_TAG=/d' .env.prod && echo IMAGE_TAG=$IMAGE_TAG >> .env.prod \
+          ; status=\$?; docker logout ghcr.io >/dev/null; \
+          docker image prune -af --filter until=72h >/dev/null; exit \$status"
+
+    # A deploy that leaves the site down must fail the run, not pass it.
+    - name: Wait for /healthz
+      shell: bash
+      env:
+        HEALTH_URL: ${{ inputs.health-url }}
+      run: |
+        for i in $(seq 1 30); do
+          body=$(curl -fsS -m 5 "$HEALTH_URL/healthz" || true)
+          if echo "$body" | grep -q '"status":"ok"'; then echo "$body"; exit 0; fi
+          sleep 5
+        done
+        echo "healthz never reported ok: $body"; exit 1

@@ -41,7 +41,16 @@ the app, Postgres 17 and Caddy, which obtains and renews the HTTPS certificate.
    pulls the new image, restarts the stack, and fails the run unless
    `/healthz` reports `ok`.
 
-Rolling back is re-running the `deploy` job of an older green commit.
+**Rolling back, or deploying without a commit:** Actions → *Deploy a chosen
+version* → *Run workflow*, and enter the full commit sha of a green run on
+`main` (or `gh workflow run deploy.yml -f image_tag=<sha>`). It runs the image
+CI already built for that commit, with that commit's compose file, and applies
+the same health check. Images from the last three days stay on the server, so
+a recent rollback does not need to download anything.
+
+It does not roll the database back: migrations only run forward. An older
+image on a newer schema usually works, but check the migrations between the
+two commits before rolling back across one that removed or renamed something.
 
 ### What lives where
 
