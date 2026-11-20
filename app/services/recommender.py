@@ -282,6 +282,14 @@ def recommend_movies_advanced(
         else [{k: v for k, v in m.items() if not k.startswith("_")} for m in candidates]
     )
 
+    # One film per franchise in what the user sees. Skipped when the caller
+    # wants the raw pool (keep_internal): the unified re-ranker de-duplicates
+    # after blending, so it can pick which entry of a series to show.
+    if not keep_internal:
+        from .unified_recommender import first_of_each_collection
+
+        filtered = [filtered[i] for i in first_of_each_collection(filtered)]
+
     # Weighted random sampling from the top pool so that the final
     # selection varies between requests while remaining relevant.
     pool_size = min(len(filtered), max(limit * 3, 18))
