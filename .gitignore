@@ -36,6 +36,8 @@ data/*
 !data/horror_corpus.json
 # Snapshot of streaming availability (scripts/fetch_watch_providers.py)
 !data/watch_providers.json
+# Descriptive tags per film, from a fixed vocabulary (see docs/evaluation-baseline.md)
+!data/film_tags.json
 
 # Local sentence-transformer model weights (downloaded via scripts/download_model.py)
 models/
