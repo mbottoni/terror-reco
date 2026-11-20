@@ -25,7 +25,15 @@ from .auth import (
     start_session,
 )
 from .db import get_db
-from .models import MovieFeedback, Payment, SearchHistory, SetFeedback, User, WatchlistItem
+from .models import (
+    MovieFeedback,
+    PasswordResetToken,
+    Payment,
+    SearchHistory,
+    SetFeedback,
+    User,
+    WatchlistItem,
+)
 from .security import hash_password, require_csrf, verify_password
 
 logger = logging.getLogger(__name__)
@@ -215,6 +223,8 @@ async def delete_account(
     db.query(Payment).filter(Payment.user_id == user_id).update({Payment.user_id: None})
     # Set-level verdicts stay as anonymous eval data, with the link removed.
     db.query(SetFeedback).filter(SetFeedback.user_id == user_id).update({SetFeedback.user_id: None})
+    # Explicit for SQLite, which does not enforce the FK's ON DELETE CASCADE.
+    db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete()
     # ORM delete, so the cascades on history, feedback and watchlist run (and
     # history's cascade removes its result rows). A bulk DELETE would skip them.
     db.delete(user)
