@@ -63,6 +63,28 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
+  # Nightly pg_dump with rotation; see ops/backup.sh. Dumps go to ./backups on
+  # the host. Off-box copies start as soon as BACKUP_S3_* is set in .env.prod.
+  backup:
+    image: postgres:17-alpine
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    command: ["loop"]
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set in .env.prod}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      BACKUP_S3_PROVIDER: ${BACKUP_S3_PROVIDER:-Cloudflare}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *default-logging
+
   caddy:
     image: caddy:2-alpine
     environment:
