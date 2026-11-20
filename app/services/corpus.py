@@ -59,6 +59,22 @@ def load_film_tags() -> dict[str, list[str]]:
     return tags
 
 
+def load_tag_vocabulary() -> dict[str, str]:
+    """``tag -> what it means``, from the tag file's fixed vocabulary."""
+    if not TAGS_FILE.exists():
+        return {}
+    try:
+        with open(TAGS_FILE) as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return {
+        str(entry["tag"]): str(entry.get("means") or "")
+        for facet in raw.get("vocabulary", {}).values()
+        for entry in facet
+    }
+
+
 def load_corpus() -> list[dict[str, Any]]:
     """Load the cached corpus from disk.  Returns ``[]`` if not built yet.
 

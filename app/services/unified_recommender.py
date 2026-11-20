@@ -346,12 +346,97 @@ def _cross_encoder_scores(mood: str, items: list[dict[str, Any]]) -> np.ndarray 
         return None
 
 
+# Fitted on the graded benchmark (a non-negative ridge over these signals,
+# rounded). Scored on moods held out of the fit, the blend with the tag signal
+# beat the previous hand-set one (semantic .45, keyword .20, popularity .20,
+# recency .05) by +0.07 NDCG@6; refitting the old four signals alone gained
+# nothing. Recency fitted to zero. See docs/evaluation-baseline.md.
 DEFAULT_WEIGHTS: dict[str, float] = {
-    "semantic": 0.45,
-    "keyword": 0.20,
-    "popularity": 0.20,
-    "recency": 0.05,
+    "semantic": 0.30,
+    "keyword": 0.25,
+    "tags": 0.35,
+    "popularity": 0.10,
+    "recency": 0.0,
 }
+
+_TAG_VECTOR_CACHE: dict[str, Any] = {}
+
+
+def tag_definition_texts() -> tuple[list[str], list[str]]:
+    """The tag vocabulary and the text embedded for each: "tag: what it means".
+
+    The meaning is included because it is what a query resembles: "a killer
+    stalks and picks off a group of victims" is closer to how people describe
+    a slasher than the word is. Measured: +0.08 with it against +0.06 without.
+    """
+    from .corpus import load_tag_vocabulary
+
+    vocabulary = load_tag_vocabulary()
+    tags = list(vocabulary)
+    return tags, [_normalize_text(f"{tag}: {vocabulary[tag]}") for tag in tags]
+
+
+def _tag_vectors() -> tuple[dict[str, int], np.ndarray] | None:
+    """Embeddings of the tag definitions, cached while the embedder is the same."""
+    embedder = _embed_sbert
+    if _TAG_VECTOR_CACHE.get("embedder") is not embedder:
+        tags, texts = tag_definition_texts()
+        if not tags:
+            return None
+        _TAG_VECTOR_CACHE.update(
+            embedder=embedder,
+            index={tag: i for i, tag in enumerate(tags)},
+            vectors=np.asarray(embedder(texts), dtype=np.float32),
+        )
+    return _TAG_VECTOR_CACHE["index"], _TAG_VECTOR_CACHE["vectors"]
+
+
+def _item_tags(item: dict[str, Any]) -> list[str]:
+    return [t.strip() for t in str(item.get("tags") or "").split(",") if t.strip()]
+
+
+def tag_scores(
+    items: list[dict[str, Any]],
+    query_vec: np.ndarray | None = None,
+    like_tags: set[str] | None = None,
+) -> np.ndarray:
+    """How well each film's descriptive tags answer the query.
+
+    For a mood: the cosine between the query and the best-matching of the
+    film's tag definitions. One strong tag is the evidence; averaging over a
+    film's tags punishes films that are well described.
+
+    For a query that names films (*like_tags*, the named films' tags): the
+    share of tags in common (Jaccard).
+
+    Zeros when the film has no tags or the vocabulary cannot be embedded: the
+    signal then drops out of the blend, it never fails the request.
+    """
+    scores = np.zeros(len(items), dtype=np.float32)
+    if like_tags is not None:
+        for i, item in enumerate(items):
+            own = set(_item_tags(item))
+            if own and like_tags:
+                scores[i] = len(own & like_tags) / len(own | like_tags)
+        return scores
+    if query_vec is None:
+        return scores
+    try:
+        loaded = _tag_vectors()
+    except Exception:  # noqa: BLE001 - never fail ranking over an optional signal
+        loaded = None
+    if loaded is None:
+        return scores
+    index, vectors = loaded
+    query = np.asarray(query_vec, dtype=np.float32).reshape(-1)
+    if vectors.shape[-1] != query.shape[-1]:
+        return scores
+    affinity = vectors @ query
+    for i, item in enumerate(items):
+        rows = [index[t] for t in _item_tags(item) if t in index]
+        if rows:
+            scores[i] = float(affinity[rows].max())
+    return scores
 
 
 def compute_signals(
@@ -378,6 +463,7 @@ def compute_signals(
 
     mood_vec = embed_query(mood)
     keyword_text = mood
+    like_tags: set[str] | None = None
     plot_vecs = None
     try:
         corpus, corpus_embeddings = get_corpus_and_embeddings()
@@ -389,10 +475,12 @@ def compute_signals(
             if reference is not None:
                 mood_vec = reference_vector(reference, corpus_embeddings, embed_query)
                 keyword_text = keyword_query(reference, corpus)
+                like_tags = {t for row in reference.rows for t in _item_tags(corpus[row])}
     except Exception:  # noqa: BLE001 - never fail ranking over a cache miss
         plot_vecs = None
         mood_vec = embed_query(mood)
         keyword_text = mood
+        like_tags = None
 
     if plot_vecs is None or plot_vecs.shape[-1] != mood_vec.shape[-1]:
         docs = [_normalize_text(embedding_text(m)) for m in items]
@@ -401,6 +489,7 @@ def compute_signals(
     signals: dict[str, np.ndarray] = {
         "semantic": _minmax(_cosine(mood_vec, plot_vecs).ravel()),
         "keyword": _minmax(_bm25_scores(keyword_text, items, stats=corpus_bm25_stats())),
+        "tags": _minmax(tag_scores(items, query_vec=mood_vec, like_tags=like_tags)),
         "popularity": _minmax(np.array([_popularity(it) for it in items], dtype=np.float32)),
     }
 

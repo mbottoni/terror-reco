@@ -126,7 +126,11 @@ def evaluate(
 def build() -> int:
     from app.services import corpus as corpus_mod
     from app.services.corpus import embedding_text, get_corpus_embeddings, load_corpus
-    from app.services.unified_recommender import _embed_sbert, _normalize_text
+    from app.services.unified_recommender import (
+        _embed_sbert,
+        _normalize_text,
+        tag_definition_texts,
+    )
 
     corpus = load_corpus()
     if not corpus:
@@ -166,11 +170,18 @@ def build() -> int:
         text_sha(_normalize_text(case["mood"])): vec.astype(np.float32)
         for case, vec in zip(cases, mood_vecs16, strict=True)
     }
+    # The unified ranker also embeds the tag definitions; without their vectors
+    # the gate would replay a ranker with one signal missing.
+    _, tag_texts = tag_definition_texts()
+    tag_vecs16 = _embed_sbert(tag_texts).astype(np.float16)
+    lookup.update(tag_lookup(tag_texts, tag_vecs16))
     with stored_vectors(corpus_mod, films, film_vecs, lookup):
         baseline = evaluate(moods, films, film_vecs)
 
     FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(FIXTURE_VECS, film_vecs=film_vecs16, mood_vecs=mood_vecs16)
+    np.savez_compressed(
+        FIXTURE_VECS, film_vecs=film_vecs16, mood_vecs=mood_vecs16, tag_vecs=tag_vecs16
+    )
     FIXTURE_META.write_text(
         json.dumps(
             {
@@ -180,6 +191,7 @@ def build() -> int:
                 "tolerance": TOLERANCE,
                 "baseline": {name: round(score, 4) for name, score in baseline.items()},
                 "moods": moods,
+                "tag_texts": [text_sha(text) for text in tag_texts],
                 "films": [
                     {
                         "imdb_id": m["imdb_id"],
@@ -198,6 +210,14 @@ def build() -> int:
         f"baseline ndcg@{K}: semantic {baseline['semantic']:.4f}, unified {baseline['unified']:.4f}"
     )
     return 0
+
+
+def tag_lookup(tag_texts: list[str], tag_vecs: np.ndarray) -> dict[str, np.ndarray]:
+    """Lookup entries for the tag definitions, keyed like every other text."""
+    return {
+        text_sha(text): vec.astype(np.float32)
+        for text, vec in zip(tag_texts, tag_vecs, strict=True)
+    }
 
 
 class stored_vectors:
