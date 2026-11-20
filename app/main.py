@@ -18,6 +18,7 @@ from .account import router as account_router
 from .auth import get_current_user
 from .auth import router as auth_router
 from .db import get_db, init_db
+from .email_verification import router as email_verification_router
 from .history import router as history_router
 from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
@@ -916,6 +917,7 @@ async def record_interaction(
 
 # Routers
 app.include_router(auth_router)
+app.include_router(email_verification_router)
 app.include_router(account_router)
 app.include_router(onboarding_router)
 app.include_router(password_reset_router)

@@ -11,11 +11,12 @@ import logging
 import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 
+from . import email_verification as ev
 from .auth import (
     MIN_PASSWORD_LENGTH,
     _set_flash,
@@ -26,6 +27,7 @@ from .auth import (
 )
 from .db import get_db
 from .models import (
+    EmailVerificationToken,
     MovieFeedback,
     PasswordResetToken,
     Payment,
@@ -77,6 +79,8 @@ async def account_page(
             "counts": counts,
             "supporter_since": supporter_since(db, user),
             "min_password_length": MIN_PASSWORD_LENGTH,
+            "verification_enabled": ev.verification_enabled(),
+            "email_verified": ev.is_verified(user),
             "flash": request.session.pop("flash", None),
             "flash_type": request.session.pop("flash_type", "success"),
         },
@@ -116,6 +120,7 @@ async def change_password(
 @router.post("/email")
 async def change_email(
     request: Request,
+    background: BackgroundTasks,
     new_email: str = Form(...),
     current_password: str = Form(...),
     user: User | None = Depends(get_current_user),
@@ -135,8 +140,17 @@ async def change_email(
         return _back(request, "That email address is already in use.", "error")
 
     user.email = email
+    # The new address has not been confirmed by anyone yet.
+    user.email_verified_at = None
     db.commit()
     logger.info("EMAIL CHANGED: user_id=%s", user.id)
+    if ev.verification_enabled():
+        ev.send_verification(request, background, db, user)
+        return _back(
+            request,
+            "Email address updated. We have sent a confirmation link to the new address; "
+            "you will need it the next time you sign in.",
+        )
     return _back(request, "Email address updated.")
 
 
@@ -156,7 +170,11 @@ def export_user_data(db: Session, user: User) -> dict[str, Any]:
     saved = db.query(WatchlistItem).filter(WatchlistItem.user_id == user.id).all()
     payments = db.query(Payment).filter(Payment.user_id == user.id).all()
     return {
-        "account": {"email": user.email, "created_at": when(user.created_at)},
+        "account": {
+            "email": user.email,
+            "email_verified_at": when(user.email_verified_at),
+            "created_at": when(user.created_at),
+        },
         "searches": [
             {
                 "mood": s.mood,
@@ -228,6 +246,7 @@ async def delete_account(
     db.query(SetFeedback).filter(SetFeedback.user_id == user_id).update({SetFeedback.user_id: None})
     # Explicit for SQLite, which does not enforce the FK's ON DELETE CASCADE.
     db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete()
+    db.query(EmailVerificationToken).filter(EmailVerificationToken.user_id == user_id).delete()
     # A published list goes with the account: its link must stop working.
     db.query(PublicList).filter(PublicList.user_id == user_id).delete()
     # ORM delete, so the cascades on history, feedback and watchlist run (and

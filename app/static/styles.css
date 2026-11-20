@@ -739,3 +739,18 @@ select{cursor:pointer}
 .public-list-film{display:block;color:inherit;text-decoration:none}
 .public-list-cta{text-align:center;margin:36px 0 12px}
 .public-list-credit{text-align:center;color:#555566;font-size:.72rem;margin-bottom:32px}
+
+/* Account page: address not confirmed yet */
+.verify-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid #2a2a33;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #a0a0ab;
+}
+.verify-notice span { flex: 1 1 260px; }

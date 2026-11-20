@@ -13,7 +13,7 @@ How TerrorReco is deployed: one server running Docker Compose, shipped by GitHub
 | `DEBUG` | No | `false` | Set to `1` or `true` for development mode |
 | `LOG_LEVEL` | No | `INFO` | Level for the app's own log lines |
 | `SENTRY_DSN` | Optional | -- | Turns on error tracking. Unset means off. No request bodies, cookies or user details are sent |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Optional | -- | Turn on password-reset email. The sender's domain must be verified with Resend |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Optional | -- | Turn on email: password reset, address confirmation at sign-up, and a sign-up form that does not reveal which addresses have accounts. The sender's domain must be verified with Resend. **Setting these changes sign-up:** new accounts must open an emailed link before they can sign in |
 | `STRIPE_PUBLISHABLE_KEY` | Optional | -- | Stripe public key (for payments) |
 | `STRIPE_SECRET_KEY` | Optional | -- | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Optional | -- | Stripe webhook signing secret |
@@ -228,7 +228,7 @@ Recommended, and off until configured:
 - [ ] Off-box backups: the four `BACKUP_S3_*` variables (see *Backups*)
 - [ ] Error tracking: `SENTRY_DSN`
 - [ ] An external uptime check on `/healthz`
-- [ ] Password-reset email: `RESEND_API_KEY` and `EMAIL_FROM`, which need a verified sending domain
+- [ ] Email (password reset, address confirmation): `RESEND_API_KEY` and `EMAIL_FROM`, which need a verified sending domain
 - [ ] Stripe: the four Stripe variables, and a webhook endpoint in the Stripe dashboard pointing at `https://<domain>/stripe/webhook`
 
 When the domain changes, update `SITE_ADDRESS`, `PUBLIC_BASE_URL` and `DEPLOY_URL` together.
