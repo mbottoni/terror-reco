@@ -33,6 +33,11 @@ class User(Base):
     email_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Google's stable identifier for the account this user signs in with, if
+    # any. The address can change on Google's side; this cannot.
+    google_sub: Mapped[str | None] = mapped_column(
+        String(64), unique=True, index=True, nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     history: Mapped[list[SearchHistory]] = relationship(

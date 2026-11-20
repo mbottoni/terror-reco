@@ -11,6 +11,7 @@ from .db import get_db
 from .models import User
 from .security import (
     DUMMY_PASSWORD_HASH,
+    has_password,
     hash_password,
     require_csrf,
     session_csrf_token,
@@ -130,7 +131,10 @@ async def login(
     # Always spend one Argon2 verification. Returning early for an unknown
     # address made "no such user" tens of milliseconds faster than "wrong
     # password", which reveals who has an account despite the shared message.
-    password_ok = verify_password(password, user.password_hash if user else DUMMY_PASSWORD_HASH)
+    # An account with no password (it signs in with Google) is checked against
+    # the dummy hash too, so it costs the same and fails the same.
+    stored = user.password_hash if user and has_password(user.password_hash) else None
+    password_ok = verify_password(password, stored or DUMMY_PASSWORD_HASH) and stored is not None
     if not user or not password_ok:
         logger.warning("LOGIN FAIL: invalid credentials")
         _set_flash(request, "Invalid email or password.", "error")

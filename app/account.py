@@ -37,7 +37,7 @@ from .models import (
     User,
     WatchlistItem,
 )
-from .security import hash_password, require_csrf, verify_password
+from .security import has_password, hash_password, require_csrf, verify_password
 from .stripe_payments import supporter_since
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,8 @@ async def account_page(
             "counts": counts,
             "supporter_since": supporter_since(db, user),
             "min_password_length": MIN_PASSWORD_LENGTH,
+            "has_password": has_password(user.password_hash),
+            "signs_in_with_google": user.google_sub is not None,
             "verification_enabled": ev.verification_enabled(),
             "email_verified": ev.is_verified(user),
             "flash": request.session.pop("flash", None),
@@ -91,7 +93,7 @@ async def account_page(
 @router.post("/password")
 async def change_password(
     request: Request,
-    current_password: str = Form(...),
+    current_password: str = Form(""),
     new_password: str = Form(...),
     confirm_password: str = Form(...),
     user: User | None = Depends(get_current_user),
@@ -99,7 +101,10 @@ async def change_password(
 ) -> RedirectResponse:
     if not user:
         return _to_login()
-    if not verify_password(current_password, user.password_hash):
+    # An account made by signing in with Google has no password to ask for;
+    # being signed in is the proof, and this sets its first one.
+    first_password = not has_password(user.password_hash)
+    if not first_password and not verify_password(current_password, user.password_hash):
         logger.warning("PASSWORD CHANGE FAIL: wrong current password (user_id=%s)", user.id)
         return _back(request, "Your current password is not correct.", "error")
     if len(new_password) < MIN_PASSWORD_LENGTH:
@@ -114,6 +119,8 @@ async def change_password(
     revoke_sessions(db, user)
     start_session(request, user)  # this device stays signed in
     logger.info("PASSWORD CHANGED: user_id=%s", user.id)
+    if first_password:
+        return _back(request, "Password set. You can now sign in with it as well.")
     return _back(request, "Password changed. Other devices have been signed out.")
 
 
@@ -128,6 +135,8 @@ async def change_email(
 ) -> RedirectResponse:
     if not user:
         return _to_login()
+    if not has_password(user.password_hash):
+        return _back(request, "Set a password first, then you can change the email.", "error")
     if not verify_password(current_password, user.password_hash):
         logger.warning("EMAIL CHANGE FAIL: wrong current password (user_id=%s)", user.id)
         return _back(request, "Your current password is not correct.", "error")
@@ -228,13 +237,18 @@ async def export_data(
 @router.post("/delete")
 async def delete_account(
     request: Request,
-    current_password: str = Form(...),
+    current_password: str = Form(""),
+    confirm_email: str = Form(""),
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     if not user:
         return _to_login()
-    if not verify_password(current_password, user.password_hash):
+    if not has_password(user.password_hash):
+        # No password to ask for: typing the address is the deliberate step.
+        if normalize_email(confirm_email) != user.email:
+            return _back(request, "Type your email address to confirm the deletion.", "error")
+    elif not verify_password(current_password, user.password_hash):
         logger.warning("ACCOUNT DELETE FAIL: wrong current password (user_id=%s)", user.id)
         return _back(request, "Your current password is not correct.", "error")
 

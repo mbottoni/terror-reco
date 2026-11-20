@@ -57,6 +57,7 @@ the threadpool, never on the event loop.
 | `account.py` | Change password or email, export data, delete the account |
 | `password_reset.py` | Reset by emailed, single-use, hashed token. Off until an email provider is configured |
 | `email_verification.py` | Confirm an address by emailed link; registration that answers the same for new and existing addresses. Off until an email provider is configured |
+| `google_auth.py` | Sign in with Google (OpenID Connect code flow with PKCE). Off until a client id and secret are configured |
 | `onboarding.py` | Pick films you love after signing up, which seeds personalisation |
 | `security.py` | Argon2 hashing, the session CSRF token and its check, URL scheme checks |
 | `middleware.py` | Security response headers and in-process, per-client rate limits |

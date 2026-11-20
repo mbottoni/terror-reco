@@ -83,6 +83,12 @@ class AppSettings(BaseSettings):
     # with the provider, which a free subdomain such as duckdns.org cannot be.
     EMAIL_FROM: str | None = Field(default=None)
 
+    # "Sign in with Google". Both unset means the button is not shown and the
+    # routes answer 404. The OAuth client must list
+    # <PUBLIC_BASE_URL>/auth/google/callback as an authorised redirect URI.
+    GOOGLE_CLIENT_ID: str | None = Field(default=None)
+    GOOGLE_CLIENT_SECRET: str | None = Field(default=None)
+
     # Stripe
     STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None)
     STRIPE_SECRET_KEY: str | None = Field(default=None)

@@ -48,6 +48,8 @@ filter responsible.
 | `GET /auth/check-email` | "Check your inbox". The same page for every address |
 | `GET /auth/verify/{token}` | Confirm an email address from its emailed link. Links last 24 hours and work once. Does not sign anyone in |
 | `POST /auth/verify/resend` | Send the signed-in user a new confirmation link (at most one a minute) |
+| `GET /auth/google` | Start "Sign in with Google": redirects to Google with a one-time `state` and a PKCE challenge. `404` unless Google sign-in is configured |
+| `GET /auth/google/callback` | Where Google sends the browser back. Checks `state`, exchanges the code server to server, then signs in: the account with that Google id, else the account with that (Google-verified) address, else a new one |
 | `POST /auth/logout` | Sign out on this device |
 | `POST /auth/logout-all` | Sign out on every device |
 | `GET /auth/forgot`, `POST /auth/forgot` | Ask for a password-reset email (`email`). The answer is the same whether or not the address is registered. Unavailable until an email provider is configured |
