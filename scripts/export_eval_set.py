@@ -32,7 +32,67 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.db import get_db_session  # noqa: E402
-from app.models import MovieFeedback  # noqa: E402
+from app.models import MovieFeedback, SetFeedback  # noqa: E402
+
+
+def set_verdict_titles(
+    rows: list[Any],
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """Titles from set-level verdicts, keyed by mood: (thumbs-up, thumbs-down).
+
+    Ids come from the page on trust, so only those present in the corpus are
+    kept; an id that resolves to nothing is dropped, not guessed at.
+    """
+    from app.services.corpus import load_corpus
+
+    title_of = {m.get("imdb_id"): (m.get("title") or "").strip().lower() for m in load_corpus()}
+    up: dict[str, set[str]] = defaultdict(set)
+    down: dict[str, set[str]] = defaultdict(set)
+    for mood, imdb_ids, verdict in rows:
+        if not mood:
+            continue
+        titles = {title_of[i] for i in (imdb_ids or []) if title_of.get(i)}
+        (up if verdict > 0 else down)[mood.strip()].update(titles)
+    return up, down
+
+
+def build_cases(
+    liked: dict[str, set[str]],
+    disliked: dict[str, set[str]],
+    set_liked: dict[str, set[str]],
+    set_disliked: dict[str, set[str]],
+    min_likes: int,
+) -> list[dict[str, Any]]:
+    """Graded eval cases from both kinds of feedback.
+
+    Grade 2 is a film someone explicitly liked for that mood. Grade 1 is a
+    film that was merely part of a set someone called good: real evidence,
+    but about six films at once, so weaker. An explicit dislike outranks a
+    set-level thumbs-up for the same film.
+    """
+    cases: list[dict[str, Any]] = []
+    for mood in sorted(set(liked) | set(set_liked)):
+        negative = disliked.get(mood, set())
+        strong = liked.get(mood, set()) - negative
+        weak = set_liked.get(mood, set()) - strong - negative
+        gold = strong | weak
+        if len(gold) < min_likes:
+            continue
+        cases.append(
+            {
+                "mood": mood,
+                "gold": sorted(gold),
+                "grades": {**{t: 1 for t in sorted(weak)}, **{t: 2 for t in sorted(strong)}},
+                # Disliked films are recorded too: a ranker that surfaces them
+                # is wrong in a way a gold list alone cannot express.
+                "negative": sorted(negative),
+                # Films from sets marked "not good": each one is only weakly
+                # implicated, so they are kept apart from explicit dislikes.
+                "negative_weak": sorted(set_disliked.get(mood, set()) - gold - negative),
+                "source": "user_feedback",
+            }
+        )
+    return cases
 
 
 def main() -> int:
@@ -56,6 +116,9 @@ def main() -> int:
 
     with get_db_session() as db:
         rows = db.query(MovieFeedback.mood, MovieFeedback.title, MovieFeedback.rating).all()
+        set_rows = db.query(SetFeedback.mood, SetFeedback.imdb_ids, SetFeedback.verdict).all()
+
+    set_liked, set_disliked = set_verdict_titles(set_rows)
 
     for mood, title, rating in rows:
         # Feedback recorded outside a search has no mood to attribute it to.
@@ -63,22 +126,8 @@ def main() -> int:
             continue
         (liked if rating > 0 else disliked)[mood.strip()].add(title.strip().lower())
 
-    cases: list[dict[str, Any]] = []
-    for mood, titles in sorted(liked.items()):
-        if len(titles) < args.min_likes:
-            continue
-        cases.append(
-            {
-                "mood": mood,
-                "gold": sorted(titles),
-                # Disliked films are recorded too: a ranker that surfaces them
-                # is wrong in a way a gold list alone cannot express.
-                "negative": sorted(disliked.get(mood, set())),
-                "source": "user_feedback",
-            }
-        )
-
-    skipped = len(liked) - len(cases)
+    cases = build_cases(liked, disliked, set_liked, set_disliked, args.min_likes)
+    skipped = len(set(liked) | set(set_liked)) - len(cases)
     if args.merge_gold:
         import ast
 

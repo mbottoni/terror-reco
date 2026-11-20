@@ -641,3 +641,16 @@ select{cursor:pointer}
 @media (max-width:640px){
   .similar-row{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
 }
+
+/* ---- SET FEEDBACK ---- */
+.set-feedback{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin:28px auto 8px;color:#9c9caa;font-size:.9rem;
+}
+.set-feedback[hidden]{display:none}
+.set-feedback-btn{
+  font-size:1.1rem;line-height:1;padding:8px 12px;border-radius:999px;cursor:pointer;
+  background:#141419;border:1px solid #2c2c36;transition:border-color .15s,background .15s;
+}
+.set-feedback-btn:hover{border-color:#4a4a58}
+.set-feedback-btn[aria-pressed="true"]{background:#2a1416;border-color:#d32f2f}

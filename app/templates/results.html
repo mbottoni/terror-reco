@@ -105,6 +105,15 @@
     </li>
     {% endfor %}
   </ul>
+  {# One click on the whole set. Per-film ratings sit behind the modal and
+     almost nobody leaves them; this is the signal the eval can actually use. #}
+  <div class="set-feedback" id="set-feedback" hidden>
+    <span class="set-feedback-label" id="set-feedback-label">Good picks?</span>
+    <button type="button" class="set-feedback-btn" id="set-up" aria-pressed="false"
+            onclick="sendSetFeedback(1)" aria-label="Yes, good picks">&#128077;</button>
+    <button type="button" class="set-feedback-btn" id="set-down" aria-pressed="false"
+            onclick="sendSetFeedback(-1)" aria-label="No, not good picks">&#128078;</button>
+  </div>
   {% else %}
   <div class="empty-state">
     <div class="empty-state-icon">👻</div>
@@ -149,6 +158,38 @@
 
 {% block scripts %}
 <script>
+// Set-level verdict. The control is hidden in the markup and revealed here,
+// so it never appears where it cannot work (no JavaScript).
+var _setVerdict = 0;
+function renderSetFeedback(){
+  var up = document.getElementById('set-up'), down = document.getElementById('set-down');
+  if(!up || !down) return;
+  up.setAttribute('aria-pressed', _setVerdict === 1 ? 'true' : 'false');
+  down.setAttribute('aria-pressed', _setVerdict === -1 ? 'true' : 'false');
+  document.getElementById('set-feedback-label').textContent =
+    _setVerdict === 0 ? 'Good picks?' : 'Thanks for telling us.';
+}
+function sendSetFeedback(verdict){
+  fetch('/api/set-feedback', {
+    method: 'POST',
+    headers: csrfHeaders({'Content-Type': 'application/json'}),
+    body: JSON.stringify({
+      mood: MOOD,
+      strategy: STRATEGY,
+      verdict: verdict,
+      imdb_ids: MOVIES.map(function(m){ return m.imdb_id; }).filter(Boolean)
+    })
+  }).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(data){ _setVerdict = data.verdict; renderSetFeedback(); })
+    .catch(function(){
+      document.getElementById('set-feedback-label').textContent = 'Could not save that. Try again.';
+    });
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var box = document.getElementById('set-feedback');
+  if(box) box.hidden = false;
+});
+
 function shareResults(){
   // List the films on screen. A seed would not reproduce them: this page is
   // a random (and possibly personalised) draw, and a seeded request is a
