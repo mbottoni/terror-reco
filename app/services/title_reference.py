@@ -273,6 +273,24 @@ def find_title_references(query: str, corpus: list[dict[str, Any]]) -> TitleRefe
     return _reference(list(dict.fromkeys(found)), corpus, residual, query)
 
 
+_SEQUEL_MARK = re.compile(r"^(\d+|i{1,3}|iv|v|vi{0,3}|part|chapter)$")
+
+
+def _same_series(named: str, other: str) -> bool:
+    """A remake with the same title, or "Alien: Covenant" / "Halloween II" for
+    "Alien" / "Halloween". TMDB's collections miss these: prequels and reboots
+    are often filed as franchises of their own."""
+    named, other = named.removeprefix("the "), other.removeprefix("the ")
+    if other == named:
+        return True
+    if not other.startswith(named + " "):
+        return False
+    rest = other[len(named) + 1 :].split()
+    # A numbered entry always; a subtitle only for titles distinctive enough
+    # that the prefix is not a coincidence ("It" must not exclude "It Follows").
+    return bool(_SEQUEL_MARK.match(rest[0])) or (len(named) >= 5 and named not in ("house",))
+
+
 def _reference(
     rows: list[int], corpus: list[dict[str, Any]], residual: str, query: str
 ) -> TitleReference:
@@ -280,10 +298,11 @@ def _reference(
     ids = tuple(str(f.get("imdb_id") or "") for f in films)
     collections = {f.get("collection_id") for f in films if f.get("collection_id") is not None}
     exclude = set(ids)
-    if collections:
-        exclude |= {
-            str(m.get("imdb_id") or "") for m in corpus if m.get("collection_id") in collections
-        }
+    named = [normalise(str(f.get("title") or "")) for f in films]
+    for movie in corpus:
+        title = normalise(str(movie.get("title") or ""))
+        if movie.get("collection_id") in collections or any(_same_series(n, title) for n in named):
+            exclude.add(str(movie.get("imdb_id") or ""))
     titles = tuple(
         f"{f.get('title')} ({str(f.get('year'))[:4]})" if f.get("year") else str(f.get("title"))
         for f in films

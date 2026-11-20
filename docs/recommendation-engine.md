@@ -55,7 +55,7 @@ Two alternatives were measured and deliberately left off: tuned blend weights an
 - The unified strategy matches keywords against the named film's tags and keywords plus the rest of the query, never against the title's words.
 - The named film and the rest of its franchise are left out, and the results page says so.
 
-A title counts only where the query's shape says it is one: the whole query (optionally with a year), after a cue such as "like" or "similar to", or at the start before "but", "meets" or "vibes". A single-word title that is also an ordinary word ("Halloween", "Smile", "It") typed alone is read as a mood. Two films with the same title resolve to the stated year, else the better known. On the 24 title queries of the graded benchmark this moved NDCG@6 from 0.20 to 0.61; see `docs/evaluation-baseline.md`.
+A title counts only where the query's shape says it is one: the whole query (optionally with a year), after a cue such as "like" or "similar to", or at the start before "but", "meets" or "vibes". A single-word title that is also an ordinary word ("Halloween", "Smile", "It") typed alone is read as a mood. Two films with the same title resolve to the stated year, else the better known. On the 24 title queries of the graded benchmark this moved NDCG@6 from 0.20 to 0.64; see `docs/evaluation-baseline.md`.
 
 ### What was removed
 

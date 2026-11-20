@@ -110,6 +110,22 @@ def test_the_rest_of_the_franchise_is_excluded_too() -> None:
     assert ref.titles == ("Halloween (1978)",)
 
 
+def test_remakes_and_subtitled_entries_outside_the_collection_are_excluded() -> None:
+    corpus = CORPUS + [
+        _film("tt20", "Alien: Covenant", 2017, collection_id=77),  # filed as its own franchise
+        _film("tt21", "Alien 3", 1992),
+        _film("tt22", "It Follows", 2015),
+        _film("tt23", "It Chapter Two", 2019),
+    ]
+    alien = find_title_references("like alien", corpus)
+    assert alien is not None
+    assert {"tt20", "tt21"} <= alien.exclude_ids
+    it = find_title_references("movies like It", corpus)
+    assert it is not None
+    assert "tt23" in it.exclude_ids  # a numbered entry
+    assert "tt22" not in it.exclude_ids  # a different film that starts with the same word
+
+
 def test_residual_drops_the_title_cue_and_filler() -> None:
     ref = find_title_references("something like Hereditary but less bleak", CORPUS)
     assert ref is not None
