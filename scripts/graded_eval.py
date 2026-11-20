@@ -61,7 +61,9 @@ Ranker = Callable[[str], list[dict[str, Any]]]
 # ----------------------------------------------------------------- data files
 def load_moods() -> dict[str, list[str]]:
     data: dict[str, list[str]] = json.loads(MOODS_FILE.read_text())
-    return {key: list(data.get(key, [])) for key in ("hand", "pooled", "null", "title")}
+    return {
+        key: list(data.get(key, [])) for key in ("hand", "pooled", "null", "title", "constraint")
+    }
 
 
 def load_judgments(path: Path = JUDGMENTS_FILE) -> dict[str, dict[str, int]]:
@@ -199,7 +201,7 @@ def build_pool(weights: dict[str, float] | None = None) -> dict[str, list[dict[s
 
     pool: dict[str, list[dict[str, Any]]] = {}
     # Title queries are pooled too: a grown catalogue changes their pages as well.
-    for mood in moods["hand"] + moods["pooled"] + moods["title"]:
+    for mood in moods["hand"] + moods["pooled"] + moods["title"] + moods["constraint"]:
         ids: list[str] = []
         ids += _ids(rankers["semantic"](mood, POOL_DEPTH))
         ids += _ids(rankers["unified"](mood, POOL_DEPTH))
@@ -280,7 +282,8 @@ def _print_paired(
 def cmd_score(args: argparse.Namespace) -> int:
     judgments = load_judgments()
     all_moods = load_moods()
-    moods = [m for m in all_moods["hand"] + all_moods["pooled"] if judgments.get(m)]
+    groups = ("hand", "pooled") if args.group == "moods" else (args.group,)
+    moods = [m for group in groups for m in all_moods[group] if judgments.get(m)]
     if not moods:
         print(f"No judgments in {JUDGMENTS_FILE}. Run `pool`, judge the films, then score.")
         return 1
@@ -374,7 +377,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     raw = json.loads(JUDGMENTS_FILE.read_text())
     known = load_moods()
     titles = set(known["title"])
-    allowed = set(known["hand"] + known["pooled"]) | titles
+    allowed = set(known["hand"] + known["pooled"] + known["constraint"]) | titles
     added = corrected = 0
     for path in args.files:
         for query, rows in json.loads(Path(path).read_text()).items():
@@ -548,6 +551,12 @@ def main() -> int:
     score.add_argument("--runs", type=int, default=5, help="noisy repetitions")
     score.add_argument("--compare", help="JSON blend weights of a variant to compare")
     score.add_argument("--per-mood", action="store_true")
+    score.add_argument(
+        "--group",
+        choices=("moods", "hand", "pooled", "constraint", "title"),
+        default="moods",
+        help="which queries to score (default: the 55 moods)",
+    )
     score.set_defaults(func=cmd_score)
     add = sub.add_parser("add", help="merge newly graded films into the judgments file")
     add.add_argument("files", nargs="+", help="JSON files of {query: [{imdb_id, grade}]}")

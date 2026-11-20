@@ -50,6 +50,26 @@ Then:
 
 Two alternatives were measured and deliberately left off: cross-encoder re-ranking, and larger learned rankers (gradient boosting on 18 features did worse on held-out moods than the five-weight blend). See `docs/evaluation-baseline.md`.
 
+### Reading the query
+
+One vector for a whole sentence cannot say that "campy fun with lots of blood" wants two things, that "scary but with no gore" wants one and excludes another, or that "80s slasher" states a fact. Embedded whole, "not gory" lands next to "very gory". So before ranking, `app/services/query_understanding.py` reads the query into:
+
+| Part | Example | How it is found |
+|---|---|---|
+| Wanted qualities | "campy", "lots of blood" → *campy*, *very gory* | A phrase that is a tag's name, one of a short list of plain-English aliases, or close to a tag's name in embedding space |
+| Excluded qualities | "no gore", "not a comedy", "sad more than scary" | The same, inside a negation. The opposite tag is wanted where one exists ("no gore" wants *little to no gore*) |
+| A decade | "the 80s", "1930s", "the eighties" | Pattern |
+| People | "John Carpenter", "Vincent Price" | A full name found in the corpus's own director, writer and cast credits |
+| Places | "Korean" also searches "Korea" | A short table |
+
+The unified strategy then uses it three ways:
+
+- **Candidates.** Besides the 60 nearest by meaning, the pool gets the best keyword matches (over a text that now includes director, writer, cast, country and language) and the films that satisfy everything the query asks for. A search by meaning cannot retrieve on a fact that is not in the embedded text.
+- **The tag signal** becomes half "how much of what was asked does this film have" and half the best single tag.
+- **Violations.** A film from the wrong decade, without the named person, or with an excluded quality has 0.35 taken off its score. It is moved down, not removed, so a page still fills when little fits.
+
+It is rule-based on purpose: nothing calls a model at search time beyond the embedder already in use, and every rule can be read. What it does not understand it ignores, and the query is ranked as before.
+
 ### Queries that name a film
 
 "The Witch", "movies like Midsommar", "like Hereditary but less bleak", "Alien meets The Thing". When a query names a film in the corpus (`find_title_references()` in `app/services/title_reference.py`), both strategies change what they search with:

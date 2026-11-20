@@ -1,5 +1,5 @@
 {
- "about": "Moods for the graded benchmark (scripts/graded_eval.py). 'hand' moods are the 15 in notebooks/1-evaluation.py; 'pooled' moods have no hand-written gold list and are scored from eval/judgments.json alone. 'null' queries have no right answer in a horror corpus. 'title' queries name a corpus film (\"like Hereditary\"); they are scored separately by `graded_eval.py titles`, with the named film itself graded 0.",
+ "about": "Moods for the graded benchmark (scripts/graded_eval.py). 'hand' moods are the 15 in notebooks/1-evaluation.py; 'pooled' moods have no hand-written gold list and are scored from eval/judgments.json alone. 'null' queries have no right answer in a horror corpus. 'title' queries name a corpus film (\"like Hereditary\"); they are scored separately by `graded_eval.py titles`, with the named film itself graded 0. 'constraint' queries ask for a fact (a director, a country, a decade), exclude something (\"no gore\") or combine several qualities; they are scored with `graded_eval.py score --group constraint`.",
  "hand": [
   "slow-burn psychological dread",
   "campy fun with lots of blood",
@@ -94,5 +94,30 @@
   "fans of Evil Dead",
   "like A Quiet Place",
   "something like the ring"
+ ],
+ "constraint": [
+  "John Carpenter movies",
+  "directed by Dario Argento",
+  "horror with Vincent Price",
+  "Stephen King adaptation from the 80s",
+  "David Cronenberg body horror",
+  "Korean horror",
+  "Japanese ghost story",
+  "Italian horror from the 70s",
+  "French horror that goes too far",
+  "Spanish-language horror",
+  "80s slasher",
+  "horror from the 1930s",
+  "something from the 2020s about grief",
+  "90s horror that is not a slasher",
+  "scary but with no gore",
+  "no jump scares, just atmosphere",
+  "zombies but not a comedy",
+  "a haunted house film that is not too scary",
+  "funny more than scary",
+  "gory but not depressing",
+  "campy and very bloody",
+  "slow-burn folk horror with a cult",
+  "claustrophobic sci-fi horror in space"
  ]
 }

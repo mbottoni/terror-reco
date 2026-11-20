@@ -134,6 +134,17 @@ def _item_text(item: dict[str, Any]) -> str:
         item.get("genre") or "",
         item.get("overview") or "",
     ]
+    if not QUERY_UNDERSTANDING:
+        return " ".join(p for p in parts if p)
+    parts += [
+        # Facts people search by: "John Carpenter movies", "with Vincent
+        # Price", "Korean horror". None of them is in the embedded text.
+        item.get("director") or "",
+        item.get("writer") or "",
+        item.get("actors") or "",
+        item.get("country") or "",
+        item.get("language") or "",
+    ]
     return " ".join(p for p in parts if p)
 
 
@@ -391,6 +402,167 @@ def _tag_vectors() -> tuple[dict[str, int], np.ndarray] | None:
     return _TAG_VECTOR_CACHE["index"], _TAG_VECTOR_CACHE["vectors"]
 
 
+# Off: queries are read as one vector and nothing else, as they were before.
+# Exists so the benchmark can measure what reading them adds.
+QUERY_UNDERSTANDING = True
+_INTENT_CACHE: OrderedDict[str, tuple[Any, Any]] = OrderedDict()
+_INTENT_CACHE_SIZE = 256
+# Share of the tag signal taken from covering what the query asks for, the
+# rest staying with the best single tag. Measured on the mood benchmark.
+ASPECT_SHARE = 0.5
+# Taken off the blended score (which spans 0 to 1) of a film that breaks
+# something the query states: the wrong decade, or a quality it excludes.
+VIOLATION_PENALTY = 0.35
+# Films added to the candidate pool because they match the query's words or
+# satisfy everything it asks for, whatever their overall similarity.
+LEXICAL_EXTRA = 20
+ASPECT_EXTRA = 30
+
+
+def _tag_name_vectors() -> tuple[list[str], np.ndarray] | None:
+    """Embeddings of the bare tag names, for matching a phrase to a tag."""
+    embedder = _embed_sbert
+    if _TAG_VECTOR_CACHE.get("names_embedder") is not embedder:
+        tags, _ = tag_definition_texts()
+        if not tags:
+            return None
+        _TAG_VECTOR_CACHE.update(
+            names_embedder=embedder,
+            names=tags,
+            name_vectors=np.asarray(embedder([_normalize_text(t) for t in tags]), dtype=np.float32),
+        )
+    return _TAG_VECTOR_CACHE["names"], _TAG_VECTOR_CACHE["name_vectors"]
+
+
+def _match_phrases(phrases: list[str]) -> dict[str, tuple[str, float]]:
+    """Each phrase's closest tag name and the cosine between them."""
+    loaded = _tag_name_vectors()
+    if loaded is None or not phrases:
+        return {}
+    names, vectors = loaded
+    encoded = np.asarray(_embed_sbert([_normalize_text(p) for p in phrases]), dtype=np.float32)
+    if encoded.shape[-1] != vectors.shape[-1]:
+        return {}
+    sims = encoded @ vectors.T
+    best = sims.argmax(axis=1)
+    return {
+        p: (names[int(j)], float(sims[i, int(j)]))
+        for i, (p, j) in enumerate(zip(phrases, best, strict=True))
+    }
+
+
+_PEOPLE_CACHE: dict[str, Any] = {}
+
+
+def _known_people() -> frozenset[str]:
+    """Every full name credited in the corpus, cached until the corpus changes."""
+    from .corpus import get_corpus_and_embeddings
+    from .query_understanding import credited_people
+
+    try:
+        corpus, _ = get_corpus_and_embeddings()
+    except Exception:  # noqa: BLE001
+        return frozenset()
+    if _PEOPLE_CACHE.get("corpus") is not corpus:
+        names = {name for film in corpus for name in credited_people(film) if " " in name}
+        _PEOPLE_CACHE.update(corpus=corpus, names=frozenset(names))
+    people: frozenset[str] = _PEOPLE_CACHE["names"]
+    return people
+
+
+def query_intent(mood: str) -> Any:
+    """What *mood* asks for (see ``query_understanding``), cached per process.
+
+    Never raises: a query that cannot be read is treated as asking for nothing
+    in particular, which is how every query was treated before.
+    """
+    from .query_understanding import Intent, understand
+
+    if not QUERY_UNDERSTANDING:
+        return Intent()
+    key = _normalize_text(mood)
+    embedder = _embed_sbert
+    hit = _INTENT_CACHE.get(key)
+    if hit is not None and hit[0] is embedder:
+        _INTENT_CACHE.move_to_end(key)
+        return hit[1]
+    try:
+        tags, _ = tag_definition_texts()
+        intent = understand(mood, tags, _match_phrases, _known_people()) if tags else Intent()
+    except Exception:  # noqa: BLE001
+        intent = Intent()
+    _INTENT_CACHE[key] = (embedder, intent)
+    while len(_INTENT_CACHE) > _INTENT_CACHE_SIZE:
+        _INTENT_CACHE.popitem(last=False)
+    return intent
+
+
+def widen_pool(
+    mood: str,
+    pool: list[dict[str, Any]],
+    corpus: list[dict[str, Any]],
+    corpus_embeddings: np.ndarray,
+    query_vector: np.ndarray,
+    exclude_ids: frozenset[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Films to add to the re-ranker's candidates, beyond the nearest by meaning.
+
+    The semantic search cannot retrieve on a fact that is not in the embedded
+    text: no vector says "directed by John Carpenter" or "released in the
+    1930s". Two kinds of film are added: the best keyword matches over the
+    fields BM25 reads, and films that satisfy everything the query asks for.
+    *corpus* and *corpus_embeddings* are the rows the search ran over (already
+    filtered), so a year or rating filter is respected here too.
+    """
+    from .query_understanding import aspect_scores
+    from .title_reference import find_title_references
+
+    try:
+        if not QUERY_UNDERSTANDING:
+            return []
+        if not corpus or find_title_references(mood, corpus) is not None:
+            return []
+        skip = {str(m.get("imdb_id") or "") for m in pool} | set(exclude_ids or ())
+        sims = (
+            np.asarray(query_vector, dtype=np.float32).reshape(1, -1) @ corpus_embeddings.T
+        ).ravel()
+        intent = query_intent(mood)
+        chosen: list[int] = []
+
+        keyword_text = " ".join([mood, *intent.extra_terms])
+        lexical = np.asarray(
+            _bm25_scores(keyword_text, corpus, stats=corpus_bm25_stats()), dtype=np.float32
+        )
+        for row in np.argsort(-lexical)[: LEXICAL_EXTRA * 3]:
+            if len(chosen) >= LEXICAL_EXTRA or lexical[row] <= 0:
+                break
+            if str(corpus[int(row)].get("imdb_id") or "") not in skip:
+                chosen.append(int(row))
+
+        if intent:
+            coverage, violates = aspect_scores(intent, corpus)
+            complete = [i for i, c in enumerate(coverage) if c >= 0.999 and not violates[i]]
+            complete.sort(key=lambda i: -float(sims[i]))
+            for row in complete[: ASPECT_EXTRA * 2]:
+                if sum(1 for r in chosen if r in complete) >= ASPECT_EXTRA:
+                    break
+                if row not in chosen and str(corpus[row].get("imdb_id") or "") not in skip:
+                    chosen.append(row)
+
+        extras = []
+        for row in chosen:
+            film = dict(corpus[row])
+            film["_semantic_score"] = float(sims[row])
+            film["_embedding_row"] = row
+            extras.append(film)
+        return extras
+    except Exception:  # noqa: BLE001 - a wider pool is an improvement, never a requirement
+        import logging
+
+        logging.getLogger(__name__).warning("Could not widen the candidate pool", exc_info=True)
+        return []
+
+
 def _item_tags(item: dict[str, Any]) -> list[str]:
     return [t.strip() for t in str(item.get("tags") or "").split(",") if t.strip()]
 
@@ -482,14 +654,32 @@ def compute_signals(
         keyword_text = mood
         like_tags = None
 
+    # A query that names a film is matched on that film's tags instead.
+    intent = query_intent(mood) if like_tags is None else None
+    if intent is not None and intent.extra_terms:
+        keyword_text = " ".join([keyword_text, *intent.extra_terms])
+
     if plot_vecs is None or plot_vecs.shape[-1] != mood_vec.shape[-1]:
         docs = [_normalize_text(embedding_text(m)) for m in items]
         plot_vecs = _embed_sbert(docs)
 
+    tag_signal = _minmax(tag_scores(items, query_vec=mood_vec, like_tags=like_tags))
+    violates = np.zeros(len(items), dtype=np.float32)
+    if intent:
+        from .query_understanding import aspect_scores
+
+        coverage, broken = aspect_scores(intent, items)
+        tag_signal = _minmax(
+            ASPECT_SHARE * np.asarray(coverage, dtype=np.float32) + (1 - ASPECT_SHARE) * tag_signal
+        )
+        violates = np.asarray(broken, dtype=np.float32)
+
     signals: dict[str, np.ndarray] = {
         "semantic": _minmax(_cosine(mood_vec, plot_vecs).ravel()),
         "keyword": _minmax(_bm25_scores(keyword_text, items, stats=corpus_bm25_stats())),
-        "tags": _minmax(tag_scores(items, query_vec=mood_vec, like_tags=like_tags)),
+        "tags": tag_signal,
+        # Not a weighted signal: subtracted in recommend_unified_semantic().
+        "violates": violates,
         "popularity": _minmax(np.array([_popularity(it) for it in items], dtype=np.float32)),
     }
 
@@ -549,6 +739,9 @@ def recommend_unified_semantic(
     if weights:
         w.update(weights)
     blended = blend_signals(signals, w)
+    # A film that breaks something the query states (the decade, "no gore")
+    # is moved down, not removed: when nothing else fits it still fills the page.
+    blended = blended - VIOLATION_PENALTY * signals["violates"]
 
     # Films the user explicitly disliked are pushed below everything else
     # rather than removed, so a heavily-rated user still gets a full page.
