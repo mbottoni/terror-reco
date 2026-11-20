@@ -654,3 +654,10 @@ select{cursor:pointer}
 }
 .set-feedback-btn:hover{border-color:#4a4a58}
 .set-feedback-btn[aria-pressed="true"]{background:#2a1416;border-color:#d32f2f}
+
+/* ---- EMPTY STATE: WHICH FILTER DID IT ---- */
+.relief-list{list-style:none;margin:14px auto 0;padding:0;display:inline-block;text-align:left}
+.relief-list li{margin:6px 0;font-size:.9rem}
+.relief-list a,.relief-note a{color:#f0a5a5}
+.relief-count{color:#6b6b78;margin-left:8px}
+.relief-note{margin-top:12px;font-size:.9rem;color:#9c9caa}

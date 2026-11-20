@@ -149,6 +149,52 @@ def _passes_filters(
     return True
 
 
+def films_without_each_filter(
+    *,
+    min_year: int | None,
+    max_year: int | None,
+    min_rating: float | None,
+    english_only: bool,
+) -> dict[str, int]:
+    """For each active filter, how many films pass once that one is dropped.
+
+    Answers "which filter emptied my results?". Filters run before ranking,
+    so a search with none of them passing returns nothing whatever the mood
+    was, and the page should point at the filter, not at the mood. The
+    ``"all"`` entry is the count with every filter removed.
+    """
+    from .corpus import get_corpus_and_embeddings
+
+    corpus, _ = get_corpus_and_embeddings()
+    active: dict[str, Any] = {
+        "min_year": min_year,
+        "max_year": max_year,
+        "min_rating": min_rating,
+        "english_only": english_only or None,
+    }
+    active = {name: value for name, value in active.items() if value is not None}
+
+    def count(without: str) -> int:
+        def keep(name: str) -> Any:
+            return None if name == without else active.get(name)
+
+        return sum(
+            1
+            for movie in corpus
+            if _passes_filters(
+                movie,
+                min_year=keep("min_year"),
+                max_year=keep("max_year"),
+                min_rating=keep("min_rating"),
+                english_only=bool(keep("english_only")),
+            )
+        )
+
+    counts = {name: count(name) for name in active}
+    counts["all"] = len(corpus)
+    return counts
+
+
 def recommend_movies_advanced(
     *,
     mood: str,

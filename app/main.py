@@ -36,6 +36,7 @@ from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
     explain_match,
     films_by_ids,
+    films_without_each_filter,
     recommend_movies_advanced,
     similar_movies,
 )
@@ -281,12 +282,14 @@ def refine_context(
 
     chips = [
         {
+            "key": key,
             "label": label,
             "remove_url": "/recommend?" + urlencode({k: v for k, v in params.items() if k != key}),
         }
         for key, label in labels.items()
     ]
     return {
+        "clear_url": "/recommend?" + urlencode({"mood": mood, "strategy": strategy}),
         "params": {k: v for k, v in params.items() if k != "mood"},
         "chips": chips,
         "shuffle_url": "/recommend?" + urlencode(params),
@@ -386,6 +389,21 @@ async def ui_recommendations(
             temperature=0.0 if seed is not None else 1.0,
         )
 
+    # Nothing came back and filters were on: work out which filter did it, so
+    # the page can say so instead of blaming the mood.
+    relief: dict[str, int] = {}
+    if not movies and (min_year or max_year or min_rating is not None or english):
+        try:
+            relief = await run_in_threadpool(
+                films_without_each_filter,
+                min_year=min_year,
+                max_year=max_year,
+                min_rating=min_rating,
+                english_only=bool(english),
+            )
+        except Exception:  # noqa: BLE001 - an explanation must never break the page
+            relief = {}
+
     # Explain each result in the user's own words: which of the film's
     # keywords the query actually hit.
     for movie in movies:
@@ -423,6 +441,7 @@ async def ui_recommendations(
             "strategy_label": STRATEGY_LABELS[strategy_key],
             "strategy_labels": STRATEGY_LABELS,
             "is_shared": bool(shared),
+            "relief": relief,
             # A shared set was chosen by someone else, so what a viewer does
             # with it says nothing about the ranker; it is not measured.
             "result_key": (
