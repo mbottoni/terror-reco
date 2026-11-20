@@ -69,6 +69,11 @@ class AppSettings(BaseSettings):
     # correct only for a single worker.
     RATE_LIMIT_ENABLED: bool = Field(default=True)
 
+    # Observability. LOG_LEVEL applies to the app's own loggers; SENTRY_DSN
+    # switches error tracking on (unset means off).
+    LOG_LEVEL: str = Field(default="INFO")
+    SENTRY_DSN: str | None = Field(default=None)
+
     # Stripe
     STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None)
     STRIPE_SECRET_KEY: str | None = Field(default=None)

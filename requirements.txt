@@ -20,6 +20,7 @@ certifi==2026.1.4
     #   httpcore
     #   httpx
     #   requests
+    #   sentry-sdk
 cffi==2.0.0
     # via argon2-cffi-bindings
 charset-normalizer==3.4.4
@@ -38,7 +39,9 @@ cuda-bindings==12.9.4 ; platform_machine == 'x86_64' and sys_platform == 'linux'
 cuda-pathfinder==1.3.3 ; platform_machine == 'x86_64' and sys_platform == 'linux'
     # via cuda-bindings
 fastapi==0.128.4
-    # via terror-reco
+    # via
+    #   sentry-sdk
+    #   terror-reco
 filelock==3.20.3
     # via
     #   huggingface-hub
@@ -185,6 +188,8 @@ scipy==1.17.0
     #   sentence-transformers
 sentence-transformers==5.2.2
     # via terror-reco
+sentry-sdk==2.75.0
+    # via terror-reco
 setuptools==81.0.0 ; python_full_version >= '3.12'
     # via torch
 shellingham==1.5.4
@@ -244,7 +249,9 @@ typing-inspection==0.4.2
 tzdata==2025.3 ; sys_platform == 'win32'
     # via psycopg
 urllib3==2.6.3
-    # via requests
+    # via
+    #   requests
+    #   sentry-sdk
 uvicorn==0.40.0
     # via terror-reco
 uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'

@@ -22,6 +22,7 @@ from .history import router as history_router
 from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from .models import Impression, Interaction, MovieFeedback, SetFeedback, User, WatchlistItem
+from .observability import configure_error_tracking, configure_logging
 from .onboarding import router as onboarding_router
 from .schemas import (
     FeedbackIn,
@@ -52,6 +53,9 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
 settings = get_settings()
+# Before anything logs: without this the app's INFO lines were dropped.
+configure_logging(settings.LOG_LEVEL)
+configure_error_tracking(settings)
 
 
 def _warm_model_and_corpus() -> None:
