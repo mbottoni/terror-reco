@@ -69,10 +69,11 @@ class TestRegister:
         """Registering with valid data creates the user and signs them in."""
         resp = _register(client)
         assert resp.status_code == 200
-        # Flash success shown on homepage
+        # A new account lands on the taste picks, with the welcome message.
+        assert resp.url.path == "/onboarding/"
         assert "Account created" in resp.text
-        # Avatar visible (first letter of email)
-        assert 'class="avatar-btn"' in resp.text
+        # Signed in: the home page shows the avatar (first letter of email).
+        assert 'class="avatar-btn"' in client.get("/").text
 
         # User exists in DB
         user = db.query(User).filter(User.email == "user@example.com").first()

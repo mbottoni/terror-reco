@@ -22,6 +22,7 @@ from .history import router as history_router
 from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from .models import Impression, Interaction, MovieFeedback, SetFeedback, User, WatchlistItem
+from .onboarding import router as onboarding_router
 from .schemas import (
     FeedbackIn,
     FeedbackOut,
@@ -775,6 +776,7 @@ async def record_interaction(
 # Routers
 app.include_router(auth_router)
 app.include_router(account_router)
+app.include_router(onboarding_router)
 app.include_router(history_router)
 app.include_router(stripe_router)
 app.include_router(watchlist_router)
