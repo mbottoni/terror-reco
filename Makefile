@@ -1,4 +1,4 @@
-.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval eval-gate eval-export tune requirements migrate migration migrate-check
+.PHONY: setup run docker clean format lint typecheck test ci deployment corpus corpus-validate eval eval-gate eval-export providers tune requirements migrate migration migrate-check
 
 
 setup:
@@ -71,6 +71,10 @@ tune:
 # Score the recommender against the gold test set (see docs/evaluation-baseline.md)
 eval:
 	.venv/bin/python scripts/run_eval.py --runs 10
+
+# Refresh the where-to-watch snapshot (availability goes stale within weeks)
+providers:
+	.venv/bin/python scripts/fetch_watch_providers.py
 
 # Rebuild the frozen eval slice that CI replays (tests/test_eval_gate.py).
 # Needed after any intended change to corpus text or embedding_text().

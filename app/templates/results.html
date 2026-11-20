@@ -176,6 +176,7 @@
 
         <div class="modal-actions" id="modal-actions"></div>
 
+        <div class="modal-providers" id="modal-providers"></div>
         <div class="modal-similar" id="modal-similar"></div>
       </div>
     </div>
@@ -328,6 +329,53 @@ function toggleSaved(imdbId){
     .catch(function(){ if(btn){ btn.disabled = false; btn.textContent = 'Try again'; } });
 }
 
+// Where to watch. Built with DOM nodes, never innerHTML: provider names come
+// from a third-party data source. A film with no data shows no section.
+function renderProviders(imdbId){
+  var box = document.getElementById('modal-providers');
+  if(!box) return;
+  box.textContent = '';
+  if(!imdbId) return;
+  fetch('/api/providers/' + encodeURIComponent(imdbId))
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(data){
+      if(_currentIdx === null || (MOVIES[_currentIdx] || {}).imdb_id !== imdbId) return;
+      var heading = document.createElement('h3');
+      heading.className = 'similar-heading';
+      heading.textContent = 'Where to watch (' + data.region + ')';
+      box.appendChild(heading);
+      [['Stream', data.stream], ['Rent', data.rent], ['Buy', data.buy]].forEach(function(row){
+        if(!row[1] || !row[1].length) return;
+        var line = document.createElement('p');
+        line.className = 'provider-row';
+        var label = document.createElement('span');
+        label.className = 'provider-kind';
+        label.textContent = row[0];
+        line.appendChild(label);
+        row[1].forEach(function(name){
+          var chip = document.createElement('span');
+          chip.className = 'provider-chip';
+          chip.textContent = name;
+          line.appendChild(chip);
+        });
+        box.appendChild(line);
+      });
+      // Availability changes weekly and this is a snapshot, so say when it
+      // was taken. TMDB requires the JustWatch credit wherever this is shown.
+      var note = document.createElement('p');
+      note.className = 'provider-note';
+      note.textContent = 'As of ' + data.as_of + '. Data by JustWatch, via TMDB. ';
+      if(data.link && /^https:\/\/www\.themoviedb\.org\//.test(data.link)){
+        var more = document.createElement('a');
+        more.href = data.link; more.target = '_blank'; more.rel = 'noopener';
+        more.textContent = 'Check current availability';
+        note.appendChild(more);
+      }
+      box.appendChild(note);
+    })
+    .catch(function(){ box.textContent = ''; });
+}
+
 function renderSimilar(imdbId){
   var box = document.getElementById('modal-similar');
   if(!box) return;
@@ -413,6 +461,7 @@ function openDetail(idx){
   if(!modalIsOpen()) _lastFocus = document.activeElement;
   _currentIdx = idx;
   logInteraction(m.imdb_id, 'open');
+  renderProviders(m.imdb_id);
   renderSimilar(m.imdb_id);
 
   var modal = document.getElementById('movie-modal');

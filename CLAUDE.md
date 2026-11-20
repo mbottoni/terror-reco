@@ -16,6 +16,7 @@ make docker      # build + run container
 make corpus      # build/refresh the corpus (resumable)
 make eval        # score against the gold set
 make eval-gate   # rebuild the frozen eval slice CI replays
+make providers   # refresh the where-to-watch snapshot (then commit it)
 make migrate     # alembic upgrade head
 make tune        # grid-search blend weights
 ```
@@ -64,6 +65,13 @@ embedding space and a relevant one still wins a slot beside its sibling. Measure
 20% of semantic pages and 12% of unified pages repeated a franchise. The hand-written gold set
 lists several entries of some franchises, so this costs a little NDCG (0.4909 -> 0.4770 unified,
 inside the noise). `scripts/add_collections.py` backfills the field without a corpus rebuild.
+
+**Where to watch** is a second committed data file, `data/watch_providers.json` (TMDB watch
+providers, data by JustWatch; eight regions). It is a **snapshot**: `make providers` refreshes it
+and the file must be re-committed, otherwise it silently goes stale. The modal shows the snapshot
+date and the JustWatch credit, which TMDB's terms require. It is served by `/api/providers/{id}`
+from `services/providers.py` -- a dictionary lookup, no network call -- and is deliberately kept
+out of the corpus so neither the page payload nor the embedded text grows.
 
 ### Everything is deliberately non-deterministic
 

@@ -665,3 +665,12 @@ select{cursor:pointer}
 /* ---- BECAUSE YOU LIKED ---- */
 .card-because{font-size:.75rem;color:#8a8a98;margin-top:8px;line-height:1.4}
 .card-because em{color:#c8c8d0;font-style:normal;font-weight:600}
+
+/* ---- WHERE TO WATCH ---- */
+.modal-providers:empty{display:none}
+.modal-providers{margin-top:18px}
+.provider-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
+.provider-kind{font-size:.7rem;font-weight:700;color:#6b6b78;text-transform:uppercase;letter-spacing:.06em;width:52px}
+.provider-chip{font-size:.75rem;color:#e8e8ec;background:#1e1e26;border:1px solid #2c2c36;border-radius:999px;padding:3px 9px}
+.provider-note{font-size:.72rem;color:#6b6b78;margin-top:8px}
+.provider-note a{color:#9c9caa}

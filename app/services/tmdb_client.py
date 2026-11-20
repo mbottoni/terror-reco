@@ -193,6 +193,16 @@ class TMDBClient:
         data = await self._get(f"/movie/{tmdb_id}/keywords")
         return [k.get("name", "") for k in (data.get("keywords") or []) if k.get("name")]
 
+    async def get_watch_providers(self, tmdb_id: int) -> dict[str, Any]:
+        """Where a film can be streamed, rented or bought, keyed by country code.
+
+        TMDB sources this from JustWatch and requires that attribution wherever
+        the data is shown.
+        """
+        data = await self._get(f"/movie/{tmdb_id}/watch/providers")
+        results = data.get("results") if isinstance(data, dict) else None
+        return dict(results or {})
+
     async def aclose(self) -> None:
         await self._client.aclose()
 
