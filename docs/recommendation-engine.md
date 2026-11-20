@@ -1,75 +1,63 @@
 # Recommendation Engine
 
-This document explains how TerrorReco matches user text to horror movies. It covers the four available strategies, the ML pipeline, scoring signals, diversity mechanisms, and the non-deterministic behaviour that ensures fresh results on every request.
+This document explains how TerrorReco matches a typed mood to horror films: the two strategies, the scoring signals, how variety is kept, and why results differ between searches.
 
-## Design Philosophy
+## Design philosophy
 
-- **No hardcoded keywords** -- matching is purely ML-based. The system understands meaning, not just words.
-- **Corpus-first** -- a pre-built collection of horror movies is searched, not the live API (except for keyword/embedding fallback strategies).
-- **Corpus built offline** -- discovery runs in `scripts/build_corpus.py`, never inside a user request. See [Architecture](architecture.md) for the stage breakdown.
-- **Non-deterministic by design** -- controlled randomness ensures users see different relevant movies each time.
-- **Multiple strategies** -- users can choose the approach that best fits their needs.
+- **Meaning, not keyword lists.** A sentence-transformer compares the query with each film's text, so "slow dread in the countryside" can find folk horror without a hand-written mapping.
+- **Corpus only.** A pre-built collection of films is searched. Nothing on the request path calls TMDB or OMDb; the strategies that did were removed.
+- **Built offline.** The corpus is assembled by `scripts/build_corpus.py`, never inside a request. See [Architecture](architecture.md).
+- **Non-deterministic by design.** Controlled randomness means a repeat search shows different, still relevant films.
+- **Measured.** Ranking changes are checked against an evaluation set, and the honest interval on its headline number is about ±0.06 NDCG, so small "gains" are treated as noise.
 
 ## Strategies
 
-### 1. Semantic Search (default)
+### 1. Semantic search (default)
 
 **Route:** `strategy=semantic`
-**Module:** `app/services/recommender.py` -> `recommend_movies_advanced()`
+**Function:** `recommend_movies_advanced()` in `app/services/recommender.py`
 
-How it works:
+1. Apply the filters (year range, minimum rating, English only) to the corpus. Filtering first, not after retrieval, means a strict filter still gets the best matches among the films that pass.
+2. Embed the query (cached per process) and take cosine similarity against the cached corpus embeddings.
+3. Add temperature-scaled Gaussian noise to the scores of the top candidates.
+4. Keep one film per franchise (see below).
+5. Draw the final page by weighted sampling from the top of the pool.
 
-1. Load the pre-built horror corpus (`data/horror_corpus.json`; build it with `make corpus`).
-2. Load or compute sentence-transformer embeddings for all corpus plots (`data/corpus_embeddings.npy`).
-3. Embed the user's query text with the same model (`all-mpnet-base-v2`).
-4. Compute cosine similarity between the query embedding and all corpus embeddings.
-5. Apply temperature-controlled Gaussian noise to similarity scores (score perturbation).
-6. Return top-K candidates, then apply filters (year, rating, language).
-7. Perform weighted random sampling from the filtered pool for the final selection.
-
-### 2. Unified (AI + Diversity)
+### 2. Unified (AI + diversity)
 
 **Route:** `strategy=unified`
-**Module:** `app/services/unified_recommender.py` -> `recommend_unified_semantic()`
+**Function:** `recommend_unified_semantic()` in `app/services/unified_recommender.py`
 
-Builds on top of semantic search by blending four scoring signals:
+Takes a 60-film pool from the semantic search and re-ranks it by a blend:
 
 | Signal | Weight | Description |
 |--------|--------|-------------|
 | Semantic | 0.45 | Sentence-transformer cosine similarity |
-| Keyword | 0.20 | Token overlap between query and title+plot |
-| Popularity | 0.20 | IMDb rating x log(1 + votes) + Metascore term |
+| Keyword | 0.20 | Okapi BM25 over title, keywords, genre and overview. Document frequencies come from the whole corpus, not the pool |
+| Popularity | 0.20 | IMDb rating × log(1 + votes), plus a small Metascore term |
 | Recency | 0.05 | Weak prior favouring newer films |
+| Taste | 0.15 | Signed-in users with at least three likes: cosine to the mean embedding of their liked films. Added on top, not renormalised |
 
-After blending:
+Then:
 
-1. Add Gaussian noise to blended scores.
-2. Select a pool of top candidates by perturbed score.
-3. Apply **Maximal Marginal Relevance (MMR)** with a jittered lambda to balance relevance vs diversity.
+1. Add Gaussian noise to the blended scores.
+2. Keep one film per franchise, decided on the blended score.
+3. Apply **Maximal Marginal Relevance** with a slightly jittered lambda to trade relevance against variety.
+4. Films the user disliked are demoted below everything else, not removed, so a heavy rater still gets a full page.
 
-### 3. TF-IDF Similarity
+Two alternatives were measured and deliberately left off: tuned blend weights and cross-encoder re-ranking. Both gains sat inside the noise; see `docs/evaluation-baseline.md`.
 
-**Route:** `strategy=embedding`
-**Module:** `app/services/strategies/embedding_omdb.py`
+### What was removed
 
-A lighter-weight approach:
+Two earlier strategies fetched from OMDb during the request: a TF-IDF ranker (`embedding`) and a title-keyword search (`keyword`). TF-IDF fitted a vectoriser on 30 to 120 documents per request, where IDF is meaningless, and both scored below the corpus pipeline. An old link with `strategy=keyword` now falls back to the default.
 
-1. Fetch horror movie candidates from OMDb.
-2. Build a TF-IDF matrix from movie plot descriptions (scikit-learn).
-3. Compute cosine similarity between the user query and each plot.
-4. Rank by similarity score.
+### One film per franchise
 
-### 4. Keyword Match
+Sequels share keywords, genre and plot vocabulary, so they sit close together in embedding space. MMR alone does not separate them: a relevant sequel still wins a slot beside its sibling. Each corpus film records its TMDB collection, and both strategies keep only the best-ranked entry of a collection. Before this rule, 20% of semantic pages and 12% of unified pages repeated a franchise. TMDB groups remakes with their originals, so those count as one franchise too.
 
-**Route:** `strategy=keyword`
-**Module:** `app/services/strategies/keyword_omdb.py`
+### Shared links
 
-The simplest approach:
-
-1. Expand the user's mood into search queries (title fragments, subgenres).
-2. Search OMDb for each query.
-3. Fetch full details for each result.
-4. Rank by IMDb rating weighted by vote count.
+A link produced by "Share these results" carries the film ids (`ids=tt...,tt...`). The page then shows exactly those films and does no ranking. A seed cannot do this: the set on screen is a random, possibly personalised draw.
 
 ## ML Models
 
@@ -77,9 +65,9 @@ The simplest approach:
 
 - **Default model:** `sentence-transformers/all-mpnet-base-v2`
 - **Embedding dimension:** 768
-- **Used for:** Encoding both user queries and movie plot descriptions into the same vector space.
+- **Used for:** Encoding the query and each film's composed text (`embedding_text()`: title, genre, keywords and overview) into the same vector space. Keywords matter most: plot summaries contain almost none of the tone and subgenre words people type, and adding them moved NDCG@6 from 0.31 to 0.50.
 - **Similarity metric:** Cosine similarity (embeddings are L2-normalised).
-- **Pre-download:** The model is pre-downloaded during Docker build and cached locally in `models/` for development.
+- **In the image:** the model is downloaded when the Docker image is built, and the container runs with the hub in offline mode. In development it is cached in `models/`.
 
 The Marimo notebooks (`notebooks/2-embedding-models.py`) compare several alternatives:
 
@@ -97,27 +85,27 @@ The notebook `notebooks/3-cross-encoder.py` evaluates cross-encoder reranking:
 - `cross-encoder/ms-marco-MiniLM-L-6-v2`
 - `cross-encoder/ms-marco-TinyBERT-L-2-v2`
 
-These provide higher precision but at the cost of latency (each query-document pair must be scored individually). Currently available as an optional enhancement.
+On the current 500-film corpus the cross-encoder gained +0.0026 NDCG, lost precision and added about 1.1 seconds per query, so it is off by default (`UNIFIED_USE_CROSS_ENCODER`). The notebook's larger gain was measured on an old 21-film corpus and should not be cited.
 
-## The Horror Movie Corpus
+## The horror corpus
 
-The corpus is built by `app/services/corpus.py`:
+500 films, committed as `data/horror_corpus.json` and built offline by `scripts/build_corpus.py` (`make corpus`):
 
-1. **Search phase** -- paginated OMDb search for horror-related terms.
-2. **Detail phase** -- fetch full details (plot, director, actors, ratings, etc.) for each result.
-3. **Filter** -- only keep titles with "Horror" in their genre.
-4. **Deduplicate** -- by IMDb ID.
-5. **Persist** -- save to `data/horror_corpus.json`.
+1. **Seed** the evaluation gold set, so the films the eval scores against are present.
+2. **Discover** with TMDB (`/discover/movie?with_genres=27`), sorted by vote count, then a decade-stratified fill so the corpus is not all recent films. OMDb is not used for discovery: its search matches titles only and cannot browse a genre.
+3. **Hydrate** each film from TMDB: plot, cast, crew, keywords, certification, franchise.
+4. **Enrich** from OMDb with the IMDb rating and vote count, Metascore and awards. `vote_average` is always on the IMDb scale, which the rating filter and the popularity signal assume.
+5. **Validate** size, duplicates, decade spread and gold coverage, then write the file.
 
-Each corpus entry contains:
+Each record holds:
 
 ```
-imdb_id, title, overview (plot), poster_url, release_date, year,
-vote_average (IMDb rating), genre, director, actors, writer,
-runtime, language, country, rated, awards, imdbVotes, Metascore
+imdb_id, tmdb_id, title, overview, keywords, genre, poster_url, release_date, year,
+vote_average (IMDb), imdbVotes, Metascore, rating_source, director, actors, writer,
+runtime, language, country, rated, awards, collection_id, collection
 ```
 
-The corpus is built once on the first request and cached. It can be incrementally updated.
+A request never builds or extends the corpus. A 1,200-film version was tried and measured worse on the gold set, so the size stayed at 500; the gold set favours famous films, so that result says the larger corpus could not be shown to be better, not that it is worse.
 
 ## Non-Deterministic Recommendations
 
@@ -147,17 +135,17 @@ Users can apply these filters from the Advanced Filters panel:
 | Max year | `max_year` | Exclude movies after this year |
 | Min IMDb rating | `min_rating` | Exclude movies below this IMDb score (0-10) |
 | Results count | `limit` | Number of recommendations (1-20) |
-| Type | `kind` | Movie, series, or both |
 | English only | `english` | Only show English-language titles |
 
-Filters are applied after semantic scoring but before the final sampling step, so filtered-out movies don't take up slots.
+Filters are applied to the corpus **before** ranking. Applied afterwards, a strict filter could leave only a few weak survivors out of the top results. When filters leave nothing at all, the results page names the filter responsible and how many films removing it would allow.
 
 ## Evaluation
 
-The Marimo notebooks provide a rigorous evaluation framework:
+- **Gold set:** 15 hand-written moods with expected films, in `notebooks/1-evaluation.py`.
+- **`make eval`** (`scripts/run_eval.py`): Hit Rate, Precision, NDCG and MRR at 6, a paired comparison of the two strategies with a bootstrap confidence interval, and retrieval recall separately from ranking.
+- **CI gate** (`tests/test_eval_gate.py`): a frozen slice of the eval, replayed on every push without the model. It fails if NDCG collapses or if the text that gets embedded changes.
+- **From real use:** per-film likes, one-click verdicts on a whole result set, and anonymous usage data (what was shown, opened, clicked through to and saved) are exported as graded cases by `make eval-export`.
 
-- **Gold test set** -- mood/title pairs with known good matches.
-- **Metrics** -- Hit Rate@K, Precision@K, NDCG@K, Mean Reciprocal Rank (MRR).
-- **Experiments** -- model comparison, cross-encoder evaluation, weight grid search.
+The limits are recorded in `docs/evaluation-baseline.md`: the gold set is small and favours famous films, and the honest interval on NDCG@6 is about ±0.06, so a ranking change smaller than that cannot be shown to help.
 
-See [notebooks.md](notebooks.md) for details.
+See [notebooks.md](notebooks.md) for the experiments.

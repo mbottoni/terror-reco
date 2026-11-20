@@ -1,122 +1,140 @@
 # Database
 
-TerrorReco uses SQLAlchemy ORM for database access. In development it defaults to SQLite; in production it connects to PostgreSQL (e.g. on Render).
+TerrorReco uses SQLAlchemy 2. Development defaults to a SQLite file; production
+runs PostgreSQL in a container beside the app. The models are in
+`app/models.py`; this page summarises them.
 
-## Connection Management
+## Connection management
 
-Defined in `app/db.py`:
+`app/db.py` builds the engine from `DATABASE_URL`.
 
-- **URL normalisation** -- converts `postgres://` URLs (common in PaaS) to `postgresql+psycopg://` for SQLAlchemy.
-- **SSL handling** -- adds `sslmode=require` for PostgreSQL connections.
-- **Retry logic** -- `init_db()` retries table creation up to 3 times with exponential backoff.
-- **Session dependency** -- `get_db()` is a FastAPI dependency that yields a session and auto-closes it.
+- `postgres://` and `postgresql://` URLs are normalised to the
+  `postgresql+psycopg` dialect.
+- SSL is passed as a connect argument, taken from `DATABASE_SSLMODE` (default
+  `require`, for managed PostgreSQL). The production container has no TLS, so
+  it sets `DATABASE_SSLMODE=disable`.
+- `init_db()` runs the Alembic migrations at startup, retrying with backoff.
+  It never raises: the app boots even with the database down, and `/healthz`
+  still answers.
+- `get_db()` is the FastAPI dependency that yields a session per request.
 
-## Models
+## Tables
 
-All models are defined in `app/models.py` and inherit from `Base` (declared in `app/db.py`).
+### Accounts
 
-### User
+**`users`**
 
-Stores registered user accounts.
+| Column | Notes |
+|--------|-------|
+| `id` | Primary key |
+| `email` | Unique. Stored trimmed and lowercased |
+| `password_hash` | Argon2 |
+| `session_version` | Copied into the session at sign-in and checked on every request. Bumping it signs the user out everywhere |
+| `created_at` | |
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | Integer | Primary key, auto-increment |
-| `email` | String(256) | Unique, indexed |
-| `password_hash` | String(512) | Argon2 hash |
-| `created_at` | DateTime | Default: `utcnow()` |
+**`password_reset_tokens`** — one row per emailed reset link.
 
-**Relationships:**
-- `searches` -> `SearchHistory` (one-to-many)
-- `feedback` -> `MovieFeedback` (one-to-many)
+| Column | Notes |
+|--------|-------|
+| `user_id` | Deleted with the user |
+| `token_hash` | SHA-256 of the token. The token itself is never stored |
+| `expires_at`, `used_at` | Links last 30 minutes and work once |
 
-### SearchHistory
+### What a signed-in user did
 
-Records each recommendation search a user performs.
+**`search_history`** — one row per search: `user_id`, `mood`, `strategy`,
+`created_at`. (`results_json` is a legacy column, no longer written.)
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | Integer | Primary key, auto-increment |
-| `user_id` | Integer | Foreign key -> `users.id`, indexed |
-| `mood` | String(512) | The user's query text |
-| `strategy` | String(64) | Which strategy was used |
-| `results_json` | JSON (`dict[str, Any]`) | The full results payload |
-| `created_at` | DateTime | Default: `utcnow()` |
+**`search_results`** — the films that search returned, in rank order:
+`search_id`, `position`, `imdb_id`, `title`. Deleted with the search.
 
-**Relationships:**
-- `user` -> `User` (many-to-one)
+**`movie_feedback`** — a like (`rating = 1`) or dislike (`-1`) per user and
+film, unique on `(user_id, imdb_id)`, with the `mood` and `strategy` it was
+given under. Feeds personalisation. Picks made at onboarding are rows here
+with `strategy = "onboarding"` and no mood.
 
-### MovieFeedback
+**`watchlist`** — films saved to watch later: `user_id`, `imdb_id`, `title`,
+`poster_url`, unique on `(user_id, imdb_id)`. Kept apart from feedback on
+purpose: saving a film says nothing about liking it.
 
-Stores per-user per-movie like/dislike ratings.
+### Payments
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | Integer | Primary key, auto-increment |
-| `user_id` | Integer | Foreign key -> `users.id`, indexed |
-| `imdb_id` | String(20) | IMDb ID, indexed |
-| `title` | String(512) | Movie title (denormalised for convenience) |
-| `rating` | Integer | `+1` (like) or `-1` (dislike) |
-| `mood` | String(512) | Nullable -- the query that prompted this |
-| `strategy` | String(64) | Nullable -- which strategy was active |
-| `created_at` | DateTime | Default: `utcnow()` |
-| `updated_at` | DateTime | Default: `utcnow()`, auto-updated on change |
+**`payments`** — one row per completed Stripe checkout, written by the webhook.
 
-**Constraints:**
-- Unique constraint on `(user_id, imdb_id)` -- each user can rate each movie once.
+| Column | Notes |
+|--------|-------|
+| `checkout_session_id` | Unique, which makes repeated webhook deliveries harmless |
+| `stripe_event_id`, `payment_intent_id` | |
+| `amount_total`, `currency` | Amount in minor units |
+| `status` | `paid` or `refunded` |
+| `user_id` | Optional. Set to null, not deleted, when the account is deleted |
 
-**Relationships:**
-- `user` -> `User` (many-to-one)
+### Anonymous usage data
 
-## Schema Diagram
+These exist to build an evaluation set from real use. They are keyed by a
+random per-session `visitor_id`, with no IP address and no user agent.
+
+**`set_feedback`** — a "good picks" (`verdict = 1`) or not (`-1`) on a whole
+result set: `mood`, `strategy`, `imdb_ids` (in the order shown), `result_key`.
+Unique on `(visitor_id, result_key)`. Carries an optional `user_id`, set to
+null when that account is deleted.
+
+**`impressions`** — a result set that was rendered: `result_key`, `mood`,
+`strategy`, `imdb_ids`. Unique on `(visitor_id, result_key)`. No user link.
+Preview crawlers and shared-link views are not recorded.
+
+**`interactions`** — something a visitor did with one film in a set they were
+shown: `result_key`, `imdb_id`, `kind` (`open`, `imdb_click`, `save`,
+`similar_click`) and `position` (the rank it was shown at). One row per
+visitor, set, film and kind.
+
+`result_key` is the SHA-256 of the mood and the ordered film ids, so it
+identifies "this set for this mood" across the three tables.
+
+## Relationships
 
 ```
-users
-  id (PK)
-  email (UNIQUE)
-  password_hash
-  created_at
-      |
-      |--- 1:N ---> search_history
-      |                id (PK)
-      |                user_id (FK)
-      |                mood
-      |                strategy
-      |                results_json
-      |                created_at
-      |
-      |--- 1:N ---> movie_feedback
-                       id (PK)
-                       user_id (FK)
-                       imdb_id
-                       title
-                       rating
-                       mood
-                       strategy
-                       created_at
-                       updated_at
-                       UNIQUE(user_id, imdb_id)
+users ─┬─< search_history ──< search_results
+       ├─< movie_feedback
+       ├─< watchlist
+       ├─< password_reset_tokens
+       ├─< payments          (user_id nullable, kept on account deletion)
+       └─< set_feedback      (user_id nullable, kept on account deletion)
+
+impressions ··· interactions   (joined by result_key and visitor_id; no user)
 ```
 
-## Table Creation
+Deleting an account removes the user, their history and result rows,
+feedback, watchlist and reset tokens, and unlinks their payments and set
+verdicts.
 
-Tables are created automatically on application startup via `init_db()` called in the `@app.on_event("startup")` handler. SQLAlchemy's `Base.metadata.create_all()` is used, which is safe to call multiple times (it only creates missing tables).
+## Migrations
 
-## Switching Databases
+Schema changes go through Alembic (`migrations/`).
+
+```bash
+make migration m="what changed"   # autogenerate from the models
+make migrate                      # upgrade to head
+make migrate-check                # fail if models and migrations have drifted
+```
+
+The app runs `alembic upgrade head` at startup, so a deploy migrates itself.
+Migrations only run forward: rolling the app back to an older version does not
+roll the schema back.
+
+## Environments
 
 | Environment | Database | Configuration |
 |-------------|----------|---------------|
-| Development | SQLite | Default when `DATABASE_URL` is not set (`sqlite:///./terror_reco.db`) |
-| Testing | SQLite (in-memory) | Set up in `tests/conftest.py` |
-| Production | PostgreSQL | Set `DATABASE_URL=postgresql+psycopg://...` |
+| Development | SQLite file | Default when `DATABASE_URL` is unset (`sqlite:///./app.db`) |
+| Tests | SQLite in memory | Set up in `tests/conftest.py`; tables are created per test |
+| Production | PostgreSQL 17 | `DATABASE_URL=postgresql://terror:<password>@db:5432/terror`, `DATABASE_SSLMODE=disable` |
 
-## Future: Migrations
+SQLite does not enforce foreign keys by default, so behaviour that depends on
+`ON DELETE` rules is also done explicitly in code (see `delete_account()`),
+and was verified once against the production PostgreSQL.
 
-Currently, schema changes require dropping and recreating tables. For production evolution, consider adding Alembic:
+## Backups
 
-```bash
-pip install alembic
-alembic init alembic
-alembic revision --autogenerate -m "initial"
-alembic upgrade head
-```
+A nightly `pg_dump` with rotation and a restore check. See
+[deployment.md](deployment.md#backups).

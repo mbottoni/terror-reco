@@ -1,186 +1,163 @@
 # API Reference
 
-All endpoints are served by the FastAPI application at `app/main.py` and its routers.
+Every route the application serves. Routes live in `app/main.py` and the
+routers it includes.
+
+Three rules apply throughout:
+
+- **CSRF.** Every `POST` except the Stripe webhook needs the session's CSRF
+  token: a hidden `csrf` form field, or an `X-CSRF-Token` header for `fetch`.
+  Each page carries the token in `<meta name="csrf-token">`. A missing or
+  wrong token is `403`.
+- **Rate limits** are per client address, per minute: 10 for sign-in,
+  registration, password reset and account changes; 10 for checkout; 30 for
+  searches; 120 for feedback, watchlist and usage writes; 120 for
+  where-to-watch lookups. Over the limit is `429` with `Retry-After`.
+- **Validation.** JSON bodies are validated; a malformed body is `422`.
 
 ## Pages (HTML)
 
 ### `GET /`
 
-Homepage with the search form, strategy selector, and advanced filters.
-
-**Response:** HTML page.
+Home page: search form, strategy selector, filters, and the account menu.
 
 ### `GET /recommend`
 
-Main recommendation endpoint. Returns an HTML page with the movie results grid.
+The results page.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `mood` | string (required) | -- | The user's free-text mood/vibe description |
-| `strategy` | string | `"semantic"` | One of: `semantic`, `unified`, `embedding`, `keyword` |
-| `min_year` | int | `null` | Minimum release year (1900-2100) |
-| `max_year` | int | `null` | Maximum release year (1900-2100) |
-| `min_rating` | float | `null` | Minimum IMDb rating (0-10, step 0.1) |
-| `limit` | int | `6` | Number of results (1-20) |
-| `kind` | string | `"movie"` | `movie`, `series`, or `both` |
-| `english` | int | `null` | Set to `1` for English-only results |
+| `mood` | string, required | -- | Free-text description of what to watch |
+| `strategy` | string | `semantic` | `semantic` or `unified`. Anything else falls back to the default |
+| `min_year`, `max_year` | int | none | Release year bounds (1900 to 2100) |
+| `min_rating` | float | none | Minimum IMDb rating (0 to 10) |
+| `limit` | int | `6` | Number of films (1 to 20) |
+| `english` | int | none | `1` for English-language films only |
+| `seed` | int | none | Makes the result reproducible and turns the randomness off. Used by the eval |
+| `ids` | string | none | Comma-separated IMDb ids. Shows exactly these films, with no ranking. This is what a shared link carries |
 
-**Response:** HTML page with movie cards, detail modal, and feedback buttons.
+Filters are applied before ranking. If they leave nothing, the page names the
+filter responsible.
 
-### `GET /login`
+### Accounts
 
-Login form page.
+| Route | Purpose |
+|-------|---------|
+| `GET /auth/login`, `POST /auth/login` | Sign in (`email`, `password`) |
+| `GET /auth/register`, `POST /auth/register` | Create an account (`email`, `password`, `confirm_password`). Lands on `/onboarding/` |
+| `POST /auth/logout` | Sign out on this device |
+| `POST /auth/logout-all` | Sign out on every device |
+| `GET /auth/forgot`, `POST /auth/forgot` | Ask for a password-reset email (`email`). The answer is the same whether or not the address is registered. Unavailable until an email provider is configured |
+| `GET /auth/reset/{token}`, `POST /auth/reset/{token}` | Choose a new password (`new_password`, `confirm_password`). Links last 30 minutes and work once |
+| `GET /onboarding/`, `POST /onboarding/` | Pick films you love (`imdb_id`, repeated). Each becomes a like |
+| `GET /account/` | Account settings |
+| `POST /account/password` | Change password (`current_password`, `new_password`, `confirm_password`). Signs out other devices |
+| `POST /account/email` | Change email (`new_email`, `current_password`) |
+| `GET /account/export` | Download your data as JSON |
+| `POST /account/delete` | Delete the account and its data (`current_password`) |
+| `GET /history/` | Your past searches |
+| `GET /watchlist/` | Your saved films |
 
-### `POST /login`
+Pages that need an account redirect to `/auth/login` when signed out.
 
-Process login.
+## JSON endpoints
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `email` | string | User email |
-| `password` | string | User password |
-| `csrf_token` | string | CSRF token from the form |
+### `GET /api/recommendations`
 
-**Response:** Redirect to `/` on success, back to `/login` on failure.
-
-### `GET /register`
-
-Registration form page.
-
-### `POST /register`
-
-Process registration.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `email` | string | User email |
-| `password` | string | Password (min 8 chars) |
-| `csrf_token` | string | CSRF token from the form |
-
-**Response:** Redirect to `/` on success, back to `/register` on failure.
-
-### `GET /logout`
-
-Log out and clear session.
-
-**Response:** Redirect to `/`.
-
-### `GET /history`
-
-User's search history page (requires authentication).
-
-**Response:** HTML page with past searches, or redirect to `/login`.
-
-## API Endpoints (JSON)
-
-### `GET /api/recommend`
-
-JSON API for recommendations (programmatic access).
+Semantic-strategy results as JSON.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `mood` | string (required) | -- | Free-text mood description |
-| `limit` | int | `6` | Number of results (1-20) |
-| `strategy` | string | `"keyword"` | `keyword` or `embedding` |
-
-**Response:**
+| `mood` | string, required | -- | Free-text description |
+| `limit` | int | `6` | Number of films |
+| `seed` | int | none | Reproducible, deterministic result |
 
 ```json
-{
-  "mood": "haunted house",
-  "strategy": "keyword",
-  "results": [
-    {
-      "imdb_id": "tt0167404",
-      "title": "The Sixth Sense",
-      "overview": "A boy who communicates with spirits...",
-      "poster_url": "https://...",
-      "year": "1999",
-      "vote_average": 8.2,
-      "genre": "Drama, Mystery, Thriller",
-      "director": "M. Night Shyamalan",
-      "actors": "Bruce Willis, Haley Joel Osment, ...",
-      "runtime": "107 min",
-      "rated": "PG-13",
-      "language": "English, Latin, Spanish",
-      "country": "United States",
-      "awards": "Nominated for 6 Oscars. ..."
-    }
-  ]
-}
+{"mood": "folk horror", "count": 6, "results": [{"imdb_id": "tt0070917", "title": "The Wicker Man", "...": "..."}]}
 ```
+
+`503` if the corpus is missing.
+
+### `GET /api/similar/{imdb_id}`
+
+Films most like the given one, by embedding similarity. `limit` (1 to 20,
+default 6). `404` for a film that is not in the corpus.
+
+### `GET /api/providers/{imdb_id}`
+
+Where a film can be streamed, rented or bought, from a stored snapshot. The
+region comes from `?region=XX` or, failing that, the `Accept-Language` header.
+Stored regions: US, GB, CA, AU, BR, DE, FR, ES.
+
+```json
+{"region": "GB", "as_of": "2026-11-20", "stream": ["Amazon Prime Video"],
+ "rent": ["Apple TV Store"], "buy": ["Apple TV Store"],
+ "link": "https://www.themoviedb.org/movie/530385/watch?locale=GB"}
+```
+
+`404` when nothing is known for that film and region. `as_of` is the snapshot
+date: availability changes often. Data by JustWatch, via TMDB.
 
 ### `POST /api/feedback`
 
-Submit a like (+1) or dislike (-1) for a movie. Requires authentication.
-
-**Request body (JSON):**
+Like or dislike a film. Requires sign-in (`401` otherwise).
 
 ```json
-{
-  "imdb_id": "tt0167404",
-  "title": "The Sixth Sense",
-  "rating": 1,
-  "mood": "haunted house",
-  "strategy": "semantic"
-}
+{"imdb_id": "tt0070917", "title": "The Wicker Man", "rating": 1, "mood": "folk horror", "strategy": "unified"}
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `imdb_id` | string (required) | IMDb ID of the movie |
-| `title` | string | Movie title |
-| `rating` | int (required) | `1` (like) or `-1` (dislike) |
-| `mood` | string | The query that generated this recommendation |
-| `strategy` | string | The strategy that was used |
+`rating` is `1` or `-1`. Sending the same rating again removes it; the other
+one switches it. Response: `{"status": "created" | "updated" | "removed", "imdb_id": "...", "rating": 1 | 0 | -1}`.
 
-**Behaviour:**
-- First submission: creates the feedback entry.
-- Same rating again: **toggles off** (removes the feedback).
-- Different rating: **switches** (updates from like to dislike or vice versa).
+### `POST /api/set-feedback`
 
-**Response:**
+A verdict on a whole result set. Open to signed-out visitors.
 
 ```json
-{
-  "status": "created",
-  "imdb_id": "tt0167404",
-  "rating": 1
-}
+{"mood": "folk horror", "strategy": "unified", "imdb_ids": ["tt0070917", "tt8772262"], "verdict": 1}
 ```
 
-Status can be `"created"`, `"updated"`, or `"removed"`.
+`verdict` is `1` (good picks) or `-1`. Same toggle behaviour as above.
+Response: `{"status": "...", "verdict": 1 | 0 | -1}`.
 
-**Errors:**
-- `401` if not authenticated.
-- `400` if `imdb_id` is empty or `rating` is not `1` or `-1`.
+### `POST /api/interaction`
 
-## Stripe Endpoints
+Anonymous usage logging: a visitor opened, clicked through to, or saved a film.
 
-### `GET /stripe/coffee`
+```json
+{"result_key": "<64 hex characters from the page>", "imdb_id": "tt0070917", "kind": "open"}
+```
 
-"Buy me a coffee" payment page.
+`kind` is `open`, `imdb_click`, `save` or `similar_click`. Accepted only for a
+result set that this same visitor was shown, and a film in it. Response:
+`{"status": "recorded" | "duplicate" | "ignored"}`.
 
-### `POST /stripe/create-checkout-session`
+### `POST /watchlist/toggle`
 
-Creates a Stripe Checkout session and redirects to Stripe.
+Save a film, or remove it if already saved. Requires sign-in.
 
-### `GET /stripe/success`
+```json
+{"imdb_id": "tt0070917", "title": "The Wicker Man", "poster_url": "https://image.tmdb.org/t/p/w500/..."}
+```
 
-Success page after completed payment.
+Response: `{"status": "added" | "removed", "imdb_id": "...", "saved": true | false}`.
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `session_id` | string | Stripe session ID |
+### `GET /healthz`
 
-### `GET /stripe/cancel`
+Liveness and readiness. `{"status": "ok", "corpus_films": 500, "embeddings_ready": true}`,
+or `"degraded"` when the corpus or its embeddings are missing. Always `200`.
 
-Cancellation page when user abandons payment.
+## Stripe
 
-### `POST /stripe/webhook`
+| Route | Purpose |
+|-------|---------|
+| `GET /stripe/coffee` | The donation page. `503` page when Stripe is not configured |
+| `POST /stripe/create-checkout-session` | Starts a Checkout session. Returns `{"checkout_url": "..."}` |
+| `GET /stripe/success?session_id=...` | Thank-you page, shown only when Stripe confirms the session is paid and belongs to this app |
+| `GET /stripe/cancel` | Shown when checkout is abandoned |
+| `POST /stripe/webhook` | Stripe events, verified by signature. Records completed payments once, and marks refunds |
 
-Stripe webhook endpoint. Validates the webhook signature and processes `checkout.session.completed` events.
+## Static files
 
-### `GET /stripe/debug`
-
-Debug endpoint showing Stripe configuration status (only useful in development).
+`/static/...`. The stylesheet is linked with a content hash
+(`/static/styles.css?v=...`) and cached for a year; fonts likewise.

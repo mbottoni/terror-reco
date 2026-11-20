@@ -30,7 +30,7 @@ Notebooks are Marimo `.py` files (reactive; a variable may be defined in only on
 
 ## Architecture
 
-FastAPI app, fully server-rendered with Jinja2. Movie data comes from **OMDb**; ranking is done with **sentence-transformers** (`all-mpnet-base-v2`). No SPA — a little inline JS drives the detail modal and the feedback AJAX call.
+FastAPI app, fully server-rendered with Jinja2. Movie data comes from **TMDB** (discovery, keywords, franchises, providers) and **OMDb** (IMDb ratings); ranking is done with **sentence-transformers** (`all-mpnet-base-v2`). No SPA — a little inline JS drives the detail modal and the feedback AJAX call.
 
 **Request path:** `index.html` form → `GET /recommend` (`app/main.py`) → strategy router → `results.html`. There is no interstitial: the `/loading` page and its param-forwarding array were removed, so a new query parameter needs only the `Query()` signature in `ui_recommendations()` and the form input in `index.html`.
 
@@ -87,7 +87,7 @@ Three independent randomness sources, all intentional: Gaussian score perturbati
 
 - `data/horror_corpus.json` **is committed** (626 KB) and copied into the Docker image, so deploys need no TMDB/OMDb keys at build time. Embeddings (`.npy`) and the build checkpoint stay gitignored and are regenerated from the corpus on first use.
 - Filters are applied to the corpus **before** ranking (`_passes_filters` in `recommender.py`), keeping corpus rows and embedding rows aligned. Filtering the top-K afterwards used to starve restrictive queries.
-- CSRF tokens are HMAC-verified but not bound to the session: `validate_csrf_token()` never compares against `request.session["csrf"]`, so a token from any session validates in any other.
+- Every state-changing route requires the session's CSRF token (`require_csrf` in `security.py`), as a hidden `csrf` field or an `X-CSRF-Token` header. One token per session, read by page scripts from `<meta name="csrf-token">`. The test `client` fixture sends it automatically; use a plain `TestClient` to test the check itself.
 - `scripts/manual/` holds hand-run scripts (`manual_*.py`, `debug_stripe.py`, `deployment_checklist.py`) that hit real services. They predate the Hetzner deploy and are not maintained; `tests/` contains only pytest files.
 - No test touches the network (the request path has no outbound calls left); `conftest.py` forces `DEBUG=true` so session cookies aren't `Secure` (TestClient speaks plain HTTP) and swaps the DB for in-memory SQLite.
 

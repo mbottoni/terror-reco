@@ -19,7 +19,7 @@ pip install stripe>=7.0.0
 4. Copy the Price ID (starts with `price_`)
 
 ### 4. Environment Variables
-Add these to your `.env` file or Render environment:
+Add these to your `.env` file locally, or to `/opt/terror-reco/.env.prod` on the server:
 
 ```bash
 # Stripe Configuration

@@ -1,8 +1,8 @@
 # TerrorReco
 
-> A horror movie recommendation engine powered by semantic search, sentence-transformers, and the OMDb API.
+> Describe a mood, get horror films that fit it. Semantic search with sentence-transformers over a curated corpus built from TMDB and OMDb.
 
-[![CI](https://github.com/maruanottoni/terror_reco/actions/workflows/ci.yml/badge.svg)](https://github.com/maruanottoni/terror_reco/actions)
+[![CI](https://github.com/mbottoni/terror-reco/actions/workflows/ci.yml/badge.svg)](https://github.com/mbottoni/terror-reco/actions)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -21,44 +21,49 @@ The system uses **ML-based semantic search** (sentence-transformers) against a p
 
 ## Key Features
 
-- **Semantic Search** -- sentence-transformer embeddings (`all-mpnet-base-v2`) match your text against movie plot descriptions by meaning, not keywords
-- **4 Recommendation Strategies** -- Semantic Search, Unified (AI + Diversity via MMR), TF-IDF Similarity, and Keyword Match, selectable from the UI
-- **Non-Deterministic Results** -- controlled randomness (score perturbation, weighted sampling, jittered MMR) ensures fresh recommendations every time
-- **Advanced Filters** -- minimum year, maximum year, minimum IMDb rating, result count, type (movie/series), English-only toggle
-- **Movie Detail Modal** -- click any card to see full details (director, cast, runtime, genre, awards) with a direct IMDb link
-- **Like / Dislike Feedback** -- logged-in users can rate recommendations; feedback is stored for future personalisation
-- **User Accounts** -- registration, login, session management with Argon2 password hashing and CSRF protection
-- **Search History** -- past searches are saved and browsable per user
-- **Stripe Integration** -- "Buy me a coffee" payments with checkout, webhooks, success/cancel flows
-- **Dark Horror UI** -- fully responsive dark theme designed for the genre
-- **Docker & CI/CD** -- Dockerfile with pre-downloaded ML model, GitHub Actions pipeline (lint, type-check, test, build)
+**Finding films**
+- **Semantic search** -- sentence-transformer embeddings (`all-mpnet-base-v2`) match your text against each film's title, genre, keywords and plot by meaning
+- **Two strategies** -- Semantic Search, and Unified (semantic + BM25 keywords + popularity + recency, with MMR for variety)
+- **Fresh results every time** -- controlled randomness, and never two films from the same franchise on one page
+- **Filters** -- year range, minimum IMDb rating, English only, result count
+- **Refine in place** -- edit the mood, drop a filter or shuffle from the results page; an empty page says which filter caused it
+- **Film details** -- cast, crew, runtime, awards, an IMDb link, "more like this" and where to watch in your region
+- **Shareable results** -- a link that reproduces exactly the films on screen, with a proper preview when pasted
+
+**Accounts**
+- **Personalisation** -- pick films you love at sign-up; results lean towards your taste and say "because you liked ..."
+- **Watchlist and history** -- save films for later; past searches are kept
+- **Account controls** -- change password or email, download your data, delete your account, sign out everywhere, reset a forgotten password by email
+- **Security** -- Argon2 hashing, revocable sessions, CSRF tokens on every write, rate limits, security headers
+
+**Running it**
+- **No network calls per request** -- the corpus, embeddings and provider data ship with the app
+- **Measured ranking** -- an evaluation suite, and a frozen slice of it replayed in CI
+- **One-command deploys** -- push to `main`: tests, image build, an offline smoke test of the image, deploy, health check; one-click rollback; nightly database backups
+- **Stripe** -- "Buy me a coffee" checkout, with payments recorded from the webhook
 
 ## Architecture at a Glance
 
 ```
-User Query
+User query
     |
     v
-[FastAPI App]  -->  Strategy Router
-    |                   |
-    |    +--------------+--------------+--------------+
-    |    |              |              |              |
-    v    v              v              v              v
- Semantic          Unified         TF-IDF        Keyword
- (corpus +      (semantic +      (sklearn       (OMDb title
-  SBERT          blended +       cosine on       search +
-  embeddings)    MMR diversity)  OMDb plots)     IMDb rank)
-    |              |              |              |
-    +--------------+--------------+--------------+
-                   |
-                   v
-            [Filters & Sampling]
-            (year, rating, language,
-             stochastic selection)
-                   |
-                   v
-            [Results Page]
-            (cards, modal, feedback)
+[FastAPI]  -->  filters (year, rating, language)  -->  strategy
+                                                      |
+                             +------------------------+------------------------+
+                             |                                                 |
+                             v                                                 v
+                         Semantic                                           Unified
+                  (cosine similarity on                        (semantic pool re-ranked by a blend:
+                   cached corpus embeddings)                    semantic + BM25 + popularity + recency
+                             |                                  + your taste, then MMR for variety)
+                             +------------------------+------------------------+
+                                                      |
+                                                      v
+                              one film per franchise, stochastic selection
+                                                      |
+                                                      v
+                                   [Results page: cards, details, feedback]
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full system design.
@@ -74,8 +79,8 @@ See [docs/architecture.md](docs/architecture.md) for the full system design.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/maruanottoni/terror_reco.git
-cd terror_reco
+git clone https://github.com/mbottoni/terror-reco.git
+cd terror-reco
 make setup
 # or manually:
 python3.11 -m venv .venv && source .venv/bin/activate
@@ -84,32 +89,41 @@ pip install -U pip && pip install -e '.[dev]'
 
 ### 2. Configure environment
 
+Create a `.env` file in the project root:
+
 ```bash
-cp .env.example .env   # then edit with your keys
+DEBUG=1
+SECRET_KEY=any-value-is-fine-with-debug-on
+# Only needed to rebuild the corpus or refresh the where-to-watch snapshot:
+TMDB_BEARER_TOKEN=...
+OMDB_API_KEY=...
 ```
 
-Required variables:
+Variables:
 
 | Variable | Description |
 |----------|-------------|
 | `TMDB_BEARER_TOKEN` | TMDB API Read Access Token — used to discover films for the corpus |
 | `OMDB_API_KEY` | Your OMDb API key — used to enrich films with IMDb rating/votes |
 | `DEBUG` | Set to `1` for local development |
-| `SECRET_KEY` | Session encryption key (auto-generated if missing) |
+| `SECRET_KEY` | Signs sessions and CSRF tokens. Any value works with `DEBUG=1`; production requires a random one of at least 32 characters |
 
 See [docs/deployment.md](docs/deployment.md) for all environment variables.
 
-### 3. Build the horror corpus
+### 3. The horror corpus
+
+The corpus (`data/horror_corpus.json`, 500 films) is committed, so there is nothing to build
+before the first run. Embeddings are computed from it on first use.
+
+To rebuild or refresh it:
 
 ```bash
 make corpus
 ```
 
-Discovers ~500 horror films via TMDB, enriches them with OMDb ratings, and computes
-sentence-transformer embeddings. Takes a few minutes and is **resumable** — re-run the
-same command after any interruption and it picks up where it stopped.
-
-The app will not serve corpus-based recommendations until this has run.
+This discovers films via TMDB, enriches them with OMDb ratings and computes embeddings. It takes
+a few minutes and is **resumable**. After changing corpus text, run `make eval-gate` as well: CI
+replays a frozen slice of the evaluation and will fail until that fixture is rebuilt.
 
 ### 4. Run the server
 
@@ -126,8 +140,6 @@ Open [http://localhost:8000](http://localhost:8000) and start describing your ho
 ### 5. Run with Docker
 
 ```bash
-docker compose up --build
-# or:
 docker build -t terror-reco:latest .
 docker run --env-file .env -p 8000:8000 terror-reco:latest
 ```
@@ -135,36 +147,43 @@ docker run --env-file .env -p 8000:8000 terror-reco:latest
 ## Project Structure
 
 ```
-terror_reco/
-├── app/                        # FastAPI application
-│   ├── main.py                 # App entry point, routes, startup
-│   ├── auth.py                 # Authentication (login, register, logout)
-│   ├── history.py              # Search history management
-│   ├── models.py               # SQLAlchemy models (User, SearchHistory, MovieFeedback)
-│   ├── db.py                   # Database connection & session management
-│   ├── security.py             # Argon2 hashing, CSRF tokens
-│   ├── settings.py             # Pydantic Settings configuration
-│   ├── stripe_payments.py      # Stripe "Buy me a coffee" integration
+terror-reco/
+├── app/
+│   ├── main.py                 # App, middleware, recommendation routes and APIs
+│   ├── auth.py                 # Register, sign in, sign out, session revocation
+│   ├── account.py              # Change password/email, export, delete account
+│   ├── password_reset.py       # Reset by emailed single-use link
+│   ├── onboarding.py           # Pick films you love after sign-up
+│   ├── history.py, watchlist.py
+│   ├── stripe_payments.py      # Checkout and webhook (records payments)
+│   ├── models.py, schemas.py   # SQLAlchemy models; request/response models
+│   ├── db.py                   # Engine, sessions, startup migrations
+│   ├── security.py             # Argon2, CSRF, URL checks
+│   ├── middleware.py           # Security headers, rate limits
+│   ├── observability.py        # Logging, optional Sentry
+│   ├── static_assets.py        # Fingerprinted static URLs
+│   ├── settings.py             # Pydantic settings
 │   ├── services/
-│   │   ├── corpus.py           # Corpus load/save, TMDB mapping, semantic search
-│   │   ├── recommender.py      # Recommendation orchestrator (strategy routing)
-│   │   ├── tmdb_client.py      # Async TMDB API client (corpus discovery)
-│   │   ├── omdb_client.py      # Async OMDb API client (rating enrichment)
-│   │   ├── unified_recommender.py  # Unified blended scorer with MMR
-│   │   └── strategies/
-│   │       ├── base.py         # Strategy protocol/interface
-│   │       ├── keyword_omdb.py # Keyword search + IMDb ranking
-│   │       └── embedding_omdb.py   # TF-IDF cosine similarity
-│   ├── templates/              # Jinja2 HTML templates
-│   └── static/                 # CSS, images, assets
-├── notebooks/                  # Marimo & Jupyter evaluation notebooks
-├── tests/                      # Pytest test suite
-├── docs/                       # Project documentation
-├── scripts/                    # build_corpus.py, run_eval.py, download_model.py
-├── Dockerfile                  # Production container
-├── docker-compose.yml          # Local Docker setup
-├── Makefile                    # Common commands
-└── pyproject.toml              # Python project config & tool settings
+│   │   ├── corpus.py           # Corpus, embeddings, semantic search
+│   │   ├── recommender.py      # Semantic strategy, filters, shared links
+│   │   ├── unified_recommender.py  # Blended scoring, BM25, MMR
+│   │   ├── personalization.py  # Taste vector, "because you liked"
+│   │   ├── providers.py        # Where-to-watch lookups
+│   │   ├── email.py            # Transactional email
+│   │   └── tmdb_client.py, omdb_client.py   # Used by offline scripts only
+│   ├── templates/              # Jinja2 templates
+│   └── static/                 # Stylesheet, fonts, preview image
+├── data/                       # Corpus and where-to-watch snapshot (committed)
+├── migrations/                 # Alembic migrations
+├── scripts/                    # Corpus build, eval, snapshots
+├── ops/                        # Backup script run on the server
+├── tests/                      # Pytest suite
+├── notebooks/                  # Marimo evaluation notebooks
+├── docs/
+├── .github/                    # CI, deploy and rollback workflows
+├── Dockerfile, docker-compose.prod.yml, Caddyfile
+├── Makefile
+└── pyproject.toml, uv.lock
 ```
 
 ## Documentation
@@ -175,7 +194,7 @@ terror_reco/
 | [Recommendation Engine](docs/recommendation-engine.md) | Strategies, ML pipeline, scoring, diversity, non-determinism |
 | [API Reference](docs/api-reference.md) | All HTTP endpoints with parameters and responses |
 | [Database](docs/database.md) | Schema, models, relationships, migrations |
-| [Deployment](docs/deployment.md) | Docker, Render, CI/CD, environment variables |
+| [Deployment](docs/deployment.md) | Production setup, CI/CD, rollback, backups, environment variables |
 | [Evaluation Baseline](docs/evaluation-baseline.md) | Current recommender scores and the gold-set diagnosis |
 | [Research Notebooks](docs/notebooks.md) | Evaluation framework, model comparison, weight tuning |
 | [Development Guide](docs/development.md) | Local setup, testing, linting, contributing |
@@ -194,6 +213,9 @@ make test        # Run pytest suite
 make corpus      # Build/refresh the horror corpus (resumable)
 make corpus-validate  # Check the existing corpus against quality gates
 make eval        # Score the recommender against the gold test set
+make eval-gate   # Rebuild the frozen eval slice CI replays
+make providers   # Refresh the where-to-watch snapshot
+make migrate     # Apply database migrations
 make ci          # Run full CI pipeline (lint + typecheck + test)
 make format      # Auto-fix linting issues
 make clean       # Remove venv and caches
@@ -206,13 +228,13 @@ make clean       # Remove venv and caches
 | Web framework | FastAPI + Uvicorn |
 | Templating | Jinja2 |
 | ML embeddings | sentence-transformers (`all-mpnet-base-v2`) |
-| TF-IDF | scikit-learn |
-| Movie data | OMDb API |
+| Keyword scoring | BM25 (in-house) |
+| Film data | TMDB (discovery, keywords, franchises, providers) + OMDb (IMDb ratings) |
 | Database | SQLAlchemy (SQLite dev / PostgreSQL prod) |
-| Auth | Argon2 + session cookies + CSRF |
+| Auth | Argon2 + revocable session cookies + CSRF |
 | Payments | Stripe Checkout |
-| Containers | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
+| Hosting | Docker Compose on one server, Caddy for HTTPS |
+| CI/CD | GitHub Actions (test, build, smoke-test, deploy, rollback) |
 | Linting | Ruff + Black |
 | Type checking | mypy (strict) |
 | Testing | pytest |
