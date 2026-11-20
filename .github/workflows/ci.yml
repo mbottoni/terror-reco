@@ -131,8 +131,11 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
-      - name: Copy compose file and Caddyfile
-        run: scp docker-compose.prod.yml Caddyfile "deploy@$HOST:$APP_DIR/"
+      - name: Copy compose file, Caddyfile and backup script
+        run: |
+          scp docker-compose.prod.yml Caddyfile "deploy@$HOST:$APP_DIR/"
+          scp ops/backup.sh "deploy@$HOST:$APP_DIR/backup.sh"
+          ssh "deploy@$HOST" "mkdir -p $APP_DIR/backups"
 
       # The job's own token authenticates the pull, so the server needs no
       # long-lived registry credential and the package can stay private.

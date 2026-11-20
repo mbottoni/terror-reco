@@ -51,6 +51,46 @@ Rolling back is re-running the `deploy` job of an older green commit.
 | App secrets, `SITE_ADDRESS`, DB password | `/opt/terror-reco/.env.prod` on the server |
 | Database | `terror-reco_pgdata` Docker volume on the server |
 
+### Backups
+
+The `backup` service (`ops/backup.sh`) runs `pg_dump` every night at 03:00 UTC
+into `/opt/terror-reco/backups/` on the server, keeps the newest 14, and takes
+one at start-up if there is none from today. Each dump is checked with
+`pg_restore --list` before it is kept.
+
+**These dumps are on the same server as the database.** They cover a bad
+migration or a mistaken delete, not the loss of the server. For an off-box
+copy, create a bucket on S3-compatible storage (Cloudflare R2's free tier is
+enough) and add to `.env.prod`:
+
+```bash
+BACKUP_S3_BUCKET=terror-reco-backups
+BACKUP_S3_ENDPOINT=https://<account id>.r2.cloudflarestorage.com
+BACKUP_S3_ACCESS_KEY_ID=...
+BACKUP_S3_SECRET_ACCESS_KEY=...
+# BACKUP_S3_PROVIDER=Cloudflare   # or AWS, Backblaze, Other
+```
+
+then `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d backup`.
+Every later dump is uploaded too, and copies older than 60 days are removed.
+
+Commands, run on the server from `/opt/terror-reco`:
+
+```bash
+C="docker compose -f docker-compose.prod.yml --env-file .env.prod"
+$C exec backup sh /backup.sh once      # take a dump now
+$C exec backup sh /backup.sh verify    # restore the newest dump into a scratch DB and compare
+$C logs backup                         # what ran, and any UPLOAD FAILED / BACKUP FAILED
+```
+
+**To restore for real** (replaces the live data; stop the app first):
+
+```bash
+$C stop app
+$C exec backup sh -c 'dropdb terror && createdb terror && pg_restore --no-owner -d terror /backups/<file>.dump'
+$C start app
+```
+
 ### Setting up a new server
 
 1. Ubuntu 24.04 with Docker; firewall open on 22, 80, 443 only.
