@@ -78,8 +78,8 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     Rule(
         "write",
         frozenset({"POST"}),
-        ("/api/feedback", "/api/set-feedback", "/watchlist/toggle"),
-        limit=60,
+        ("/api/feedback", "/api/set-feedback", "/api/interaction", "/watchlist/toggle"),
+        limit=120,
     ),
 )
 

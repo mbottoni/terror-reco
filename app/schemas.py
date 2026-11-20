@@ -51,3 +51,13 @@ class SetFeedbackIn(BaseModel):
 class SetFeedbackOut(BaseModel):
     status: Literal["created", "updated", "removed"]
     verdict: Literal[1, 0, -1]
+
+
+class InteractionIn(BaseModel):
+    result_key: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
+    imdb_id: ImdbId
+    kind: Literal["open", "imdb_click", "save", "similar_click"]
+
+
+class InteractionOut(BaseModel):
+    status: Literal["recorded", "duplicate", "ignored"]

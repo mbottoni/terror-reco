@@ -195,3 +195,49 @@ class SetFeedback(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
+
+
+class Impression(Base):
+    """One result set that was shown: the denominator for every implicit signal.
+
+    Without it a film nobody opened is indistinguishable from a film nobody
+    was shown. Anonymous by design: a random per-session ``visitor_id`` and no
+    user link, so there is nothing personal here to export or delete.
+    """
+
+    __tablename__ = "impressions"
+    __table_args__ = (
+        UniqueConstraint("visitor_id", "result_key", name="uq_impression_visitor_result"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    visitor_id: Mapped[str] = mapped_column(String(32), index=True)
+    result_key: Mapped[str] = mapped_column(String(64), index=True)
+    mood: Mapped[str] = mapped_column(String(512))
+    strategy: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    imdb_ids: Mapped[list[str]] = mapped_column(JSON)  # in the order shown
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class Interaction(Base):
+    """Something a visitor did with one film in a result set.
+
+    ``kind`` is ``open`` (detail modal), ``imdb_click``, ``save`` (watchlist)
+    or ``similar_click``. One row per visitor, set, film and kind: opening
+    the same film five times is one signal, not five.
+    """
+
+    __tablename__ = "interactions"
+    __table_args__ = (
+        UniqueConstraint("visitor_id", "result_key", "imdb_id", "kind", name="uq_interaction_once"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    visitor_id: Mapped[str] = mapped_column(String(32), index=True)
+    result_key: Mapped[str] = mapped_column(String(64), index=True)
+    imdb_id: Mapped[str] = mapped_column(String(20), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    # 0-based rank the film was shown at. Recorded because a click at rank 1
+    # says less than a click at rank 6: people click what is on top.
+    position: Mapped[int] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
