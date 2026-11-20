@@ -601,3 +601,30 @@ No returned film was left unjudged: 132 new pairs were graded first.
 - The weakest moods are still weak: "campy fun with lots of blood" 0.10 to 0.19, "ghost story that is sad more than scary" 0.17 to 0.22. Degree and negation need attributes the tags do not have.
 - Recency now has no weight and popularity half of what it had. Popular films are shown a little less; that was not measured as a goal in itself.
 
+## Reading the query: qualities, exclusions, decades, people (2026-11-20)
+
+**The gap.** The weakest moods after the tag signal were of three kinds: several qualities at once ("campy fun with lots of blood"), a degree or exclusion ("sad more than scary", "not gory"), and facts ("Stephen King adaptation", "from the 90s"). The 55 moods held only a handful of these, so 23 **constraint queries** were added to `eval/moods.json` (directors and cast, countries, decades, exclusions, combinations) and graded with a literal rubric: a film that breaks a stated fact or exclusion is 0 however good it is. 704 pairs, including films found by plain field lookups so the right answers were graded whether or not a ranker found them.
+
+**What did not work.** Scoring a film by how many of the query's top tags it covers, using the whole query's vector to pick those tags: -0.03 to +0.006 against the single best tag. The sentence vector blurs the query; "campy fun with lots of blood" put *vampires* and *summer camp* ahead of *campy*.
+
+**What did.** Reading the query phrase by phrase (`app/services/query_understanding.py`; described in `docs/recommendation-engine.md`), then widening the candidate pool, blending aspect coverage into the tag signal, and penalising violations.
+
+As served, five draws per query, the switch `QUERY_UNDERSTANDING` off against on, on the 650-film catalogue:
+
+| | Off | On | Difference | Page judged a fit |
+|---|---|---|---|---|
+| 23 constraint queries | 0.412 | 0.801 | +0.389 [+0.271, +0.521] | 42% to 86% |
+| 55 moods | 0.727 | 0.755 | +0.027 [-0.000, +0.056] | 87% to 90% |
+| 24 title queries | 0.712 | 0.711 | -0.001 [-0.007, +0.004] | unchanged |
+
+22 of the 23 constraint queries improved and none got worse. "Horror from the 1930s" went from 0.05 to 1.00, "John Carpenter movies" and "horror with Vincent Price" from 0.00 to 1.00, "zombies but not a comedy" from 0.25 to 0.87. People needed their own rule: keyword matching scores "vincent" and "price" separately, and "price" is in a dozen plots.
+
+**What this does not show.**
+
+- I wrote the 23 queries knowing what the rules would cover. They show the rules work on phrasings like these, not how many real queries are phrased that way. An unrecognised phrasing falls back to the previous behaviour.
+- The gain on moods is at the edge of the interval and 12 of 55 got worse by more than 0.05; it is safer to call it "no harm" than "better".
+- The alias list ("blood" means *very gory*, "funny" means *horror comedy*) and the 0.35 penalty were set by hand and judged on these queries; neither was tuned on held-out data.
+- "Stephen King adaptation from the 80s" reaches only 0.54: the credits name him as a writer on two films, and the corpus has no field for "based on a work by". That needs data, not a rule.
+- Exclusions depend on the tags being right. A gory film that nobody tagged *very gory* passes "no gore".
+- An AI model wrote the tags and graded the films.
+

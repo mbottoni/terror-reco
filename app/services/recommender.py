@@ -299,6 +299,17 @@ def recommend_movies_advanced(
         for movie in candidates:
             movie["_embedding_row"] = keep[movie["_embedding_row"]]
 
+    extras: list[dict[str, Any]] = []
+    if keep_internal:
+        # The caller is building the re-ranker's pool: add the films a search
+        # by meaning cannot reach (a director, a decade, an exact word).
+        from .unified_recommender import widen_pool
+
+        extras = widen_pool(mood, candidates, corpus, embeddings, query_vector, exclude_ids)
+        if filtered_corpus:
+            for movie in extras:
+                movie["_embedding_row"] = keep[movie["_embedding_row"]]
+
     # Strip internal scoring fields unless a caller needs them (the unified
     # re-ranker uses `_embedding_row` to avoid re-encoding cached vectors).
     filtered = (
@@ -331,4 +342,4 @@ def recommend_movies_advanced(
     # 0.62 without the draw) to show 24 different films over ten visits where
     # 13 is plenty. It also ran on the unified strategy's candidate pool,
     # handing the re-ranker a random 60 of the top 180 films.
-    return filtered[:limit]
+    return filtered[:limit] + extras
