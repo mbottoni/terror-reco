@@ -51,17 +51,26 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 # build time that the cached model loads without the network.
 ENV HF_HUB_OFFLINE=1
 
-# Copy source
-COPY --chown=app:app app /app/app
-
-# Ship the pre-built horror corpus so the container serves recommendations
-# immediately, without needing TMDB/OMDb keys at build time.
-COPY --chown=app:app data /app/data
-
-# Embeddings are not committed, so compute them here rather than on the first
-# request: a fresh container would otherwise re-encode the whole corpus while a
-# user waits. A valid cache copied in with data/ is reused as-is.
+# Embeddings are not committed, so they are computed here, not on a user's
+# first request. The step is expensive (about three minutes on two cores), so
+# only what it actually reads is copied in before it: the corpus and the two
+# modules that turn a film into a vector. A change anywhere else in the app
+# then reuses this layer instead of re-encoding 500 films on every build.
+#
+# If embedding_text() or the model wrapper ever imports another app module,
+# this step fails loudly at build time, which is the right moment to notice.
+# Created as the app user, so the embeddings step can write into data/.
+RUN mkdir -p /app/app/services /app/data
+COPY --chown=app:app app/__init__.py /app/app/__init__.py
+COPY --chown=app:app app/services/__init__.py app/services/corpus.py app/services/unified_recommender.py /app/app/services/
+COPY --chown=app:app data/horror_corpus.json /app/data/horror_corpus.json
 RUN python -c "from app.services.corpus import get_corpus_embeddings, load_corpus; get_corpus_embeddings(load_corpus())"
+
+# The rest of the application, and the rest of the data (the where-to-watch
+# snapshot). Copying over the directories above adds files; it does not
+# remove the embeddings just written.
+COPY --chown=app:app app /app/app
+COPY --chown=app:app data /app/data
 
 # Migrations run at startup via init_db(), so they must ship with the image
 COPY --chown=app:app alembic.ini /app/alembic.ini
