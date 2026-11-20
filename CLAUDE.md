@@ -158,4 +158,7 @@ The Dockerfile strips `nvidia-*`/`triton` from `requirements.txt` before install
 lockfile pins the CUDA build of torch, and those wheels are separate packages that
 `--no-deps` would otherwise install next to the CPU torch (11.9 GB image instead of a few).
 Embeddings are computed at image build, so a fresh container never re-encodes the corpus on
-a user's first request.
+a user's first request. That build step copies in only `data/horror_corpus.json`,
+`services/corpus.py` and `services/unified_recommender.py` first, so its layer is reused unless
+one of those three changes. **Keep those two modules free of imports from the rest of the app**,
+or the image build fails.
