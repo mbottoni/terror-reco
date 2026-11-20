@@ -469,6 +469,22 @@ def privacy_page(request: Request, user: User | None = Depends(get_current_user)
     )
 
 
+def _named_films(mood: str) -> list[str]:
+    """Titles the query names ("like Hereditary"), for the note above the
+    results. The search itself resolves them again; this is display only and
+    must never break the page."""
+    try:
+        from .services.corpus import get_corpus_and_embeddings
+        from .services.title_reference import find_title_references
+
+        corpus, _ = get_corpus_and_embeddings()
+        reference = find_title_references(mood, corpus)
+        return list(reference.titles) if reference else []
+    except Exception:  # noqa: BLE001
+        logger.warning("Could not check the query for film titles", exc_info=True)
+        return []
+
+
 @app.get("/recommend", response_class=HTMLResponse)
 async def ui_recommendations(
     request: Request,
@@ -639,6 +655,7 @@ async def ui_recommendations(
             "strategy_label": STRATEGY_LABELS[strategy_key],
             "strategy_labels": STRATEGY_LABELS,
             "is_shared": bool(shared),
+            "named_films": [] if shared else _named_films(mood),
             "relief": relief,
             # A shared set was chosen by someone else, so what a viewer does
             # with it says nothing about the ranker; it is not measured.

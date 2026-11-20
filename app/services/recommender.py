@@ -236,7 +236,12 @@ def recommend_movies_advanced(
     it.  Request handlers must call it through ``run_in_threadpool``; torch and
     numpy both release the GIL, so the work really does overlap.
     """
-    from .corpus import CorpusNotBuiltError, get_corpus_and_embeddings, semantic_search
+    from .corpus import (
+        CorpusNotBuiltError,
+        get_corpus_and_embeddings,
+        resolve_query,
+        semantic_search,
+    )
 
     corpus, embeddings = get_corpus_and_embeddings()
     if not corpus:
@@ -247,6 +252,10 @@ def recommend_movies_advanced(
             "Horror corpus is empty. Build it first:  make corpus  "
             "(or: python scripts/build_corpus.py --target 500)"
         )
+
+    # Against the whole corpus, before filtering: "like Alien, after 2010"
+    # still means Alien, though the filter removes it from the candidates.
+    query_vector, exclude_ids = resolve_query(mood, corpus, embeddings)
 
     # Prefilter, keeping corpus rows and embedding rows aligned.
     keep = [
@@ -278,7 +287,11 @@ def recommend_movies_advanced(
         top_k=max(limit, 60),
         temperature=temperature,
         seed=seed,
+        query_vector=query_vector,
+        exclude_ids=exclude_ids,
     )
+    # Nothing but named films passed the filters: those were masked, not removed.
+    candidates = [m for m in candidates if str(m.get("imdb_id") or "") not in exclude_ids]
 
     if filtered_corpus:
         # `_embedding_row` indexes the *sliced* matrix; translate it back to the

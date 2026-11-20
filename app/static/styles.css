@@ -773,3 +773,5 @@ select{cursor:pointer}
 .legal h2{font-size:1.05rem;font-weight:700;color:#e8e8ec;margin:28px 0 10px}
 .legal p{font-size:.95rem;color:#9c9caa;line-height:1.7;margin-bottom:12px}
 .legal p a{color:#e8e8ec;text-decoration:underline}
+.named-note{font-size:.9rem;color:#9c9caa;margin:4px 0 18px}
+.named-note strong{color:#e8e8ec;font-weight:600}

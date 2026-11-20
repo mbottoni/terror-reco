@@ -535,3 +535,31 @@ from 0.456 to 0.672, and films that fit the mood from 61% to 77% of the page.
 The lesson is the one this document keeps relearning: a number measured with
 the randomness switched off describes a system nobody uses.
 
+## Queries that name a film (2026-11-20)
+
+A query such as "like Hereditary but less bleak" used to be embedded as free text. The title's own words dominated: the named film came back first and the rest shared vocabulary with its title. `app/services/title_reference.py` now detects a corpus title in the query, searches with that film's stored vector (blended 70/30 with whatever else the query says), matches keywords against the film's tags and keywords, and leaves the film and the rest of its franchise out of the results. "Franchise" is TMDB's collection plus same-title remakes and entries titled "Title: ..." or "Title 2", because TMDB files prequels and reboots (Alien: Covenant, Halloween 2007) as franchises of their own.
+
+**The cases.** 24 queries in `eval/moods.json` under `title`: bare titles, "like X", "like X but Y", "X meets Y". 721 query-film pairs were pooled from the old ranker, an exclusion-only variant and the new ranker at four blend settings, then graded 0 to 2 by an AI judge blind to the source. The named film itself is graded 0 (the user has seen it) and its sequels and remakes at most 1.
+
+`python scripts/graded_eval.py titles`:
+
+| Arm | NDCG@6 | fits@6 | square@6 |
+|---|---|---|---|
+| unified as served, title handling off | 0.199 | 34% | 11% |
+| unified as served, named film excluded only | 0.273 | 40% | 14% |
+| unified as served, film vector (shipped) | 0.637 | 79% | 36% |
+| semantic, off | 0.211 | 38% | 9% |
+| semantic, film vector | 0.529 | 74% | 29% |
+
+Paired, as served: exclusion alone +0.074 [+0.037, +0.112]; the film vector on top of it +0.364 [+0.277, +0.449]. On unified, every one of the 24 queries scored higher with the film vector than with title handling off.
+
+**What mattered.** The blend share barely does (0.5 to 1.0 all land between 0.647 and 0.651 on unified), so it stays at 0.7. Matching keywords against the named film's own tags and keywords is worth about +0.10 over matching only the rest of the query.
+
+**What this does not show.**
+
+- The rubric grades the named film 0, so part of the gain (the +0.074) is the rubric agreeing with the design. The +0.364 is measured after that is removed.
+- I wrote the 24 queries and the detector together, and all 24 are detected. The number says nothing about how often real queries that name a film are recognised. Detection is conservative on purpose: a title counts when it is the whole query, follows a cue such as "like", or opens the query before "but"/"meets"/"vibes". "the thing in the basement" and "halloween" typed alone are treated as moods.
+- A wrong detection would replace a mood search with "films like X". None of the 63 mood and null queries in the benchmark, nor the home page's suggestions, triggers it; a test keeps that true.
+- "less bleak" and "but funny" are embedded as text. The model does not understand negation or contrast, so the condition nudges the results and no more.
+- The judge is an AI model. No person has checked the grades.
+

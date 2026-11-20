@@ -30,6 +30,7 @@ def _fake_search(calls: list[dict[str, Any]]) -> Any:
         top_k: int = 60,
         temperature: float = 1.0,
         seed: int | None = None,
+        **_resolved: Any,
     ) -> list[dict[str, Any]]:
         calls.append({"top_k": top_k, "temperature": temperature})
         return [

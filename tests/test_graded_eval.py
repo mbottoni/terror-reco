@@ -75,7 +75,7 @@ def test_moods_are_distinct_and_the_hand_ones_match_the_notebook() -> None:
     from scripts.eval_gate import gold_cases
 
     moods = load_moods()
-    everything = moods["hand"] + moods["pooled"] + moods["null"]
+    everything = moods["hand"] + moods["pooled"] + moods["null"] + moods["title"]
     assert len(everything) == len(set(everything))
     assert moods["hand"] == [case["mood"] for case in gold_cases()]
     assert len(moods["pooled"]) >= 30
@@ -86,7 +86,7 @@ def test_judgments_are_well_formed() -> None:
     raw = json.loads(JUDGMENTS_FILE.read_text())
     assert raw["judge"], "the file must say who judged"
     moods = load_moods()
-    known_moods = set(moods["hand"] + moods["pooled"])
+    known_moods = set(moods["hand"] + moods["pooled"] + moods["title"])
     corpus_ids = {m["imdb_id"] for m in load_corpus()}
     judgments = load_judgments()
     assert set(judgments) <= known_moods

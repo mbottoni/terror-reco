@@ -61,7 +61,7 @@ Ranker = Callable[[str], list[dict[str, Any]]]
 # ----------------------------------------------------------------- data files
 def load_moods() -> dict[str, list[str]]:
     data: dict[str, list[str]] = json.loads(MOODS_FILE.read_text())
-    return {key: list(data[key]) for key in ("hand", "pooled", "null")}
+    return {key: list(data.get(key, [])) for key in ("hand", "pooled", "null", "title")}
 
 
 def load_judgments(path: Path = JUDGMENTS_FILE) -> dict[str, dict[str, int]]:
@@ -356,6 +356,90 @@ def cmd_score(args: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------- nulls
+def cmd_titles(args: argparse.Namespace) -> int:
+    """Queries that name a film, under three treatments of the title.
+
+    ``off`` is the plain text search. ``exclude only`` still searches with the
+    query's text but leaves the named film and its franchise out, which is
+    worth something by itself here because the named film is graded 0.
+    ``film vector`` is what ships. Comparing the last two isolates what the
+    film's vector adds beyond not repeating the film back.
+    """
+    import app.services.title_reference as tr
+
+    judgments = load_judgments()
+    queries = [q for q in load_moods()["title"] if judgments.get(q)]
+    if not queries:
+        print("No judged title queries.")
+        return 1
+    corpus, embeddings = load_ranking_inputs()
+    rankers = make_rankers(corpus, embeddings)
+    shipped = (tr.ENABLED, tr.USE_FILM_VECTOR, tr.FILM_SHARE, tr.KEYWORDS_FROM_FILM)
+
+    def arms_for(label: str) -> dict[str, dict[str, dict[str, float]]]:
+        return {
+            f"semantic (det.), {label}": score_arm(rankers["semantic"], queries, judgments),
+            f"unified (det.), {label}": score_arm(rankers["unified"], queries, judgments),
+            f"unified as served, {label}": _average_runs(
+                [
+                    score_arm(
+                        lambda q, s=seed: rankers["served"](q, "unified", s), queries, judgments
+                    )
+                    for seed in range(args.runs)
+                ]
+            ),
+        }
+
+    arms: dict[str, dict[str, dict[str, float]]] = {}
+    try:
+        tr.ENABLED = False
+        arms.update(arms_for("off"))
+        tr.ENABLED, tr.USE_FILM_VECTOR = True, False
+        arms.update(arms_for("exclude only"))
+        tr.USE_FILM_VECTOR = True
+        arms.update(arms_for("film vector"))
+        sweep: dict[str, dict[str, dict[str, float]]] = {}
+        if args.sweep:
+            for share in (0.5, 0.6, 0.7, 0.85, 1.0):
+                for from_film in (True, False):
+                    tr.FILM_SHARE, tr.KEYWORDS_FROM_FILM = share, from_film
+                    name = f"unified share={share} kw_from_film={from_film}"
+                    sweep[name] = score_arm(rankers["unified"], queries, judgments)
+    finally:
+        tr.ENABLED, tr.USE_FILM_VECTOR, tr.FILM_SHARE, tr.KEYWORDS_FROM_FILM = shipped
+
+    judged = sum(len(judgments[q]) for q in queries)
+    print(f"{len(queries)} title queries, {judged} judged films, k={K}\n")
+    print(f"  {'arm':<36}{'ndcg@6':>8}{'fits@6':>9}{'square@6':>10}{'holes':>7}")
+    print("  " + "-" * 70)
+    for name, scores in {**arms, **sweep}.items():
+        total_holes = sum(s["holes"] for s in scores.values())
+        print(
+            f"  {name[:35]:<36}{_mean(scores, 'ndcg'):>8.4f}{_mean(scores, 'p_fit'):>9.3f}"
+            f"{_mean(scores, 'p_square'):>10.3f}{total_holes:>7.1f}"
+        )
+    print("\n  PAIRED differences in ndcg@6 (second minus first), 95% bootstrap CI over queries")
+    print("  " + "-" * 86)
+    for kind in ("semantic (det.)", "unified (det.)", "unified as served"):
+        _print_paired(
+            f"{kind[:17]}: off -> excl.", arms[f"{kind}, off"], arms[f"{kind}, exclude only"]
+        )
+        _print_paired(
+            f"{kind[:17]}: excl. -> film",
+            arms[f"{kind}, exclude only"],
+            arms[f"{kind}, film vector"],
+        )
+    if args.per_mood:
+        print()
+        for q in queries:
+            row = "  ".join(
+                f"{arms[f'unified (det.), {label}'][q]['ndcg']:.2f}"
+                for label in ("off", "exclude only", "film vector")
+            )
+            print(f"  {q[:44]:<46}{row}")
+    return 0
+
+
 def cmd_nulls(args: argparse.Namespace) -> int:
     """How confident does the retriever look on queries with no right answer?
 
@@ -407,7 +491,13 @@ def main() -> int:
     score.add_argument("--compare", help="JSON blend weights of a variant to compare")
     score.add_argument("--per-mood", action="store_true")
     score.set_defaults(func=cmd_score)
+    titles = sub.add_parser("titles", help="score the queries that name a film")
+    titles.add_argument("--runs", type=int, default=5, help="noisy repetitions")
+    titles.add_argument("--sweep", action="store_true", help="also vary the blend settings")
+    titles.add_argument("--per-mood", action="store_true")
+
     nulls = sub.add_parser("nulls", help="retrieval confidence on queries with no answer")
+    titles.set_defaults(func=cmd_titles)
     nulls.set_defaults(func=cmd_nulls)
     args = parser.parse_args()
     result: int = args.func(args)
