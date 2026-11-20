@@ -77,7 +77,8 @@ class TestFormField:
             "confirm_password": "password123",
             "csrf": csrf,
         }
-        home = raw.post("/auth/register", data=data, follow_redirects=True).text
+        raw.post("/auth/register", data=data, follow_redirects=True)
+        home = raw.get("/").text
         field = re.search(
             r'action="/auth/logout" method="post">\s*<input[^>]*value="([^"]+)"', home
         )

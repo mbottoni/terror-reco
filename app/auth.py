@@ -217,7 +217,9 @@ async def register(
     start_session(request, user)
     logger.info("REGISTER OK: user_id=%s", user.id)
     _set_flash(request, "Account created. Welcome!")
-    return RedirectResponse(url="/", status_code=303)
+    # Straight to the taste picks: personalisation needs a few likes to start,
+    # and a brand-new account has none. The page has a skip link.
+    return RedirectResponse(url="/onboarding/", status_code=303)
 
 
 @router.post("/logout", dependencies=[Depends(require_csrf)])
