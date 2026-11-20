@@ -65,6 +65,15 @@
       <a class="share-btn refine-shuffle" href="{{ refine.shuffle_url }}"
          title="Same search, a different draw">Shuffle</a>
     </div>
+    {% if movies and refine.suggestions %}
+    {# Nudges relative to the films on screen. Each is a plain link. #}
+    <div class="refine-row refine-suggest">
+      <span class="refine-label">Refine:</span>
+      {% for s in refine.suggestions %}
+      <a class="suggest-chip" href="{{ s.url }}" title="{{ s.title }}">{{ s.label }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
   {% if movies %}

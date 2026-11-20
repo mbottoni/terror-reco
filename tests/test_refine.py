@@ -200,3 +200,96 @@ class TestWhichFilterEmptiedTheResults:
         monkeypatch.setattr(main_mod, "films_without_each_filter", _boom)
         resp = client.get("/recommend", params={"mood": "x", "min_rating": 9.9})
         assert resp.status_code == 200 and "No films pass these filters" in resp.text
+
+
+class TestSuggestions:
+    """One-click nudges: older, newer, more mainstream, more obscure."""
+
+    def _by_label(self, ctx: dict[str, Any]) -> dict[str, dict[str, list[str]]]:
+        return {s["label"]: _query(s["url"]) for s in ctx["suggestions"]}
+
+    def test_era_nudges_are_relative_to_the_films_on_screen(self) -> None:
+        nudges = self._by_label(_ctx(years=[1973, 1978, 1981, 1984, 1992, 2019]))
+        # Median 1982: older means before it, newer means after it.
+        assert nudges["Older"]["max_year"] == ["1981"]
+        assert nudges["Newer"]["min_year"] == ["1983"]
+        assert nudges["Older"]["mood"] == ["folk horror"]
+
+    def test_no_era_nudges_without_years(self) -> None:
+        labels = [s["label"] for s in _ctx(years=[])["suggestions"]]
+        assert labels == ["More mainstream", "More obscure"]
+
+    def test_an_era_nudge_drops_a_filter_it_would_contradict(self) -> None:
+        nudges = self._by_label(_ctx(years=[2015, 2018, 2020], min_year=2010, max_year=2022))
+        assert nudges["Older"]["max_year"] == ["2017"] and nudges["Older"]["min_year"] == ["2010"]
+        nudges = self._by_label(_ctx(years=[2015, 2018, 2020], min_year=2018))
+        assert nudges["Older"]["max_year"] == ["2017"] and "min_year" not in nudges["Older"]
+        nudges = self._by_label(_ctx(years=[1975, 1978, 1980], max_year=1978))
+        assert nudges["Newer"]["min_year"] == ["1979"] and "max_year" not in nudges["Newer"]
+
+    def test_other_filters_survive_a_nudge(self) -> None:
+        nudges = self._by_label(_ctx(years=[1980], min_rating=7.0, english=True))
+        assert nudges["Older"]["min_rating"] == ["7"] and nudges["Older"]["english"] == ["1"]
+
+    def test_tilt_nudges_switch_to_the_unified_ranking(self) -> None:
+        nudges = self._by_label(_ctx(strategy="semantic", years=[1980]))
+        assert nudges["More obscure"]["tilt"] == ["obscure"]
+        assert nudges["More obscure"]["strategy"] == ["unified"]
+
+    def test_active_tilt_becomes_a_removable_chip_and_is_not_offered_again(self) -> None:
+        ctx = _ctx(strategy="unified", tilt="obscure", years=[1980])
+        assert [c["label"] for c in ctx["chips"]] == ["More obscure"]
+        assert "tilt" not in _query(ctx["chips"][0]["remove_url"])
+        labels = [s["label"] for s in ctx["suggestions"]]
+        assert "More mainstream" in labels and "More obscure" not in labels
+        assert ctx["params"]["tilt"] == "obscure"
+
+    def test_unknown_tilt_is_ignored(self) -> None:
+        ctx = _ctx(tilt="chaotic")
+        assert ctx["chips"] == [] and "tilt" not in ctx["params"]
+
+
+class TestTiltReachesTheRanker:
+    @pytest.fixture()
+    def weights_seen(self, monkeypatch: pytest.MonkeyPatch) -> list[Any]:
+        seen: list[Any] = []
+        film = {**FILM, "_embedding_row": 0}
+        monkeypatch.setattr(main_mod, "recommend_movies_advanced", lambda **kw: [dict(film)])
+
+        def _unified(**kwargs: Any) -> list[dict[str, Any]]:
+            seen.append(kwargs.get("weights"))
+            return [dict(FILM)]
+
+        monkeypatch.setattr(main_mod, "recommend_unified_semantic", _unified)
+        return seen
+
+    @pytest.mark.parametrize(("tilt", "popularity"), [("obscure", 0.0), ("mainstream", 0.45)])
+    def test_tilt_sets_the_popularity_weight_and_keeps_the_others(
+        self, client: TestClient, weights_seen: list[Any], tilt: str, popularity: float
+    ) -> None:
+        from app.services.unified_recommender import DEFAULT_WEIGHTS
+
+        page = client.get("/recommend", params={"mood": "x", "tilt": tilt}).text
+        weights = weights_seen[-1]
+        assert weights["popularity"] == popularity
+        assert weights["semantic"] == DEFAULT_WEIGHTS["semantic"]
+        assert "Unified" in page  # a tilt implies the unified ranking
+
+    def test_no_tilt_leaves_the_default_weights(
+        self, client: TestClient, weights_seen: list[Any]
+    ) -> None:
+        client.get("/recommend", params={"mood": "x", "strategy": "unified"})
+        assert weights_seen[-1] is None
+
+    def test_bogus_tilt_is_a_normal_search(
+        self, client: TestClient, weights_seen: list[Any]
+    ) -> None:
+        resp = client.get("/recommend", params={"mood": "x", "tilt": "<script>"})
+        assert resp.status_code == 200 and weights_seen == []
+
+    def test_page_shows_the_nudges_and_keeps_the_tilt_when_refining(
+        self, client: TestClient, weights_seen: list[Any]
+    ) -> None:
+        page = client.get("/recommend", params={"mood": "x", "tilt": "obscure"}).text
+        assert 'class="suggest-chip"' in page and ">Older</a>" in page
+        assert '<input type="hidden" name="tilt" value="obscure">' in page

@@ -302,13 +302,18 @@ def refine_context(
     min_rating: float | None,
     limit: int,
     english: bool,
+    tilt: str | None = None,
+    years: list[int] | None = None,
 ) -> dict[str, Any]:
     """What the results page needs to adjust a search without starting over.
 
     ``params`` are the active, non-default query parameters (never ``seed``:
     refining wants a fresh draw). Each chip names one active filter and links
     to the same search without it. ``shuffle_url`` repeats the search as is.
+    ``suggestions`` are one-click nudges ("Older", "More obscure") relative to
+    the films on screen; *years* are those films' release years.
     """
+    from statistics import median
     from urllib.parse import urlencode
 
     params: dict[str, str] = {"mood": mood, "strategy": strategy}
@@ -328,6 +333,45 @@ def refine_context(
     if limit != DEFAULT_RESULT_LIMIT:
         params["limit"] = str(limit)
         labels["limit"] = f"{limit} results"
+    if tilt in TILT_POPULARITY:
+        params["tilt"] = str(tilt)
+        labels["tilt"] = TILT_LABELS[str(tilt)]
+
+    def url(changes: dict[str, str | None]) -> str:
+        merged = {**params, **{k: v for k, v in changes.items() if v is not None}}
+        for key, value in changes.items():
+            if value is None:
+                merged.pop(key, None)
+        return "/recommend?" + urlencode(merged)
+
+    suggestions: list[dict[str, str]] = []
+    if years:
+        middle = int(median(years))
+        # "Older" means older than what is on screen, not older than some
+        # fixed year: on a page of 1970s films it should reach further back.
+        # A bound that would contradict the opposite filter drops that filter.
+        older: dict[str, str | None] = {"max_year": str(middle - 1)}
+        if min_year is not None and min_year > middle - 1:
+            older["min_year"] = None
+        newer: dict[str, str | None] = {"min_year": str(middle + 1)}
+        if max_year is not None and max_year < middle + 1:
+            newer["max_year"] = None
+        suggestions.append(
+            {"label": "Older", "url": url(older), "title": f"Films from before {middle}"}
+        )
+        suggestions.append(
+            {"label": "Newer", "url": url(newer), "title": f"Films from after {middle}"}
+        )
+    for value, label in TILT_LABELS.items():
+        if value != tilt:
+            # The popularity signal only exists in the unified ranking.
+            suggestions.append(
+                {
+                    "label": label,
+                    "url": url({"tilt": value, "strategy": "unified"}),
+                    "title": TILT_TITLES[value],
+                }
+            )
 
     chips = [
         {
@@ -341,11 +385,23 @@ def refine_context(
         "clear_url": "/recommend?" + urlencode({"mood": mood, "strategy": strategy}),
         "params": {k: v for k, v in params.items() if k != "mood"},
         "chips": chips,
+        "suggestions": suggestions,
         "shuffle_url": "/recommend?" + urlencode(params),
     }
 
 
 DEFAULT_RESULT_LIMIT = 6
+
+# One-click nudges to how much fame counts. The value replaces the unified
+# ranking's popularity weight (0.20 by default). Measured on the corpus: the
+# median IMDb vote count of results is about 136k at 0.0, 194k at the default
+# and 271k at 0.45.
+TILT_POPULARITY: dict[str, float] = {"obscure": 0.0, "mainstream": 0.45}
+TILT_LABELS: dict[str, str] = {"mainstream": "More mainstream", "obscure": "More obscure"}
+TILT_TITLES: dict[str, str] = {
+    "mainstream": "Favour widely seen films",
+    "obscure": "Stop favouring widely seen films",
+}
 
 # Valid strategy values accepted by the UI. Both search the local corpus; an
 # unknown value (including the retired "keyword") falls back to the default.
@@ -368,6 +424,9 @@ async def ui_recommendations(
     seed: int | None = Query(
         default=None, description="reproducible results; also disables sampling noise"
     ),
+    tilt: str | None = Query(
+        default=None, description="'mainstream' or 'obscure': how much popularity counts"
+    ),
     ids: str | None = Query(
         default=None,
         max_length=400,
@@ -378,6 +437,9 @@ async def ui_recommendations(
 ) -> HTMLResponse:
     default_strategy = "unified" if settings.USE_UNIFIED_RECOMMENDER else "semantic"
     strategy_key = strategy if strategy in STRATEGY_LABELS else default_strategy
+    tilt = tilt if tilt in TILT_POPULARITY else None
+    if tilt:
+        strategy_key = "unified"  # the only ranking with a popularity signal
 
     # A shared link names the films themselves. A seed cannot do this job:
     # the set on screen is a random draw, possibly personalised, and replaying
@@ -409,6 +471,8 @@ async def ui_recommendations(
         )
         taste = _load_taste(db, user)
         weights = dict(settings.UNIFIED_WEIGHTS) if settings.UNIFIED_WEIGHTS else None
+        if tilt:
+            weights = {**(weights or DEFAULT_WEIGHTS), "popularity": TILT_POPULARITY[tilt]}
         if taste.taste_vector is not None:
             # Blend the taste signal in without renormalising the others: it
             # is an additive nudge, not a replacement for relevance.
@@ -531,6 +595,12 @@ async def ui_recommendations(
                 min_rating=min_rating,
                 limit=limit,
                 english=bool(english),
+                tilt=tilt,
+                years=[
+                    int(str(m["year"])[:4])
+                    for m in movies
+                    if str(m.get("year") or "")[:4].isdigit()
+                ],
             ),
             "user": user,
             "user_feedback": user_feedback,
