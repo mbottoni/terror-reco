@@ -1,0 +1,100 @@
+name: Uptime
+
+# An external check on production, from GitHub's network, not from the server
+# and not from a developer's laptop. A failure opens an issue labelled
+# "outage" (GitHub emails the repository owner); the first healthy run after
+# it records the recovery time and closes the issue.
+#
+# Limits worth knowing: GitHub runs scheduled workflows late under load, often
+# by several minutes, and stops scheduling them after 60 days without a commit.
+# This is a floor, not a replacement for a real monitor (issue #46).
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Check this URL instead of production's /healthz (to test the alert)"
+        required: false
+
+permissions:
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TARGET: ${{ inputs.url || format('{0}/healthz', vars.DEPLOY_URL) }}
+      OWNER: ${{ github.repository_owner }}
+    steps:
+      - name: Probe
+        id: probe
+        run: |
+          # Three attempts, 20 seconds apart: one lost request is not an outage.
+          ok=""
+          detail=""
+          for attempt in 1 2 3; do
+            code=$(curl -sS -m 15 -o body.json -w '%{http_code}' "$TARGET" 2>err.txt) || code="000"
+            if [ "$code" = "200" ] && \
+               jq -e '.status == "ok" and .embeddings_ready == true' body.json >/dev/null 2>&1; then
+              ok="yes"
+              break
+            fi
+            if [ "$code" = "000" ]; then
+              detail="attempt $attempt: no response ($(tr -d '\n' < err.txt | cut -c1-160))"
+            else
+              detail="attempt $attempt: HTTP $code, body: $(head -c 200 body.json 2>/dev/null | tr -d '\n')"
+            fi
+            echo "$detail"
+            [ "$attempt" -lt 3 ] && sleep 20
+          done
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+          {
+            echo "detail<<EOF_DETAIL"
+            echo "$detail"
+            echo "EOF_DETAIL"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Report an outage
+        if: steps.probe.outputs.ok != 'yes'
+        env:
+          DETAIL: ${{ steps.probe.outputs.detail }}
+        run: |
+          now=$(date -u '+%Y-%m-%d %H:%M UTC')
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          open=$(gh issue list --label outage --state open --json number -q '.[0].number // empty')
+          if [ -z "$open" ]; then
+            gh label create outage --color B60205 \
+              --description "Opened by the uptime check" 2>/dev/null || true
+            printf '%s\n\n%s\n\n%s\n' \
+              "The uptime check could not get a healthy answer from \`$TARGET\` in three attempts over about a minute, as of **$now**." \
+              "Last attempt: $DETAIL" \
+              "[Run]($run_url). This issue closes itself on the first healthy check." > body.md
+            gh issue create --title "Site down: $now" --label outage \
+              --assignee "$OWNER" --body-file body.md
+          else
+            # One comment an hour while it stays down, not one every five minutes.
+            last=$(gh issue view "$open" --json createdAt,comments \
+              -q '([.createdAt] + [.comments[].createdAt]) | max')
+            age=$(( $(date -u +%s) - $(date -u -d "$last" +%s) ))
+            if [ "$age" -ge 3600 ]; then
+              gh issue comment "$open" --body "Still down at **$now**. Last attempt: $DETAIL ([run]($run_url))"
+            fi
+          fi
+          exit 1
+
+      - name: Record a recovery
+        if: steps.probe.outputs.ok == 'yes'
+        run: |
+          now=$(date -u '+%Y-%m-%d %H:%M UTC')
+          for number in $(gh issue list --label outage --state open --json number -q '.[].number'); do
+            gh issue close "$number" --comment "Healthy again as of **$now**."
+          done

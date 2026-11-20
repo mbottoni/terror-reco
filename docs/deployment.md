@@ -102,6 +102,23 @@ $C exec backup sh -c 'dropdb terror && createdb terror && pg_restore --no-owner 
 $C start app
 ```
 
+### Uptime check
+
+`.github/workflows/uptime.yml` asks production's `/healthz` for a healthy
+answer every five minutes, from GitHub's network. Three failed attempts over
+about a minute open an issue labelled `outage`, assigned to the repository
+owner, so GitHub sends an email. While the site stays down it adds one comment
+an hour. The first healthy check afterwards records the recovery time and
+closes the issue, so the issue list doubles as an outage log.
+
+It is a floor, not a full monitor: GitHub often runs scheduled workflows
+several minutes late, and stops scheduling them after 60 days without a
+commit. To test the alert, run the workflow by hand with a URL that fails:
+
+```bash
+gh workflow run uptime.yml -f url=https://example.invalid/healthz
+```
+
 ### Setting up a new server
 
 1. Ubuntu 24.04 with Docker; firewall open on 22, 80, 443 only.
