@@ -1,6 +1,6 @@
 # Deployment
 
-This guide covers deploying TerrorReco with Docker, on Render, and the CI/CD pipeline.
+How TerrorReco is deployed: one server running Docker Compose, shipped by GitHub Actions on every push to `main`.
 
 ## Environment Variables
 
@@ -11,9 +11,9 @@ This guide covers deploying TerrorReco with Docker, on Render, and the CI/CD pip
 | `PUBLIC_BASE_URL` | Production | -- | The site's origin, e.g. `https://example.com`. Absolute URLs (Stripe return URLs) are built from it. The app refuses to start in production without it |
 | `DATABASE_URL` | Production | SQLite file | PostgreSQL connection URL |
 | `DEBUG` | No | `false` | Set to `1` or `true` for development mode |
-| `PORT` | No | `10000` | Port the server listens on |
 | `LOG_LEVEL` | No | `INFO` | Level for the app's own log lines |
 | `SENTRY_DSN` | Optional | -- | Turns on error tracking. Unset means off. No request bodies, cookies or user details are sent |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Optional | -- | Turn on password-reset email. The sender's domain must be verified with Resend |
 | `STRIPE_PUBLISHABLE_KEY` | Optional | -- | Stripe public key (for payments) |
 | `STRIPE_SECRET_KEY` | Optional | -- | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Optional | -- | Stripe webhook signing secret |
@@ -134,13 +134,15 @@ docker build -t terror-reco:latest .
 
 The Dockerfile:
 
-1. Starts from `python:3.11-slim`.
-2. Installs system deps (build-essential, ca-certificates, libpq-dev for PostgreSQL SSL).
-3. Installs Python dependencies from `pyproject.toml`.
-4. **Pre-downloads the sentence-transformer model** (`all-mpnet-base-v2`) so there's no cold-start download at runtime.
-5. Copies the application source.
-6. Exposes port 10000 (Render convention).
-7. Runs with `uvicorn`.
+1. Starts from `python:3.11-slim` and installs system dependencies.
+2. Installs the CPU build of PyTorch, then the locked Python dependencies from `requirements.txt` (generated from `uv.lock`), leaving out the CUDA wheels a CPU-only server never uses. The image is about 3.5 GB; with them it was 11.9 GB.
+3. Switches to an unprivileged user.
+4. **Downloads the sentence-transformer model** and then sets the hub to offline mode, so the container never contacts huggingface.co.
+5. Copies the app, the corpus and the where-to-watch snapshot.
+6. **Computes the corpus embeddings**, so a new container never encodes 500 films while a user waits.
+7. Runs `uvicorn`.
+
+CI boots every image it builds with no network and production settings, and requires `/healthz` to report `ok`, before the image can be pushed.
 
 ### Run
 
@@ -156,35 +158,17 @@ docker compose up --build
 
 The `docker-compose.yml` mounts `./app` as a read-only volume for live development, maps port 8000, and loads environment from `.env`.
 
-## Render Deployment
-
-TerrorReco is designed for [Render](https://render.com):
-
-1. **Create a Web Service** pointing to your GitHub repo.
-2. **Runtime:** Docker.
-3. **Environment variables:** Set `OMDB_API_KEY`, `SECRET_KEY`, `DATABASE_URL` (Render provides a PostgreSQL instance).
-4. **Port:** The Dockerfile defaults to 10000 which is Render's expected port.
-
-### Render PostgreSQL
-
-1. Create a PostgreSQL instance on Render.
-2. Copy the Internal Database URL.
-3. Set it as `DATABASE_URL` in your web service's environment.
-
-The app automatically handles:
-- Converting `postgres://` to `postgresql+psycopg://`.
-- Adding SSL parameters for secure connections.
-
 ## CI/CD Pipeline
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and PR to `main`:
+`.github/workflows/ci.yml` runs on every push and pull request to `main`:
 
-| Step | Command | What it checks |
-|------|---------|---------------|
-| Lint | `ruff check .` | Code style, imports, common errors |
-| Type-check | `mypy app` | Static type checking (strict mode) |
-| Tests | `pytest` | Unit tests with mocked external services |
-| Docker build | `docker build -t terror-reco:ci .` | Ensures the image builds successfully |
+| Job | What it does |
+|-----|--------------|
+| `build-test` | Installs from the lockfile and checks it is current, then `ruff`, `black --check`, `mypy app` and `pytest` (which includes the ranking regression gate) |
+| `image` | Builds the Docker image, boots it offline with production settings and checks `/healthz`. On a push to `main`, pushes it to GHCR |
+| `deploy` | Push to `main` only: ships that image to the server and fails unless the site reports healthy |
+
+`.github/workflows/deploy.yml` is the manual deploy and rollback described above. Both use the same deploy action, `.github/actions/deploy`.
 
 ### Running CI Locally
 
@@ -202,43 +186,32 @@ For the full pipeline including Docker:
 make ci && docker build -t terror-reco:ci .
 ```
 
-## First-Run Behaviour
+## First Run
 
-On the first request using the Semantic or Unified strategy, the app will:
+Nothing is built on first request. The corpus is committed and the image carries its embeddings. In local development, embeddings are computed from the corpus the first time a search runs (a minute or so) and cached in `data/`.
 
-1. **Build the horror corpus** by querying OMDb (takes a few minutes, requires API quota).
-2. **Compute embeddings** for all corpus plots using the sentence-transformer model.
-3. **Cache both** to `data/horror_corpus.json` and `data/corpus_embeddings.npy`.
+To rebuild the corpus, run `make corpus` (needs TMDB and OMDb keys). A search with no corpus present returns a clear error page and `/healthz` reports `degraded`; the app never crawls for data inside a request.
 
-Subsequent requests use the cached data and are fast (numpy dot-product).
-
-### Pre-building the Corpus
-
-To avoid the first-request delay, you can build the corpus ahead of time:
-
-```python
-import asyncio
-from app.services.corpus import build_corpus
-
-asyncio.run(build_corpus(pages=5))
-```
-
-### Pre-downloading the ML Model
-
-For local development (without Docker):
-
-```bash
-python scripts/download_model.py
-```
-
-This downloads `all-mpnet-base-v2` to the `models/` directory.
+For local development without Docker, `python scripts/download_model.py` caches the model in `models/`.
 
 ## Production Checklist
 
-- [ ] Set `DEBUG=false` (enables secure cookies, disables debug pages)
-- [ ] Set a strong `SECRET_KEY` (don't rely on auto-generation)
-- [ ] Configure `DATABASE_URL` for PostgreSQL
-- [ ] Set `OMDB_API_KEY` with sufficient quota
-- [ ] Build the horror corpus before first user request
-- [ ] (Optional) Configure Stripe keys for payment support
-- [ ] (Optional) Set up Stripe webhooks pointing to `https://yourdomain.com/stripe/webhook`
+Enforced at startup when `DEBUG` is off (the app refuses to boot otherwise):
+
+- [ ] `SECRET_KEY`: a random value of at least 32 characters
+- [ ] `PUBLIC_BASE_URL`: the site's `https://` origin
+
+Needed for the stack to work:
+
+- [ ] `SITE_ADDRESS`, `POSTGRES_PASSWORD`, `DATABASE_URL`, `DATABASE_SSLMODE=disable` (see *Setting up a new server*)
+- [ ] The three `DEPLOY_*` secrets and the `DEPLOY_URL` variable in GitHub Actions
+
+Recommended, and off until configured:
+
+- [ ] Off-box backups: the four `BACKUP_S3_*` variables (see *Backups*)
+- [ ] Error tracking: `SENTRY_DSN`
+- [ ] An external uptime check on `/healthz`
+- [ ] Password-reset email: `RESEND_API_KEY` and `EMAIL_FROM`, which need a verified sending domain
+- [ ] Stripe: the four Stripe variables, and a webhook endpoint in the Stripe dashboard pointing at `https://<domain>/stripe/webhook`
+
+When the domain changes, update `SITE_ADDRESS`, `PUBLIC_BASE_URL` and `DEPLOY_URL` together.

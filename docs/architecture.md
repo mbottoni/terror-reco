@@ -1,159 +1,205 @@
 # Architecture
 
-This document describes the high-level system design of TerrorReco, its components, and how data flows from a user query to rendered recommendations.
+How TerrorReco is put together, and how a query becomes a page of films.
 
-## System Overview
+## System overview
 
-TerrorReco is a server-rendered FastAPI application. The browser sends traditional form submissions; the server processes them, calls the recommendation pipeline, and returns fully rendered HTML. A small amount of client-side JavaScript powers the movie detail modal and the feedback (like/dislike) AJAX calls.
+TerrorReco is a server-rendered FastAPI application. The browser submits plain
+forms and follows plain links; the server ranks films from a local corpus and
+returns finished HTML. A small amount of JavaScript drives the film detail
+view, feedback, the watchlist and usage logging. Nothing on the request path
+calls an external API.
 
 ```
-Browser (Jinja2 HTML)
-   |  POST /search  or  GET /recommend
+Browser
+   |  GET /recommend?mood=...&strategy=...&filters
    v
-FastAPI (app/main.py)
+Caddy (TLS)  -->  FastAPI (app/main.py)
    |
-   +-- Auth layer (app/auth.py, app/security.py)
-   +-- Session & DB (app/db.py, app/models.py)
+   +-- Middleware: security headers, per-client rate limits, sessions
+   +-- Auth and accounts (auth.py, account.py, password_reset.py, onboarding.py)
+   +-- CSRF check on every state-changing route (security.py)
    |
-   +-- Strategy Router
-   |      |
-   |      +-- "semantic"   --> recommend_movies_advanced()
-   |      +-- "unified"    --> recommend_movies_advanced() --> recommend_unified_semantic()
-   |      +-- "embedding"  --> recommend_movies(strategy="embedding")
-   |      +-- "keyword"    --> recommend_movies(strategy="keyword")
+   +-- Strategy router (ui_recommendations)
+   |      +-- "semantic" --> recommend_movies_advanced()
+   |      +-- "unified"  --> recommend_movies_advanced() --> recommend_unified_semantic()
+   |      +-- ids=...    --> films_by_ids()            (a shared link: no ranking)
    |
-   +-- Filters (year range, min IMDb rating, language, type)
-   +-- Stochastic Sampling (score perturbation, weighted selection, jittered MMR)
+   +-- Filters before ranking (year range, minimum IMDb rating, English only)
+   +-- One film per franchise, then stochastic selection
    |
    v
-Jinja2 Template (results.html)
-   |
-   +-- Movie cards grid
-   +-- Movie detail modal (JS)
-   +-- Feedback buttons (JS --> POST /api/feedback)
+results.html
+   +-- Refine bar (search, removable filter chips, shuffle)
+   +-- Film cards, detail dialog, "where to watch", "more like this"
+   +-- Feedback: per film (signed in) and per set (anyone)
 ```
 
-## Component Responsibilities
+## Components
 
-### `app/main.py` -- Application Core
+### `app/main.py`: application core
 
-The entry point. Defines all routes, the startup event (database init, model pre-loading), the strategy router, the feedback API, and template rendering. Includes the `STRATEGY_LABELS` mapping and the `/recommend` endpoint that dispatches to the correct strategy.
+Creates the app, registers middleware and routers, and holds the recommendation
+routes: `/` (search form), `/recommend` (results), `/api/recommendations`,
+`/api/similar/{imdb_id}`, `/api/providers/{imdb_id}`, `/api/feedback`,
+`/api/set-feedback`, `/api/interaction` and `/healthz`. Startup runs in a
+`lifespan` handler: migrate the database, load the model, warm the corpus.
 
-### `app/auth.py` -- Authentication Router
+`ui_recommendations()` validates `strategy` against `STRATEGY_LABELS`; an
+unknown value falls back to the default. Ranking is CPU-bound, so it runs in
+the threadpool, never on the event loop.
 
-Handles `/login`, `/register`, `/logout`. Uses Argon2 password hashing via `app/security.py`. Sessions are stored in signed cookies (itsdangerous). CSRF tokens protect all POST forms.
+### Accounts and security
 
-### `app/models.py` -- Data Models
+| Module | What it does |
+|--------|--------------|
+| `auth.py` | Register, sign in, sign out, sign out everywhere. Emails are normalised. Sessions carry a per-user version, so they can be revoked |
+| `account.py` | Change password or email, export data, delete the account |
+| `password_reset.py` | Reset by emailed, single-use, hashed token. Off until an email provider is configured |
+| `onboarding.py` | Pick films you love after signing up, which seeds personalisation |
+| `security.py` | Argon2 hashing, the session CSRF token and its check, URL scheme checks |
+| `middleware.py` | Security response headers and in-process, per-client rate limits |
 
-Three SQLAlchemy ORM models:
+Sessions are signed cookies (Starlette `SessionMiddleware`). Every route that
+changes state requires the session's CSRF token, sent as a hidden form field
+or an `X-CSRF-Token` header. The Stripe webhook is the exception: it is
+authenticated by signature.
 
-- **`User`** -- id, email, password_hash, created_at, relationships to history and feedback.
-- **`SearchHistory`** -- records each search (mood, strategy, results JSON, timestamp).
-- **`MovieFeedback`** -- per-user per-movie like/dislike with unique constraint on (user_id, imdb_id).
+### `app/models.py`: data
 
-### `app/db.py` -- Database Layer
+`User`, `SearchHistory` and `SearchResult` (what was shown, in rank order),
+`MovieFeedback` (per-film like or dislike), `WatchlistItem`, `Payment`,
+`PasswordResetToken`, and three tables of anonymous usage data: `SetFeedback`
+(a verdict on a whole result set), `Impression` (a set that was shown) and
+`Interaction` (a film opened, clicked through to, or saved). See
+[database.md](database.md).
 
-Connection management with support for SQLite (development) and PostgreSQL (production with SSL). Provides `get_db()` as a FastAPI dependency and `init_db()` for table creation with retry logic.
+### `app/db.py` and migrations
 
-### `app/settings.py` -- Configuration
+Connection handling for SQLite (development) and PostgreSQL (production).
+`init_db()` runs `alembic upgrade head` at startup and never raises, so the
+app boots even if the database is down. Schema changes go through Alembic.
 
-Pydantic Settings class that reads from environment variables. Centralises all configuration: OMDb key, Stripe keys, database URL, debug flag, unified recommender weights, diversity lambda, and more.
+### `app/settings.py`: configuration
 
-### `app/services/corpus.py` -- Corpus & Semantic Search
+One Pydantic settings class, read from the environment. With `DEBUG` off it
+refuses to start without a real `SECRET_KEY` and a `PUBLIC_BASE_URL`.
 
-The heart of the ML pipeline. Performs **no network I/O** -- the corpus is built offline by `scripts/build_corpus.py`.
+### `app/services/corpus.py`: corpus and semantic search
 
-1. **`load_corpus()`** / **`save_corpus()`** -- read/write `data/horror_corpus.json`; saving invalidates stale embeddings.
-2. **`map_tmdb_to_corpus()`** -- maps a TMDB movie-detail payload onto the corpus record schema.
-3. **`apply_omdb_enrichment()`** -- overlays OMDb-only fields (IMDb rating/votes, Metascore, awards).
-4. **`get_corpus_embeddings()`** -- computes or loads sentence-transformer embeddings, cached to `data/corpus_embeddings.npy` and keyed on a content hash of the embedded text.
-5. **`semantic_search()`** -- embeds the user query, computes cosine similarity against the corpus, optionally adds temperature-controlled noise, and returns the top-K results.
+No network I/O. The corpus is built offline.
 
-### `scripts/build_corpus.py` -- Offline Corpus Builder
+- `load_corpus()` / `save_corpus()` read and write `data/horror_corpus.json`.
+- `embedding_text()` defines the text that is embedded: title, genre, keywords
+  and overview. Anything computing a semantic score must use it.
+- `get_corpus_embeddings()` computes or loads the embeddings, cached and keyed
+  on a hash of the embedded text.
+- `semantic_search()` embeds the query (cached per process), takes cosine
+  similarity against the corpus, optionally adds noise, and returns the top K.
 
-Discovery runs against **TMDB** (`/discover/movie?with_genres=27`) because OMDb's `s=` parameter searches titles only and cannot browse by genre. Six resumable stages:
+### `app/services/recommender.py`: the semantic strategy
 
-| Stage | Purpose |
-|-------|---------|
-| A `gold` | Force-seed the evaluation gold set, parsed from `notebooks/1-evaluation.py` by AST |
-| B `canon` | Most-voted horror films (`vote_count.desc` -- stable, unlike `popularity.desc`) |
-| C `decades` | Decade-stratified fill, so the corpus is not overwhelmingly modern |
-| D `hydrate` | TMDB detail fetch (`append_to_response=credits,external_ids,release_dates`) |
-| E `enrich` | OMDb overlay for IMDb rating/votes, Metascore, awards |
-| F `finalize` | Write corpus, then validate size / duplicates / decade spread / gold coverage |
+`recommend_movies_advanced()` filters the corpus first, runs semantic search,
+keeps one film per franchise, then samples from the top of the pool so repeat
+searches vary. It also provides `similar_movies()`, `films_by_ids()` (shared
+links), `explain_match()` (the keyword chips on each card) and
+`films_without_each_filter()` (the empty-state explanation).
 
-Progress is checkpointed to `data/.corpus_build_state.json` after every stage and every 50 records, so an interrupted run resumes with `--resume` instead of restarting.
+### `app/services/unified_recommender.py`: the unified strategy
 
-### `app/services/tmdb_client.py` -- TMDB API Client
+`recommend_unified_semantic()` takes a 60-film pool from the above and re-ranks
+it by a blend of four signals:
 
-Async httpx client with bearer auth, request throttling (10 req/s against TMDB's ~40 req/s ceiling), and exponential backoff on 429/5xx. Deliberately has no "give up after N consecutive errors" rule -- that behaviour in the previous OMDb builder is what silently truncated the corpus at 21 films.
+- semantic similarity,
+- BM25 keyword match, with document frequencies taken from the whole corpus,
+- popularity (IMDb rating × log of votes),
+- recency.
 
-### `app/services/recommender.py` -- Recommendation Orchestrator
+A signed-in user with enough likes adds a fifth, their taste vector. It then
+keeps one film per franchise and applies Maximal Marginal Relevance for
+variety. See [recommendation-engine.md](recommendation-engine.md).
 
-Provides `recommend_movies()` (delegates to keyword or embedding strategies) and `recommend_movies_advanced()` (uses corpus semantic search with filters and weighted random sampling for non-determinism).
+### Other services
 
-### `app/services/unified_recommender.py` -- Unified Blended Scorer
+| Module | What it does |
+|--------|--------------|
+| `services/personalization.py` | Taste vector from liked films, demotion of disliked ones, "because you liked" |
+| `services/providers.py` | Where-to-watch lookups from the `data/watch_providers.json` snapshot |
+| `services/email.py` | Transactional email through Resend; a logged no-op when unconfigured |
+| `services/tmdb_client.py`, `services/omdb_client.py` | API clients used only by the offline scripts |
+| `stripe_payments.py` | "Buy me a coffee" checkout; the webhook records payments |
+| `static_assets.py` | Fingerprinted static URLs with long cache headers |
+| `observability.py` | Application logging and optional Sentry error tracking |
 
-Implements `recommend_unified_semantic()` which blends four signals:
+### Offline scripts (`scripts/`)
 
-- Semantic similarity (sentence-transformer cosine)
-- Keyword overlap proxy
-- Popularity (IMDb rating x log-votes)
-- Recency (year-based)
+| Script | Purpose |
+|--------|---------|
+| `build_corpus.py` | Build the corpus from TMDB (discovery) and OMDb (IMDb ratings). Resumable |
+| `add_collections.py` | Backfill each film's TMDB franchise without a rebuild |
+| `fetch_watch_providers.py` | Refresh the where-to-watch snapshot |
+| `run_eval.py`, `tune_weights.py` | Score the ranker against the gold set; search blend weights |
+| `eval_gate.py` | Rebuild the frozen eval slice that CI replays |
+| `export_eval_set.py` | Turn feedback and usage data into graded eval cases |
 
-Applies Maximal Marginal Relevance (MMR) for diversity. Adds controlled noise and jittered lambda for non-determinism.
+Corpus discovery uses TMDB (`/discover/movie?with_genres=27`, sorted by vote
+count) because OMDb cannot browse a genre. Stages: seed the eval gold set,
+most-voted films, a decade-stratified fill, TMDB detail, OMDb enrichment,
+validation. Progress is checkpointed, so an interrupted build resumes.
 
-### `app/services/strategies/` -- Strategy Implementations
+### Templates and static files
 
-- **`base.py`** -- `RecommenderStrategy` protocol defining the `recommend()` interface.
-- **`keyword_omdb.py`** -- `KeywordOMDbStrategy` that expands mood into search queries, fetches from OMDb, and ranks by IMDb rating.
-- **`embedding_omdb.py`** -- `EmbeddingOMDbStrategy` that fetches candidates from OMDb and ranks by TF-IDF cosine similarity on plot text.
-
-### `app/services/omdb_client.py` -- OMDb API Client
-
-Async HTTP client (httpx) for OMDb. Supports search (`s=`) and detail (`i=`) lookups. Used by both the corpus builder and the keyword/embedding strategies.
-
-### `app/stripe_payments.py` -- Payments
-
-Stripe Checkout integration for "Buy me a coffee" donations. Handles session creation, success/cancel redirects, and webhook verification.
-
-### Templates (`app/templates/`)
-
-Server-rendered Jinja2 templates with a shared `_base.html` that contains the dark theme CSS, navigation, and flash message rendering.
+Jinja2 templates extend `_base.html`. The stylesheet is a static file served
+from a fingerprinted URL; the Inter font is self-hosted.
 
 | Template | Route | Purpose |
 |----------|-------|---------|
-| `index.html` | `GET /` | Search form with mood input, strategy selector, advanced filters |
-| `loading.html` | `GET /loading` | Animated loading screen, auto-redirects to `/recommend` |
-| `results.html` | `GET /recommend` | Movie grid, detail modal, feedback buttons |
-| `login.html` | `GET /login` | Login form |
-| `register.html` | `GET /register` | Registration form with password strength meter |
-| `history.html` | `GET /history` | User's past searches |
-| `coffee.html` | `GET /stripe/coffee` | Coffee purchase page |
-| `coffee_success.html` | `GET /stripe/success` | Payment success |
-| `coffee_cancel.html` | `GET /stripe/cancel` | Payment cancelled |
+| `index.html` | `GET /` | Search form, strategy selector, filters, account menu |
+| `results.html` | `GET /recommend` | Refine bar, film grid, detail dialog, feedback |
+| `login.html`, `register.html` | `/auth/login`, `/auth/register` | Sign in and sign up |
+| `forgot.html`, `reset.html` | `/auth/forgot`, `/auth/reset/{token}` | Password reset |
+| `onboarding.html` | `GET /onboarding/` | Pick films you love |
+| `account.html` | `GET /account/` | Password, email, data export, deletion |
+| `history.html`, `watchlist.html` | `/history/`, `/watchlist/` | Past searches; saved films |
+| `coffee*.html` | `/stripe/...` | Donation page and its outcomes |
+| `error.html` | (errors) | 404, 429 and failure pages |
 
-## Data Flow: From Query to Results
+## From query to results
 
-1. User types a mood on the index page and submits the form.
-2. The browser navigates to `/loading?mood=...&strategy=...&filters...`.
-3. `loading.html` shows a spooky loading animation, then JS redirects to `/recommend?...`.
-4. `ui_recommendations()` in `main.py` dispatches to the selected strategy.
-5. The strategy fetches/searches movies, applies filters (year, rating, language).
-6. Stochastic sampling selects the final set from a larger pool.
-7. Results are passed to `results.html` which renders the movie card grid.
-8. Clicking a card opens the detail modal (pure JS, no server round-trip).
-9. Like/dislike buttons send `POST /api/feedback` via fetch (AJAX).
+1. The search form submits `GET /recommend` with the mood, strategy and filters.
+2. Rate limiting and the session middleware run; the handler loads the user.
+3. Filters are applied to the corpus, then the chosen strategy ranks what is left.
+4. One film per franchise is kept and the final set is drawn from the top of
+   the pool. With `seed` set and `temperature=0` the draw is deterministic,
+   which the eval relies on.
+5. For a signed-in user the search is saved to history; for any real visitor
+   an anonymous impression is recorded (preview crawlers are skipped).
+6. `results.html` renders the cards, the refine bar and the feedback control.
+7. Opening a card shows the detail dialog, which fetches "where to watch" and
+   "more like this" from the API.
+
+If filters leave nothing, the page says which filter is responsible and how
+many films removing it would allow.
 
 ## Persistence
 
 | Store | Format | Purpose |
 |-------|--------|---------|
-| SQLite / PostgreSQL | Relational DB | Users, search history, movie feedback |
-| `data/horror_corpus.json` | JSON file | Horror movie corpus (TMDB discovery + OMDb enrichment) |
-| `data/corpus_embeddings.npy` | NumPy binary | Pre-computed sentence-transformer embeddings |
-| `data/corpus_embeddings.meta.json` | JSON file | Content hash of the embedded text, for cache invalidation |
-| `data/.corpus_build_state.json` | JSON file | Resumable build checkpoint |
-| `models/` | HuggingFace cache | Locally cached sentence-transformer model weights |
+| SQLite / PostgreSQL | Relational | Accounts, history, feedback, watchlist, payments, usage data |
+| `data/horror_corpus.json` | JSON, committed | The film corpus |
+| `data/watch_providers.json` | JSON, committed | Where-to-watch snapshot (refresh with `make providers`) |
+| `data/corpus_embeddings.npy` and `.meta.json` | NumPy, gitignored | Embeddings and the hash they were built from |
+| `data/.corpus_build_state.json` | JSON, gitignored | Corpus build checkpoint |
+| `tests/fixtures/eval_gate.*` | JSON and NumPy, committed | Frozen eval slice replayed in CI |
 
-`data/` is gitignored and is not copied into the Docker image. Because the corpus is no longer built lazily during a request, a fresh deployment must either run `make corpus` or mount an existing `data/` directory -- otherwise corpus-based strategies raise `CorpusNotBuiltError`.
+The corpus and the provider snapshot ship in the Docker image. Embeddings are
+computed when the image is built, so a new container never encodes the corpus
+while a user waits. A recommendation requested with no corpus raises
+`CorpusNotBuiltError` instead of crawling: an in-request crawl that was
+rate-limited is what once froze the corpus at 21 films.
+
+## Deployment
+
+One server runs the app, PostgreSQL, Caddy and a nightly backup job with
+Docker Compose. Pushing to `main` builds, tests, smoke-tests and deploys the
+image. See [deployment.md](deployment.md).

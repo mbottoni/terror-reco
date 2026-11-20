@@ -111,7 +111,7 @@ Server will start at: http://localhost:8000
 
 ## Next Steps After Testing
 
-1. **Deploy to Render** with Stripe environment variables
+1. **Set the Stripe variables** in `/opt/terror-reco/.env.prod` on the server and restart the app
 2. **Set up production webhook** pointing to your domain
 3. **Test with real domain** and HTTPS
 4. **Switch to live keys** when ready for real payments
@@ -121,3 +121,7 @@ Server will start at: http://localhost:8000
 - Stripe Docs: https://stripe.com/docs
 - Stripe Test Cards: https://stripe.com/docs/testing
 - TerrorReco Issues: Check your app logs
+
+## Automated tests
+
+`tests/test_stripe.py` covers checkout, the success page and the webhook (including signature checks and payment recording) with the Stripe SDK mocked. It runs in CI and needs no keys. The hand-run scripts that talk to Stripe live in `scripts/manual/`.
