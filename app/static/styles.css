@@ -768,3 +768,8 @@ select{cursor:pointer}
   font-weight: 600;
 }
 .btn-google:hover { background: #f2f2f2; color: #1f1f1f; }
+.site-footer a{color:#6b6b78;text-decoration:underline}
+.site-footer a:hover{color:#e8e8ec}
+.legal h2{font-size:1.05rem;font-weight:700;color:#e8e8ec;margin:28px 0 10px}
+.legal p{font-size:.95rem;color:#9c9caa;line-height:1.7;margin-bottom:12px}
+.legal p a{color:#e8e8ec;text-decoration:underline}
