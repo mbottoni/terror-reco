@@ -344,6 +344,29 @@ Limits:
   graded 2, though the corpus holds many more that no ranker surfaced.
 - **One judge**, with no second opinion to measure agreement against.
 
+### First ablations
+
+`score --compare '<weights>'` re-ranks with different blend weights and pairs
+the result against the default, mood by mood. Scoring takes about ten seconds.
+
+| Variant (vs. default unified) | Difference | 95% CI | Holes | Verdict |
+|-------------------------------|-----------:|:------:|------:|---------|
+| keyword weight 0 | -0.0857 | [-0.1165, -0.0563] | 2 | **worse** |
+| popularity weight 0 | -0.0090 | [-0.0267, +0.0088] | 1 | indistinguishable |
+| popularity weight 0.4 | -0.0226 | [-0.0435, -0.0011] | 7 | worse, but 7 unjudged films |
+| semantic 0.7, popularity 0.1 | -0.0196 | [-0.0443, +0.0056] | 0 | indistinguishable |
+
+- **The keyword (BM25) signal earns its place.** This is the first ranking
+  component in this project shown to matter with an interval that excludes
+  zero. Without it the unified ranker (0.540) is worse than plain semantic
+  search (0.605): popularity, recency and the diversity pass cost relevance,
+  and the keyword signal more than buys it back.
+- **Popularity is not shown to help or hurt** (the question from issue #34).
+  Removing it moves NDCG by less than the interval.
+- These are four looks at one benchmark with no holdout. They say which
+  components matter; they are not a tuned set of weights. Tuning should split
+  the 55 moods into dev and test first.
+
 ### Queries with no right answer
 
 `graded_eval.py nulls` compares the best cosine score for the 55 moods against
