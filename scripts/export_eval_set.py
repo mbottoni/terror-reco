@@ -32,7 +32,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.db import get_db_session  # noqa: E402
-from app.models import MovieFeedback, SetFeedback  # noqa: E402
+from app.models import Impression, Interaction, MovieFeedback, SetFeedback  # noqa: E402
 
 
 def set_verdict_titles(
@@ -54,6 +54,55 @@ def set_verdict_titles(
         titles = {title_of[i] for i in (imdb_ids or []) if title_of.get(i)}
         (up if verdict > 0 else down)[mood.strip()].update(titles)
     return up, down
+
+
+def implicit_signals(
+    impressions: list[Any], interactions: list[Any]
+) -> tuple[dict[str, set[str]], dict[str, dict[str, dict[str, Any]]]]:
+    """What visitors did with the films they were shown, per mood.
+
+    Returns ``(acted_on, usage)``. ``acted_on`` holds titles someone clicked
+    through to IMDb for or saved: a deliberate act, usable as weak relevance.
+    Merely opening the detail view is curiosity, so it is counted in ``usage``
+    but never treated as relevance. ``usage`` also records how often each
+    film was shown and its mean rank when acted on, because people click what
+    is on top: a film opened from rank 6 has earned it more than one at rank 1.
+    """
+    from app.services.corpus import load_corpus
+
+    title_of = {m.get("imdb_id"): (m.get("title") or "").strip().lower() for m in load_corpus()}
+    mood_of: dict[str, str] = {}
+    usage: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+
+    def entry(mood: str, title: str) -> dict[str, Any]:
+        return usage[mood].setdefault(
+            title, {"shown": 0, "open": 0, "imdb_click": 0, "save": 0, "similar_click": 0}
+        )
+
+    for result_key, mood, imdb_ids in impressions:
+        if not mood:
+            continue
+        mood_of[result_key] = mood.strip()
+        for imdb_id in imdb_ids or []:
+            if title_of.get(imdb_id):
+                entry(mood.strip(), title_of[imdb_id])["shown"] += 1
+
+    acted_on: dict[str, set[str]] = defaultdict(set)
+    positions: dict[tuple[str, str], list[int]] = defaultdict(list)
+    for result_key, imdb_id, kind, position in interactions:
+        mood, title = mood_of.get(result_key), title_of.get(imdb_id)
+        if not mood or not title:
+            continue
+        stats = entry(mood, title)
+        if kind in stats:
+            stats[kind] += 1
+        positions[(mood, title)].append(int(position))
+        if kind in ("imdb_click", "save"):
+            acted_on[mood].add(title)
+
+    for (mood, title), ranks in positions.items():
+        usage[mood][title]["mean_position"] = round(sum(ranks) / len(ranks), 2)
+    return acted_on, dict(usage)
 
 
 def build_cases(
@@ -117,8 +166,17 @@ def main() -> int:
     with get_db_session() as db:
         rows = db.query(MovieFeedback.mood, MovieFeedback.title, MovieFeedback.rating).all()
         set_rows = db.query(SetFeedback.mood, SetFeedback.imdb_ids, SetFeedback.verdict).all()
+        impressions = db.query(Impression.result_key, Impression.mood, Impression.imdb_ids).all()
+        interactions = db.query(
+            Interaction.result_key, Interaction.imdb_id, Interaction.kind, Interaction.position
+        ).all()
 
     set_liked, set_disliked = set_verdict_titles(set_rows)
+    acted_on, usage = implicit_signals(impressions, interactions)
+    # Clicking through to IMDb or saving a film is the same weak tier of
+    # evidence as a film in a set someone called good.
+    for mood, titles in acted_on.items():
+        set_liked[mood].update(titles)
 
     for mood, title, rating in rows:
         # Feedback recorded outside a search has no mood to attribute it to.
@@ -127,6 +185,10 @@ def main() -> int:
         (liked if rating > 0 else disliked)[mood.strip()].add(title.strip().lower())
 
     cases = build_cases(liked, disliked, set_liked, set_disliked, args.min_likes)
+    for case in cases:
+        # Raw counts travel with the case so a reader can see what the grades
+        # rest on, including how often a film was shown and ignored.
+        case["usage"] = usage.get(case["mood"], {})
     skipped = len(set(liked) | set(set_liked)) - len(cases)
     if args.merge_gold:
         import ast

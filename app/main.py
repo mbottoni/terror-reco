@@ -21,8 +21,15 @@ from .db import get_db, init_db
 from .history import router as history_router
 from .history import save_history
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
-from .models import MovieFeedback, SetFeedback, User, WatchlistItem
-from .schemas import FeedbackIn, FeedbackOut, SetFeedbackIn, SetFeedbackOut
+from .models import Impression, Interaction, MovieFeedback, SetFeedback, User, WatchlistItem
+from .schemas import (
+    FeedbackIn,
+    FeedbackOut,
+    InteractionIn,
+    InteractionOut,
+    SetFeedbackIn,
+    SetFeedbackOut,
+)
 from .security import poster_variant, require_csrf, safe_url, session_csrf_token
 from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
@@ -416,6 +423,11 @@ async def ui_recommendations(
             "strategy_label": STRATEGY_LABELS[strategy_key],
             "strategy_labels": STRATEGY_LABELS,
             "is_shared": bool(shared),
+            # A shared set was chosen by someone else, so what a viewer does
+            # with it says nothing about the ranker; it is not measured.
+            "result_key": (
+                None if shared else record_impression(db, request, mood, strategy_key, movies)
+            ),
             "refine": refine_context(
                 mood=mood,
                 strategy=strategy_key,
@@ -519,6 +531,53 @@ async def submit_feedback(
     return {"status": "created", "imdb_id": imdb_id, "rating": rating}
 
 
+def visitor_id_for(request: Request) -> str:
+    """A random id for this browser session; not tied to an account or an IP."""
+    import secrets as _secrets
+
+    visitor_id = request.session.get("vid")
+    if not visitor_id:
+        visitor_id = _secrets.token_hex(16)
+        request.session["vid"] = visitor_id
+    return str(visitor_id)
+
+
+def record_impression(
+    db: Session, request: Request, mood: str, strategy: str, movies: list[dict[str, Any]]
+) -> str | None:
+    """Note which films were shown, and return the set's key for the page.
+
+    Best-effort: this is measurement, and it must never cost a visitor their
+    search results. Any failure is logged and the page renders without it.
+    """
+    imdb_ids = [str(m["imdb_id"]) for m in movies if m.get("imdb_id")]
+    if not imdb_ids:
+        return None
+    key = set_result_key(mood, imdb_ids)
+    try:
+        visitor_id = visitor_id_for(request)
+        seen = (
+            db.query(Impression.id)
+            .filter(Impression.visitor_id == visitor_id, Impression.result_key == key)
+            .first()
+        )
+        if not seen:
+            db.add(
+                Impression(
+                    visitor_id=visitor_id,
+                    result_key=key,
+                    mood=mood[:512],
+                    strategy=strategy[:64],
+                    imdb_ids=imdb_ids,
+                )
+            )
+            db.commit()
+    except Exception:  # noqa: BLE001
+        db.rollback()
+        logger.warning("Could not record the impression", exc_info=True)
+    return key
+
+
 def set_result_key(mood: str, imdb_ids: list[str]) -> str:
     """Identifies one result set for one mood, order included."""
     import hashlib
@@ -543,13 +602,7 @@ async def submit_set_feedback(
     really shown for that mood, so the export treats this as weak evidence and
     keeps only ids that exist in the corpus.
     """
-    import secrets as _secrets
-
-    visitor_id = request.session.get("vid")
-    if not visitor_id:
-        visitor_id = _secrets.token_hex(16)
-        request.session["vid"] = visitor_id
-
+    visitor_id = visitor_id_for(request)
     key = set_result_key(payload.mood, payload.imdb_ids)
     existing = (
         db.query(SetFeedback)
@@ -578,6 +631,44 @@ async def submit_set_feedback(
     )
     db.commit()
     return {"status": "created", "verdict": payload.verdict}
+
+
+@app.post("/api/interaction", response_model=InteractionOut, dependencies=[Depends(require_csrf)])
+async def record_interaction(
+    payload: InteractionIn, request: Request, db: Session = Depends(get_db)
+) -> dict[str, str]:
+    """Record that this visitor opened, clicked through to, or saved a film.
+
+    Accepted only for a set this same visitor was actually shown, and only
+    for a film in it. That keeps the table to things that happened on a real
+    page, and lets the server fill in the rank itself instead of trusting it.
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    visitor_id = visitor_id_for(request)
+    impression = (
+        db.query(Impression)
+        .filter(Impression.visitor_id == visitor_id, Impression.result_key == payload.result_key)
+        .first()
+    )
+    if impression is None or payload.imdb_id not in impression.imdb_ids:
+        return {"status": "ignored"}
+
+    db.add(
+        Interaction(
+            visitor_id=visitor_id,
+            result_key=payload.result_key,
+            imdb_id=payload.imdb_id,
+            kind=payload.kind,
+            position=impression.imdb_ids.index(payload.imdb_id),
+        )
+    )
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()  # already recorded: the same action twice is one signal
+        return {"status": "duplicate"}
+    return {"status": "recorded"}
 
 
 # Routers

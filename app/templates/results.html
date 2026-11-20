@@ -263,6 +263,22 @@ var IS_LOGGED_IN = {{ "true" if user else "false" }};
 var SAVED_IDS = new Set({{ (saved_ids or []) | tojson }});
 var MOOD = {{ mood | tojson }};
 var STRATEGY = {{ strategy | tojson }};
+// Identifies this result set for anonymous usage measurement; null when the
+// set is not being measured (a shared link).
+var RESULT_KEY = {{ result_key | tojson }};
+
+// Fire-and-forget: measurement must never get in the way of the page.
+// keepalive lets the request finish when the click also navigates away.
+function logInteraction(imdbId, kind){
+  if(!RESULT_KEY || !imdbId) return;
+  try{
+    fetch('/api/interaction', {
+      method: 'POST', keepalive: true,
+      headers: csrfHeaders({'Content-Type': 'application/json'}),
+      body: JSON.stringify({result_key: RESULT_KEY, imdb_id: imdbId, kind: kind})
+    }).catch(function(){});
+  }catch(e){}
+}
 
 // Track feedback state client-side (seeded from server for logged-in users)
 var feedbackState = {{ user_feedback | tojson }};
@@ -278,7 +294,8 @@ function toggleSaved(imdbId){
     body: JSON.stringify({imdb_id: imdbId, title: m.title, poster_url: m.poster_url})
   }).then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function(data){
-      if(data.saved){ SAVED_IDS.add(imdbId); } else { SAVED_IDS.delete(imdbId); }
+      if(data.saved){ SAVED_IDS.add(imdbId); logInteraction(imdbId, 'save'); }
+      else { SAVED_IDS.delete(imdbId); }
       if(btn){ btn.disabled = false; btn.textContent = data.saved ? 'Saved \u2713' : 'Save to watchlist'; }
     })
     .catch(function(){ if(btn){ btn.disabled = false; btn.textContent = 'Try again'; } });
@@ -308,6 +325,8 @@ function renderSimilar(imdbId){
         link.className = 'similar-item';
         link.href = '/recommend?mood=' + encodeURIComponent(f.title || '') +
                     '&strategy=semantic';
+        // Following a "more like this" link is interest in the film it hangs off.
+        link.addEventListener('click', function(){ logInteraction(imdbId, 'similar_click'); });
         var url = safeUrl(f.poster_url);
         if(url){
           var img = document.createElement('img');
@@ -366,6 +385,7 @@ function openDetail(idx){
   // this" re-opens the modal from inside itself.
   if(!modalIsOpen()) _lastFocus = document.activeElement;
   _currentIdx = idx;
+  logInteraction(m.imdb_id, 'open');
   renderSimilar(m.imdb_id);
 
   var modal = document.getElementById('movie-modal');
@@ -415,7 +435,7 @@ function openDetail(idx){
   // is not an IMDb id at all.
   var actions = '';
   if(isImdbId(m.imdb_id)){
-    actions += '<a href="https://www.imdb.com/title/'+m.imdb_id+'/" target="_blank" rel="noopener" class="btn btn-imdb">';
+    actions += '<a href="https://www.imdb.com/title/'+m.imdb_id+'/" target="_blank" rel="noopener" class="btn btn-imdb" id="modal-imdb-link">';
     actions += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 0 0-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-4a.75.75 0 0 1 1.5 0v4A2.25 2.25 0 0 1 12.75 17h-8.5A2.25 2.25 0 0 1 2 14.75v-8.5A2.25 2.25 0 0 1 4.25 4h5a.75.75 0 0 1 0 1.5h-5Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M6.194 12.753a.75.75 0 0 0 1.06.053L16.5 4.44v2.81a.75.75 0 0 0 1.5 0v-4.5a.75.75 0 0 0-.75-.75h-4.5a.75.75 0 0 0 0 1.5h2.553l-9.056 8.194a.75.75 0 0 0-.053 1.06Z" clip-rule="evenodd"/></svg>';
     actions += 'View on IMDb</a>';
   }
@@ -427,6 +447,8 @@ function openDetail(idx){
   document.getElementById('modal-actions').innerHTML = actions;
   // Bound as a listener rather than an inline onclick, so the id never has to
   // survive a round-trip through a quoted attribute.
+  var imdbLink = document.getElementById('modal-imdb-link');
+  if(imdbLink) imdbLink.addEventListener('click', function(){ logInteraction(m.imdb_id, 'imdb_click'); });
   var saveBtn = document.getElementById('save-btn');
   if(saveBtn) saveBtn.addEventListener('click', function(){ toggleSaved(m.imdb_id); });
 
