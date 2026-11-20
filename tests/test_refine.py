@@ -122,6 +122,81 @@ class TestResultsPage:
     ) -> None:
         monkeypatch.setattr(main_mod, "recommend_movies_advanced", lambda **kw: [])
         with_filter = client.get("/recommend", params={"mood": "x", "min_rating": 9.5}).text
-        assert "with these filters" in with_filter and "IMDb 9.5+" in with_filter
+        assert "No films pass these filters" in with_filter and "IMDb 9.5+" in with_filter
         without = client.get("/recommend", params={"mood": "x"}).text
         assert "Try a different vibe" in without
+
+
+class TestWhichFilterEmptiedTheResults:
+    CORPUS = [
+        {
+            "imdb_id": "tt1",
+            "title": "Old Good",
+            "year": "1975",
+            "vote_average": 8.6,
+            "language": "English",
+        },
+        {
+            "imdb_id": "tt2",
+            "title": "Old Okay",
+            "year": "1978",
+            "vote_average": 6.0,
+            "language": "English",
+        },
+        {
+            "imdb_id": "tt3",
+            "title": "New Good",
+            "year": "2015",
+            "vote_average": 8.8,
+            "language": "Korean",
+        },
+    ]
+
+    @pytest.fixture(autouse=True)
+    def _corpus(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import app.services.corpus as corpus_mod
+
+        monkeypatch.setattr(corpus_mod, "get_corpus_and_embeddings", lambda: (self.CORPUS, None))
+        monkeypatch.setattr(main_mod, "recommend_movies_advanced", lambda **kw: [])
+
+    def test_counts_films_that_would_pass_without_each_filter(self) -> None:
+        from app.services.recommender import films_without_each_filter
+
+        counts = films_without_each_filter(
+            min_year=1970, max_year=1980, min_rating=9.0, english_only=False
+        )
+        # Nothing is rated 9+. Dropping the rating leaves the two 1970s films;
+        # dropping either year bound still leaves nothing.
+        assert counts == {"min_year": 0, "max_year": 0, "min_rating": 2, "all": 3}
+
+    def test_page_names_the_filter_and_what_removing_it_gains(self, client: TestClient) -> None:
+        params = {"mood": "x", "min_year": 1970, "max_year": 1980, "min_rating": 9.0}
+        page = client.get("/recommend", params=params).text
+        assert "No films pass these filters" in page
+        assert "Remove &ldquo;IMDb 9+&rdquo;" in page
+        assert "2 films would qualify" in page
+        # The year filters are not the culprit, so they are not offered.
+        assert "Remove &ldquo;From 1970&rdquo;" not in page
+
+    def test_singular_count_reads_correctly(self, client: TestClient) -> None:
+        page = client.get("/recommend", params={"mood": "x", "min_year": 2010, "english": 1}).text
+        assert "Remove &ldquo;English only&rdquo;" in page
+        assert "1 film would qualify" in page
+
+    def test_when_no_single_removal_helps_it_offers_to_clear_everything(
+        self, client: TestClient
+    ) -> None:
+        params = {"mood": "x", "min_year": 1990, "max_year": 2000, "min_rating": 9.5}
+        page = client.get("/recommend", params=params).text
+        assert "Removing any single filter is not enough" in page
+        assert "Clear all filters" in page and "all 3 films" in page
+
+    def test_explaining_never_breaks_the_page(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def _boom(**kwargs: Any) -> dict[str, int]:
+            raise RuntimeError("no corpus")
+
+        monkeypatch.setattr(main_mod, "films_without_each_filter", _boom)
+        resp = client.get("/recommend", params={"mood": "x", "min_rating": 9.9})
+        assert resp.status_code == 200 and "No films pass these filters" in resp.text

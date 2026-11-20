@@ -118,7 +118,26 @@
   <div class="empty-state">
     <div class="empty-state-icon">👻</div>
     {% if refine.chips %}
-    <p>No films match that mood with these filters. Remove one above to widen the search.</p>
+    {# Filters run before ranking, so an empty page is almost always a filter's
+       doing. Say which one, and how much dropping it would open up. #}
+    <p>No films pass these filters, whatever the mood.</p>
+    {% set ns = namespace(any=false) %}
+    <ul class="relief-list">
+      {% for chip in refine.chips %}
+      {% set n = relief.get("english_only" if chip.key == "english" else chip.key, 0) %}
+      {% if n %}{% set ns.any = true %}
+      <li><a href="{{ chip.remove_url }}">Remove &ldquo;{{ chip.label }}&rdquo;</a>
+          <span class="relief-count">{{ n }} film{{ "" if n == 1 else "s" }} would qualify</span></li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+    {% if not ns.any %}
+    <p class="relief-note">
+      Removing any single filter is not enough.
+      <a href="{{ refine.clear_url }}">Clear all filters</a>{% if relief.get("all") %}
+      to search all {{ relief.get("all") }} films{% endif %}.
+    </p>
+    {% endif %}
     {% else %}
     <p>No movies found for that mood. Try a different vibe!</p>
     {% endif %}
