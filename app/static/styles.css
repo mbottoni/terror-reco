@@ -704,3 +704,11 @@ select{cursor:pointer}
 .provider-chip{font-size:.75rem;color:#e8e8ec;background:#1e1e26;border:1px solid #2c2c36;border-radius:999px;padding:3px 9px}
 .provider-note{font-size:.72rem;color:#6b6b78;margin-top:8px}
 .provider-note a{color:#9c9caa}
+
+/* ---- REFINE SUGGESTIONS ---- */
+.refine-label{font-size:.72rem;font-weight:700;color:#6b6b78;text-transform:uppercase;letter-spacing:.06em}
+.suggest-chip{
+  font-size:.78rem;text-decoration:none;color:#9c9caa;padding:5px 11px;border-radius:999px;
+  border:1px dashed #33333d;background:transparent;
+}
+.suggest-chip:hover{color:#e8e8ec;border-color:#5a5a68;border-style:solid}
