@@ -661,3 +661,7 @@ select{cursor:pointer}
 .relief-list a,.relief-note a{color:#f0a5a5}
 .relief-count{color:#6b6b78;margin-left:8px}
 .relief-note{margin-top:12px;font-size:.9rem;color:#9c9caa}
+
+/* ---- BECAUSE YOU LIKED ---- */
+.card-because{font-size:.75rem;color:#8a8a98;margin-top:8px;line-height:1.4}
+.card-because em{color:#c8c8d0;font-style:normal;font-weight:600}

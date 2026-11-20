@@ -171,3 +171,58 @@ class TestCacheIsNotClobbered:
             corpus_mod.EMBEDDINGS_FILE.read_bytes() if corpus_mod.EMBEDDINGS_FILE.exists() else None
         )
         assert before == after
+
+
+class TestBecauseYouLiked:
+    """Personalised results say which liked film they resemble."""
+
+    CORPUS = [
+        {"imdb_id": "tt1", "title": "Liked Folk"},
+        {"imdb_id": "tt2", "title": "Liked Slasher"},
+        {"imdb_id": "tt3", "title": "Near Folk"},
+        {"imdb_id": "tt4", "title": "Near Slasher"},
+        {"imdb_id": "tt5", "title": "Unrelated"},
+    ]
+    # Unit vectors: tt3 is close to tt1, tt4 to tt2, tt5 to neither.
+    EMB = np.array(
+        [[1, 0, 0], [0, 1, 0], [0.9, 0.1, 0.42], [0.1, 0.9, 0.42], [0, 0, 1]], dtype=np.float32
+    )
+    EMB = EMB / np.linalg.norm(EMB, axis=1, keepdims=True)
+
+    def _explain(self, result_ids: list[str], liked: set[str], **kw: Any) -> dict[str, str]:
+        from app.services.personalization import explain_by_liked_films
+
+        movies = [m for m in self.CORPUS if m["imdb_id"] in result_ids]
+        return explain_by_liked_films(movies, liked, self.CORPUS, self.EMB, **kw)
+
+    def test_names_the_nearest_liked_film(self) -> None:
+        out = self._explain(["tt3", "tt4"], {"tt1", "tt2"})
+        assert out == {"tt3": "Liked Folk", "tt4": "Liked Slasher"}
+
+    def test_stays_silent_without_a_clear_resemblance(self) -> None:
+        assert self._explain(["tt5"], {"tt1", "tt2"}) == {}
+
+    def test_a_film_is_never_explained_by_itself(self) -> None:
+        # tt1 is liked and also a result: no "because you liked Liked Folk".
+        assert self._explain(["tt1"], {"tt1"}) == {}
+        # With another liked film nearby it is credited to that one instead.
+        assert self._explain(["tt1"], {"tt1", "tt3"}) == {"tt1": "Near Folk"}
+
+    def test_threshold_is_respected(self) -> None:
+        assert self._explain(["tt3"], {"tt1"}, min_similarity=0.99) == {}
+        assert self._explain(["tt3"], {"tt1"}, min_similarity=0.5) == {"tt3": "Liked Folk"}
+
+    def test_degrades_to_nothing_on_missing_inputs(self) -> None:
+        from app.services.personalization import explain_by_liked_films
+
+        movies = [self.CORPUS[2]]
+        assert explain_by_liked_films(movies, {"tt1"}, self.CORPUS, None) == {}
+        assert explain_by_liked_films(movies, set(), self.CORPUS, self.EMB) == {}
+        assert explain_by_liked_films([], {"tt1"}, self.CORPUS, self.EMB) == {}
+        assert explain_by_liked_films(movies, {"tt999"}, self.CORPUS, self.EMB) == {}
+        assert explain_by_liked_films([{"imdb_id": "tt999"}], {"tt1"}, self.CORPUS, self.EMB) == {}
+
+    def test_default_threshold_sits_above_chance_similarity(self) -> None:
+        from app.services.personalization import BECAUSE_LIKED_MIN_SIMILARITY
+
+        assert 0.5 <= BECAUSE_LIKED_MIN_SIMILARITY <= 0.7
