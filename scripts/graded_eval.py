@@ -130,7 +130,9 @@ def make_rankers(
         found = semantic_search(
             mood, corpus, embeddings, top_k=POOL_K, temperature=temperature, seed=seed
         )
-        return [{k: v for k, v in m.items() if not k.startswith("_")} for m in found]
+        # The private ``_embedding_row`` hints are kept, as on the request path:
+        # without them the re-ranker encodes all 60 candidates again per call.
+        return found
 
     def semantic(mood: str, limit: int = K) -> list[dict[str, Any]]:
         return candidates(mood, 0.0, None)[:limit]
