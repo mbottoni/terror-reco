@@ -119,6 +119,49 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # so every poster URL rendered into a src/href goes through this first.
 templates.env.filters["safe_url"] = safe_url
 templates.env.globals["static_url"] = static_url
+
+
+def public_url(request: Request, path: str) -> str:
+    """Absolute URL for *path*: link previews need them, relative ones fail.
+
+    Built from PUBLIC_BASE_URL (always set in production); in development the
+    request's own origin stands in.
+    """
+    base = settings.PUBLIC_BASE_URL or str(request.base_url).rstrip("/")
+    return f"{base}{path}"
+
+
+def page_url(request: Request) -> str:
+    """This page's canonical absolute URL, query string included."""
+    query = f"?{request.url.query}" if request.url.query else ""
+    return public_url(request, f"{request.url.path}{query}")
+
+
+templates.env.globals["public_url"] = public_url
+templates.env.globals["page_url"] = page_url
+
+# Link-preview fetchers and crawlers. They load result pages without anyone
+# looking at them, so they must not count as a film having been "shown".
+_BOT_MARKERS = (
+    "bot",
+    "crawler",
+    "spider",
+    "preview",
+    "facebookexternalhit",
+    "slurp",
+    "embedly",
+    "whatsapp",
+    "curl/",
+    "python-requests",
+    "httpx",
+)
+
+
+def looks_like_bot(request: Request) -> bool:
+    agent = request.headers.get("user-agent", "").lower()
+    return not agent or any(marker in agent for marker in _BOT_MARKERS)
+
+
 templates.env.filters["poster_variant"] = poster_variant
 # Every page embeds the session's CSRF token (see _base.html), so forms and
 # fetch() calls on any page can send it back.
@@ -445,7 +488,9 @@ async def ui_recommendations(
             # A shared set was chosen by someone else, so what a viewer does
             # with it says nothing about the ranker; it is not measured.
             "result_key": (
-                None if shared else record_impression(db, request, mood, strategy_key, movies)
+                None
+                if shared or looks_like_bot(request)
+                else record_impression(db, request, mood, strategy_key, movies)
             ),
             "refine": refine_context(
                 mood=mood,
