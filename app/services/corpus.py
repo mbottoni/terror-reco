@@ -291,9 +291,9 @@ def semantic_search(
         Optional RNG seed.  Together with ``temperature=0`` this makes the
         search reproducible, which offline evaluation depends on.
     """
-    from .unified_recommender import _embed_sbert, _normalize_text
+    from .unified_recommender import embed_query
 
-    q_emb = _embed_sbert([_normalize_text(query)])  # (1, dim)
+    q_emb = embed_query(query)  # (1, dim), cached per process
     sims = (q_emb @ corpus_embeddings.T).ravel()  # (n_corpus,)
 
     if temperature > 0:

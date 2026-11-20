@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, OrderedDict
 from dataclasses import dataclass
 from math import isfinite, log
 from pathlib import Path
@@ -45,6 +45,39 @@ def _embed_sbert(texts: list[str]) -> np.ndarray:
         return np.zeros((len(texts), 1), dtype=np.float32)
     vecs = model.encode(texts, normalize_embeddings=True)
     return np.asarray(vecs, dtype=np.float32)
+
+
+_QUERY_CACHE_SIZE = 512
+_QUERY_CACHE: OrderedDict[str, tuple[Any, np.ndarray]] = OrderedDict()
+
+
+def embed_query(text: str) -> np.ndarray:
+    """Embedding of one query string, shape ``(1, dim)``, cached per process.
+
+    Queries repeat far more than they look like they should: the mood chips
+    on the home page submit fixed strings, match chips and "more like this"
+    re-run a keyword or a title, shared links replay a mood, and the unified
+    strategy embeds the same mood twice in one request (once to retrieve,
+    once to score). Each of those was a full model forward pass.
+
+    An entry is only reused while ``_embed_sbert`` is the function that
+    produced it, so swapping the embedder (tests, the eval gate) can never be
+    answered from a stale vector. The array is read-only because it is shared
+    between callers.
+    """
+    key = _normalize_text(text)
+    embedder = _embed_sbert
+    hit = _QUERY_CACHE.get(key)
+    if hit is not None and hit[0] is embedder:
+        _QUERY_CACHE.move_to_end(key)
+        return hit[1]
+    vec = embedder([key])
+    vec.setflags(write=False)
+    _QUERY_CACHE[key] = (embedder, vec)
+    _QUERY_CACHE.move_to_end(key)
+    while len(_QUERY_CACHE) > _QUERY_CACHE_SIZE:
+        _QUERY_CACHE.popitem(last=False)
+    return vec
 
 
 def _cosine(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -316,7 +349,7 @@ def compute_signals(
     # semantic search feeding it.
     from .corpus import embedding_text, embeddings_for, get_corpus_and_embeddings
 
-    mood_vec = _embed_sbert([_normalize_text(mood)])
+    mood_vec = embed_query(mood)
     plot_vecs = None
     try:
         _, corpus_embeddings = get_corpus_and_embeddings()
