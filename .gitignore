@@ -39,3 +39,6 @@ data/*
 
 # Local sentence-transformer model weights (downloaded via scripts/download_model.py)
 models/
+
+# Films waiting to be judged; an intermediate file (scripts/graded_eval.py pool)
+eval/to_judge.json

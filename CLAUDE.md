@@ -130,6 +130,13 @@ changes for any fixture film -- so editing `embedding_text()` or rebuilding the 
 it red on purpose. Rebuild with `make eval-gate` (needs the model) and commit the fixture with the
 change. It guards against a collapse; it cannot show an improvement.
 
+There is a second, wider benchmark: `make eval-graded` scores 55 moods against pooled, graded
+judgments (`eval/judgments.json`, graded 0-2 **by an AI judge, not a person**). Its paired interval
+is about ±0.034 NDCG@6, against ±0.06 for the 15 hand-written moods, so prefer it for comparing
+rankers. A ranker whose results were never judged shows **holes**, which score 0: run
+`make eval-pool`, judge the listed films, add them to the file, then score. Do not read a score
+with holes as a measurement.
+
 Before claiming any ranking change helps, run `make eval` — and remember a single run is
 not a measurement, since the pipeline's stddev is comparable to most effects worth finding.
 
