@@ -429,7 +429,7 @@ STRATEGY_LABELS: dict[str, str] = {
 async def ui_recommendations(
     request: Request,
     mood: str = Query(..., min_length=1),
-    strategy: str = Query(default="semantic"),
+    strategy: str | None = Query(default=None),
     min_year: int | None = Query(default=None, ge=1900, le=2100),
     max_year: int | None = Query(default=None, ge=1900, le=2100),
     min_rating: float | None = Query(default=None, ge=0, le=10),
@@ -631,7 +631,13 @@ async def api_recommendations(
     try:
         # Uses the same corpus pipeline as the UI.
         movies = await run_in_threadpool(
-            recommend_movies_advanced, mood=mood, limit=limit, seed=seed
+            recommend_movies_advanced,
+            mood=mood,
+            limit=limit,
+            seed=seed,
+            # As documented: a seed makes the result reproducible. Without
+            # this the seed only fixed the noise, it did not remove it.
+            temperature=0.0 if seed is not None else 1.0,
         )
     except CorpusNotBuiltError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

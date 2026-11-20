@@ -12,7 +12,7 @@ This document explains how TerrorReco matches a typed mood to horror films: the 
 
 ## Strategies
 
-### 1. Semantic search (default)
+### 1. Semantic search
 
 **Route:** `strategy=semantic`
 **Function:** `recommend_movies_advanced()` in `app/services/recommender.py`
@@ -21,9 +21,9 @@ This document explains how TerrorReco matches a typed mood to horror films: the 
 2. Embed the query (cached per process) and take cosine similarity against the cached corpus embeddings.
 3. Add temperature-scaled Gaussian noise to the scores of the top candidates.
 4. Keep one film per franchise (see below).
-5. Draw the final page by weighted sampling from the top of the pool.
+5. The page is the top of that ranking.
 
-### 2. Unified (AI + diversity)
+### 2. Unified (AI + diversity), the default
 
 **Route:** `strategy=unified`
 **Function:** `recommend_unified_semantic()` in `app/services/unified_recommender.py`
@@ -109,15 +109,15 @@ A request never builds or extends the corpus. A 1,200-film version was tried and
 
 ## Non-Deterministic Recommendations
 
-To avoid showing the same results every time for the same query, randomness is injected at three levels:
+To avoid showing the same results every time for the same query, randomness is injected at two levels, and a repeat search for the same mood also demotes the films it just showed:
 
 ### 1. Score Perturbation (Semantic Search)
 
 In `semantic_search()`, a `temperature` parameter controls Gaussian noise added to cosine similarity scores. A wider pool is fetched first, noise is applied proportional to the score spread, and the pool is re-ranked. This shuffles similar-scoring movies.
 
-### 2. Weighted Random Sampling (Advanced Recommender)
+### 2. (Removed) Weighted random sampling
 
-In `recommend_movies_advanced()`, instead of taking the top-K deterministically, a larger pool is created and movies are selected via weighted random sampling without replacement. Weights decay linearly from 1.0 (best) to 0.3 (end of pool), so top results are favoured but not guaranteed.
+`recommend_movies_advanced()` used to draw the page at random from the top 18 films. Measured as served, that cost a third of the page's quality (NDCG@6 0.46 against 0.61) for variety the score noise already provides, and it also ran on the unified strategy's candidate pool. It was removed; see `docs/evaluation-baseline.md`.
 
 ### 3. Blended Noise + Jittered MMR (Unified Strategy)
 

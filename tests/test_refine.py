@@ -285,7 +285,8 @@ class TestTiltReachesTheRanker:
         self, client: TestClient, weights_seen: list[Any]
     ) -> None:
         resp = client.get("/recommend", params={"mood": "x", "tilt": "<script>"})
-        assert resp.status_code == 200 and weights_seen == []
+        # The default strategy with its default weights: no tilt was applied.
+        assert resp.status_code == 200 and weights_seen == [None]
 
     def test_page_shows_the_nudges_and_keeps_the_tilt_when_refining(
         self, client: TestClient, weights_seen: list[Any]
