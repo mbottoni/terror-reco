@@ -12,8 +12,49 @@
   <h1 class="page-title">Watchlist</h1>
   <p class="page-subtitle">Films you saved for later.</p>
 
+  {% if flash %}
+  <div class="flash{% if flash_type == 'error' %} flash-error{% endif %}" style="margin-bottom:20px">{{ flash }}</div>
+  {% endif %}
+
+  {# Sharing. Private unless published; unpublishing kills the link for good. #}
+  <details class="share-list"{% if public_list %} open{% endif %}>
+    <summary>{% if public_list %}This list is public{% else %}Share this list{% endif %}</summary>
+    {% if public_list %}
+    <p class="share-list-note">
+      Anyone with this link can see the films below, your title and your description.
+      Your email address is not shown.
+    </p>
+    <p><a class="share-list-link" href="/l/{{ public_list.slug }}">{{ public_url(request, '/l/' ~ public_list.slug) }}</a></p>
+    {% else %}
+    <p class="share-list-note">
+      Publishing creates a link you can send to anyone. It shows the films below with a title you
+      choose. Your email address is not shown, and you can make the list private again at any time.
+    </p>
+    {% endif %}
+    <form action="/watchlist/publish" method="post" class="auth-form share-list-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <div class="form-group">
+        <label for="list-title">Title</label>
+        <input id="list-title" name="title" type="text" maxlength="80" required
+               value="{{ public_list.title if public_list else '' }}" placeholder="My favourite folk horror">
+      </div>
+      <div class="form-group">
+        <label for="list-description">Description (optional)</label>
+        <input id="list-description" name="description" type="text" maxlength="280"
+               value="{{ public_list.description or '' if public_list else '' }}">
+      </div>
+      <button type="submit" class="btn btn-primary">{% if public_list %}Save changes{% else %}Publish list{% endif %}</button>
+    </form>
+    {% if public_list %}
+    <form action="/watchlist/unpublish" method="post" style="margin-top:10px">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+      <button type="submit" class="btn btn-danger">Make private</button>
+    </form>
+    {% endif %}
+  </details>
+
   {% if items %}
-  <ul class="card-grid">
+  <ul class="grid">
     {% for item in items %}
     <li class="card">
       {% if item.poster_url | safe_url %}

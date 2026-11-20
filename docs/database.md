@@ -57,6 +57,8 @@ with `strategy = "onboarding"` and no mood.
 `poster_url`, unique on `(user_id, imdb_id)`. Kept apart from feedback on
 purpose: saving a film says nothing about liking it.
 
+**`public_lists`** — a watchlist published at a random address: `user_id` (one per user), `slug`, `title`, `description`. A row is the publication: unpublishing deletes it, and publishing again creates a new slug, so a withdrawn link stays dead.
+
 ### Payments
 
 **`payments`** — one row per completed Stripe checkout, written by the webhook.

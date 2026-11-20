@@ -1,0 +1,45 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ list.title }} — TerrorReco{% endblock %}
+
+{# Not for search engines: the owner shared a link, they did not ask to be listed. #}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block og_title %}{{ list.title | truncate(80, true, "…") }}{% endblock %}
+{% block og_description %}{% if list.description %}{{ list.description | truncate(190, false, "…") }}{% else %}{{ films | map(attribute="title") | select | join(", ") | truncate(190, false, "…") }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px">
+  <h1 class="page-title">{{ list.title }}</h1>
+  {% if list.description %}<p class="page-subtitle">{{ list.description }}</p>{% endif %}
+  <p class="public-list-meta">A list of {{ films | length }} film{{ "" if films | length == 1 else "s" }}, shared from TerrorReco.</p>
+
+  {% if films %}
+  <ul class="grid">
+    {% for m in films %}
+    <li class="card">
+      <a class="public-list-film" rel="noopener" target="_blank"
+         href="https://www.imdb.com/title/{{ m.imdb_id | urlencode }}/">
+        {% if m.poster_url | safe_url %}
+        <img class="card-poster" src="{{ m.poster_url | poster_variant('w342') }}"
+             srcset="{{ m.poster_url | poster_variant('w342') }} 342w, {{ m.poster_url | poster_variant('w500') }} 500w"
+             sizes="(max-width: 600px) 45vw, 240px" alt="" loading="lazy" decoding="async">
+        {% else %}
+        <div class="card-no-poster">🎬</div>
+        {% endif %}
+        <div class="card-body">
+          <h2 class="card-title">{{ m.title }}</h2>
+          {% if m.year %}<p class="card-meta"><span>{{ m.year }}</span></p>{% endif %}
+        </div>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state"><p>This list is empty.</p></div>
+  {% endif %}
+
+  <p class="public-list-cta"><a href="/" class="btn btn-primary">Find your own horror films</a></p>
+  <p class="public-list-credit">Film data and images from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+</div>
+{% endblock %}

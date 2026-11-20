@@ -47,6 +47,7 @@ from .services.unified_recommender import DEFAULT_WEIGHTS, recommend_unified_sem
 from .settings import get_settings
 from .static_assets import CachedStaticFiles, static_url
 from .stripe_payments import router as stripe_router
+from .watchlist import public_router as public_list_router
 from .watchlist import router as watchlist_router
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -921,3 +922,4 @@ app.include_router(password_reset_router)
 app.include_router(history_router)
 app.include_router(stripe_router)
 app.include_router(watchlist_router)
+app.include_router(public_list_router)
