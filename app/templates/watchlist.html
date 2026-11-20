@@ -3,11 +3,7 @@
 {% block title %}Watchlist — TerrorReco{% endblock %}
 
 {% block content %}
-<div class="container" style="padding-top:32px">
-  <a href="/" class="back-link">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
-    Back
-  </a>
+<div class="container page">
 
   <h1 class="page-title">Watchlist</h1>
   <p class="page-subtitle">Films you saved for later.</p>
@@ -57,13 +53,15 @@
   <ul class="grid">
     {% for item in items %}
     <li class="card">
-      {% if item.poster_url | safe_url %}
-      <img class="card-poster" src="{{ item.poster_url | poster_variant('w342') }}"
-           srcset="{{ item.poster_url | poster_variant('w342') }} 342w, {{ item.poster_url | poster_variant('w500') }} 500w"
-           sizes="(max-width: 600px) 45vw, 240px" alt="{{ item.title }}" loading="lazy" decoding="async">
-      {% else %}
-      <div class="card-no-poster">🎬</div>
-      {% endif %}
+      <div class="card-media">
+        {% if item.poster_url | safe_url %}
+        <img class="card-poster" src="{{ item.poster_url | poster_variant('w342') }}"
+             srcset="{{ item.poster_url | poster_variant('w342') }} 342w, {{ item.poster_url | poster_variant('w500') }} 500w"
+             sizes="(max-width: 520px) 46vw, (max-width: 1100px) 24vw, 180px" alt="" loading="lazy" decoding="async">
+        {% else %}
+        <div class="card-no-poster" aria-hidden="true">{{ item.title }}</div>
+        {% endif %}
+      </div>
       <div class="card-body">
         <h2 class="card-title">{{ item.title }}</h2>
         <p class="card-meta">
@@ -81,8 +79,9 @@
   </ul>
   {% else %}
   <div class="empty-state">
-    <div class="empty-state-icon">🔖</div>
-    <p>Nothing saved yet. Open a film and hit Save to watch later.</p>
+    <div class="empty-state-icon">Nothing saved yet.</div>
+    <p>Open a film and choose Save to watchlist.</p>
+    <p style="margin-top:24px"><a href="/" class="btn btn-primary">Find a film</a></p>
   </div>
   {% endif %}
 </div>

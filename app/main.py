@@ -275,6 +275,62 @@ async def healthz() -> dict[str, Any]:
         return {"status": "degraded", "corpus_films": 0, "error": str(exc)}
 
 
+_CATALOGUE_CACHE: dict[str, Any] = {}
+SHOWCASE_SIZE = 8
+
+
+def _catalogue() -> dict[str, Any]:
+    """What the home page says about the corpus, and a shelf of well-known
+    films to start from. Each shelf film links to a "like <title>" search, so
+    only films that search would recognise are offered. Decoration: any
+    failure yields an empty shelf, never a broken home page."""
+    import random
+
+    try:
+        from .services.corpus import get_corpus_and_embeddings
+        from .services.title_reference import find_title_references
+
+        corpus, _ = get_corpus_and_embeddings()
+        if _CATALOGUE_CACHE.get("corpus") is not corpus:
+            years = sorted(
+                int(str(m["year"])[:4]) for m in corpus if str(m.get("year") or "")[:4].isdigit()
+            )
+
+            def votes(movie: dict[str, Any]) -> int:
+                raw = str(movie.get("imdbVotes") or "0").replace(",", "")
+                return int(raw) if raw.isdigit() else 0
+
+            pool = []
+            for movie in sorted(corpus, key=votes, reverse=True)[:120]:
+                query = f"like {movie['title']}"
+                reference = find_title_references(query, corpus)
+                if (
+                    reference is not None
+                    and reference.imdb_ids == (movie.get("imdb_id"),)
+                    and safe_url(movie.get("poster_url") or "")
+                ):
+                    pool.append(
+                        {"title": movie["title"], "poster_url": movie["poster_url"], "query": query}
+                    )
+            _CATALOGUE_CACHE.update(
+                corpus=corpus,
+                count=len(corpus),
+                first_year=years[0] if years else None,
+                last_year=years[-1] if years else None,
+                pool=pool,
+            )
+        pool = _CATALOGUE_CACHE["pool"]
+        return {
+            "count": _CATALOGUE_CACHE["count"],
+            "first_year": _CATALOGUE_CACHE["first_year"],
+            "last_year": _CATALOGUE_CACHE["last_year"],
+            "shelf": random.sample(pool, min(SHOWCASE_SIZE, len(pool))),
+        }
+    except Exception:  # noqa: BLE001
+        logger.warning("Could not build the home page shelf", exc_info=True)
+        return {"count": 0, "first_year": None, "last_year": None, "shelf": []}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(
     request: Request,
@@ -294,6 +350,7 @@ async def index(
             "user": user,
             # Someone who has already given is thanked, not asked again.
             "supporter": supporter_since(db, user) is not None,
+            "catalogue": _catalogue(),
         },
     )
 
