@@ -20,6 +20,12 @@ dependencies = [
   "tenacity>=9.0.0",
   "scikit-learn>=1.4.0",
   "sentence-transformers>=2.2.2",
+  # Direct dependency so its source can be pinned below. On Linux (CI and the
+  # server) it comes from the CPU-only index: the default PyPI wheel drags in
+  # about 9 GB of CUDA libraries that a machine with no GPU never loads.
+  # Held to one minor version so Linux (CPU index) and macOS (PyPI) run the
+  # same torch; the Dockerfile pre-installs this same version.
+  "torch>=2.10.0,<2.11",
   "SQLAlchemy>=2.0.29",
   "alembic>=1.13.0",
   "psycopg[binary]>=3.2.1",
@@ -84,3 +90,12 @@ warn_unused_ignores = false
 [tool.pytest.ini_options]
 addopts = "-q"
 asyncio_mode = "auto"
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+

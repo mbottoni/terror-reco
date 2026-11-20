@@ -154,9 +154,10 @@ a real `SECRET_KEY` and `PUBLIC_BASE_URL` (the site's origin; every absolute URL
 is built from it, never from the request's `Host` header). **When the domain changes, update
 `SITE_ADDRESS`, `PUBLIC_BASE_URL` and the `DEPLOY_URL` Actions variable together.**
 
-The Dockerfile strips `nvidia-*`/`triton` from `requirements.txt` before installing. The
-lockfile pins the CUDA build of torch, and those wheels are separate packages that
-`--no-deps` would otherwise install next to the CPU torch (11.9 GB image instead of a few).
+On Linux, torch is locked to the CPU-only build: `pyproject.toml` declares it as a direct
+dependency sourced from the PyTorch CPU index (`[tool.uv.sources]`), held to one minor version so
+Linux and macOS run the same torch. The default PyPI wheel pulls in about 9 GB of CUDA libraries
+that a server with no GPU never loads. The Dockerfile's `TORCH_VERSION` must match the lockfile.
 Embeddings are computed at image build, so a fresh container never re-encodes the corpus on
 a user's first request. That build step copies in only `data/horror_corpus.json`,
 `services/corpus.py` and `services/unified_recommender.py` first, so its layer is reused unless

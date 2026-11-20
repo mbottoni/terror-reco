@@ -26,13 +26,11 @@ RUN pip install --upgrade pip && \
 # meant the image shipped different versions than CI tested against; the
 # requirements file is generated from uv.lock by `make requirements`.
 COPY pyproject.toml README.md requirements.txt /app/
-# The lockfile pins the PyPI (CUDA) build of torch, whose nvidia-*/triton
-# wheels are listed as packages in their own right -- so `--no-deps` installed
-# all ~9 GB of them next to the CPU torch above. Nothing imports them on a
-# CPU-only box; dropping them takes the image from 11.9 GB to a few GB.
-RUN grep -v -E '^(nvidia-|triton==)' requirements.txt > /tmp/requirements.cpu.txt && \
-    pip install --no-deps -r /tmp/requirements.cpu.txt && \
-    rm /tmp/requirements.cpu.txt
+# The lockfile resolves torch from the CPU-only index on Linux (see
+# [tool.uv.sources] in pyproject.toml), so requirements.txt asks for
+# torch==<version>+cpu and lists no CUDA wheels. That exact build is already
+# installed by the step above, which is why no extra index is needed here.
+RUN pip install --no-deps -r requirements.txt
 
 # Everything from here on runs as an unprivileged user, and so does the app.
 # Created before the model download so the cache it writes is owned by that
