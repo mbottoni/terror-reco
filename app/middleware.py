@@ -75,6 +75,8 @@ DEFAULT_RULES: tuple[Rule, ...] = (
         ("/recommend", "/api/recommendations", "/api/similar/"),
         limit=30,
     ),
+    # A dictionary lookup, fired once per detail view alongside /api/similar.
+    Rule("lookup", frozenset({"GET"}), ("/api/providers/",), limit=120),
     Rule(
         "write",
         frozenset({"POST"}),

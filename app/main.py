@@ -559,6 +559,26 @@ async def api_similar(imdb_id: str, limit: int = Query(default=6, ge=1, le=20)) 
     return {"imdb_id": imdb_id, "count": len(movies), "results": movies}
 
 
+@app.get("/api/providers/{imdb_id}")
+async def api_providers(
+    imdb_id: str,
+    request: Request,
+    region: str | None = Query(default=None, min_length=2, max_length=2),
+) -> dict[str, Any]:
+    """Where a film can be streamed, rented or bought, from the stored snapshot.
+
+    The region is the one asked for, or a guess from the browser's language.
+    Answers 404 when nothing is known, so the page simply shows no section.
+    """
+    from .services.providers import providers_for, region_from_accept_language
+
+    chosen = (region or region_from_accept_language(request.headers.get("accept-language"))).upper()
+    found = providers_for(imdb_id, chosen)
+    if found is None:
+        raise HTTPException(status_code=404, detail="No availability data for this film")
+    return found
+
+
 @app.post("/api/feedback", response_model=FeedbackOut, dependencies=[Depends(require_csrf)])
 async def submit_feedback(
     payload: FeedbackIn,

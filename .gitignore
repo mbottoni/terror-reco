@@ -34,6 +34,8 @@ notebooks/cache/
 # checkpoint are regenerable and stay out of git.
 data/*
 !data/horror_corpus.json
+# Snapshot of streaming availability (scripts/fetch_watch_providers.py)
+!data/watch_providers.json
 
 # Local sentence-transformer model weights (downloaded via scripts/download_model.py)
 models/
