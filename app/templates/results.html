@@ -18,12 +18,18 @@
       </p>
     </noscript>
     {% if movies %}
-    {# Results are stochastic by default, so a plain URL would show the next
-       visitor something different. Adding a seed pins this exact set. #}
+    {# Results are a random draw, so a plain URL would show the next visitor
+       something different. The shared link lists these exact films. #}
     <button type="button" class="share-btn" id="share-btn"
-            onclick="shareResults()" title="Copy a link that reproduces exactly these results">
+            onclick="shareResults()" title="Copy a link that shows exactly these films">
       Share these results
     </button>
+    {% endif %}
+    {% if is_shared %}
+    <p class="shared-note">
+      You are looking at a shared set.
+      <a href="{{ refine.shuffle_url }}">Run this search yourself</a> for a fresh draw.
+    </p>
     {% endif %}
     <p class="results-mood">for <em>"{{ mood }}"</em> {% if strategy_label %}<span class="results-strategy">via {{ strategy_label }}</span>{% endif %}</p>
   </div>
@@ -144,13 +150,14 @@
 {% block scripts %}
 <script>
 function shareResults(){
-  var url = new URL(window.location.href);
-  // Pin the seed so the link reproduces this exact set rather than a fresh
-  // stochastic draw. Any stable integer works; the current one is reused if
-  // the page was already loaded from a shared link.
-  if(!url.searchParams.get('seed')){
-    url.searchParams.set('seed', String(Math.floor(Math.random() * 1e9)));
-  }
+  // List the films on screen. A seed would not reproduce them: this page is
+  // a random (and possibly personalised) draw, and a seeded request is a
+  // different, deterministic one.
+  var url = new URL('/recommend', window.location.origin);
+  url.searchParams.set('mood', MOOD);
+  url.searchParams.set('strategy', STRATEGY);
+  url.searchParams.set('ids', MOVIES.map(function(m){ return m.imdb_id; })
+                                      .filter(Boolean).join(','));
   var btn = document.getElementById('share-btn');
   var done = function(ok){
     if(!btn) return;

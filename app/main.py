@@ -29,6 +29,7 @@ from .services.corpus import CorpusNotBuiltError
 from .services.personalization import UserTaste, load_user_taste
 from .services.recommender import (
     explain_match,
+    films_by_ids,
     recommend_movies_advanced,
     similar_movies,
 )
@@ -307,13 +308,25 @@ async def ui_recommendations(
     seed: int | None = Query(
         default=None, description="reproducible results; also disables sampling noise"
     ),
+    ids: str | None = Query(
+        default=None,
+        max_length=400,
+        description="comma-separated IMDb ids: show exactly these films (shared links)",
+    ),
     user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     default_strategy = "unified" if settings.USE_UNIFIED_RECOMMENDER else "semantic"
     strategy_key = strategy if strategy in STRATEGY_LABELS else default_strategy
 
-    if strategy_key == "unified":
+    # A shared link names the films themselves. A seed cannot do this job:
+    # the set on screen is a random draw, possibly personalised, and replaying
+    # a seed gives the recipient a different one.
+    shared = await run_in_threadpool(films_by_ids, ids.split(",")) if ids else []
+
+    if shared:
+        movies = shared
+    elif strategy_key == "unified":
         # Full pipeline: corpus semantic search → unified re-ranking with MMR
         # Both stages below are CPU-bound (sbert forward pass + numpy) and do
         # no I/O, so they run in a worker thread; on the event loop they would
@@ -370,8 +383,9 @@ async def ui_recommendations(
     for movie in movies:
         movie["match_terms"] = explain_match(mood, movie)
 
-    # Save history if logged in
-    if user:
+    # Save history if logged in. Opening someone's shared set is not a search
+    # the viewer made, so it is not recorded as one.
+    if user and not shared:
         save_history(db, user.id, mood, strategy_key, movies)
     # Load existing feedback for this user so the UI can show active states
     user_feedback: dict[str, int] = {}
@@ -400,6 +414,7 @@ async def ui_recommendations(
             "strategy": strategy_key,
             "strategy_label": STRATEGY_LABELS[strategy_key],
             "strategy_labels": STRATEGY_LABELS,
+            "is_shared": bool(shared),
             "refine": refine_context(
                 mood=mood,
                 strategy=strategy_key,
