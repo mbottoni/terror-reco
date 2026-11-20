@@ -21,6 +21,10 @@ Three rules apply throughout:
 
 Home page: search form, strategy selector, filters, and the account menu.
 
+### `GET /privacy`
+
+What the site stores, who else receives data, and how to export or delete it. Linked from every page's footer. Update `PRIVACY_UPDATED` in `app/main.py` when its text changes.
+
 ### `GET /recommend`
 
 The results page.

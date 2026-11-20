@@ -1,0 +1,36 @@
+{% extends "_base.html" %}
+
+{% block title %}Privacy — TerrorReco{% endblock %}
+{% block og_title %}Privacy — TerrorReco{% endblock %}
+{% block og_description %}What TerrorReco stores, why, and how to delete it.{% endblock %}
+
+{% block content %}
+<div class="container legal" style="padding-top:32px;max-width:680px">
+  <h1 class="page-title">Privacy</h1>
+  <p class="page-subtitle">What this site stores, why, and how to remove it. Last updated {{ updated }}.</p>
+
+  <h2>Without an account</h2>
+  <p>You can search without signing in. The site sets one cookie, which keeps your session for up to 30 days. It holds a random visitor id and nothing that identifies you.</p>
+  <p>To measure whether recommendations are any good, the site records against that random id: the mood you searched for, which films were shown, which you opened, clicked through to or saved, and any "good picks" verdict you gave. No IP address, browser details or account is attached to these records.</p>
+
+  <h2>With an account</h2>
+  <p>The site stores your email address and, if you set one, your password as a one-way hash (the password itself is never stored). It also stores what you do while signed in: your searches and their results, the films you like or dislike, and your watchlist. Likes and dislikes are used to personalise your results.</p>
+  <p>A watchlist is private unless you publish it. A published list is visible to anyone with its link and does not show your email address.</p>
+
+  <h2>Sign in with Google</h2>
+  <p>If you sign in with Google, Google tells the site your email address and a stable account id. The site asks for nothing else: not your name, picture, contacts or files. Google learns that you signed in to this site.</p>
+
+  <h2>Payments</h2>
+  <p>Donations are handled by Stripe. Card details go to Stripe and never reach this site. The site stores the amount, currency, date and Stripe's reference for the payment, linked to your account if you were signed in.</p>
+
+  <h2>Other services</h2>
+  <p>Film posters are loaded by your browser from TMDB's image servers, which therefore see your IP address. The site uses no advertising or analytics service and sells no data.</p>
+  <p>Like most web servers, this one keeps short-lived technical logs of requests, which include IP addresses and are overwritten as they fill. Database backups are kept for up to 60 days.</p>
+
+  <h2>Seeing and deleting your data</h2>
+  <p>From <a href="/account/">your account page</a> you can download everything stored about your account, and delete the account. Deleting removes your email address, password, search history, likes, dislikes, watchlist and any published list. Payment records are kept without a link to you, and the anonymous usage records described above are kept because they cannot be tied to you. Copies in backups expire within 60 days.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or requests: open an issue at <a href="https://github.com/mbottoni/terror-reco/issues" rel="noopener">github.com/mbottoni/terror-reco</a>.</p>
+</div>
+{% endblock %}

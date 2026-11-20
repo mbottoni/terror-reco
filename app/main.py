@@ -428,6 +428,19 @@ STRATEGY_LABELS: dict[str, str] = {
 }
 
 
+# Bumped by hand whenever the text of the privacy page changes.
+PRIVACY_UPDATED = "20 November 2026"
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_page(request: Request, user: User | None = Depends(get_current_user)) -> HTMLResponse:
+    """What the site stores and how to remove it. Google's OAuth consent
+    screen requires a public URL for this before it can leave testing."""
+    return templates.TemplateResponse(
+        request, "privacy.html", {"user": user, "updated": PRIVACY_UPDATED}
+    )
+
+
 @app.get("/recommend", response_class=HTMLResponse)
 async def ui_recommendations(
     request: Request,
