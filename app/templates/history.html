@@ -3,28 +3,27 @@
 {% block title %}History — TerrorReco{% endblock %}
 
 {% block content %}
-<div class="container" style="padding-top:32px">
-  <a href="/" class="back-link">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
-    Back
-  </a>
+<div class="container page">
 
   <h1 class="page-title">Search history</h1>
-  <p class="page-subtitle">Your recent mood searches.</p>
+  <p class="page-subtitle">Pick one to run it again.</p>
 
   {% if items %}
   <ul class="history-list">
     {% for item in items %}
-    <li class="history-item">
-      <span class="history-mood">{{ item.mood }}</span>
-      <span class="history-date">{{ item.created_at.strftime('%b %d, %Y at %H:%M') if item.created_at else '' }}</span>
+    <li>
+      <a class="history-item" href="/recommend?mood={{ item.mood | urlencode }}" title="Run this search again">
+        <span class="history-mood">{{ item.mood }}</span>
+        <span class="history-date">{{ item.created_at.strftime('%b %d, %Y at %H:%M') if item.created_at else '' }}</span>
+      </a>
     </li>
     {% endfor %}
   </ul>
   {% else %}
   <div class="empty-state">
-    <div class="empty-state-icon">📜</div>
-    <p>No searches yet. Go find some horror movies!</p>
+    <div class="empty-state-icon">No searches yet.</div>
+    <p>Your mood searches will be listed here.</p>
+    <p style="margin-top:24px"><a href="/" class="btn btn-primary">Find a film</a></p>
   </div>
   {% endif %}
 </div>

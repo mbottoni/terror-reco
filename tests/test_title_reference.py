@@ -180,9 +180,12 @@ def test_no_benchmark_mood_or_home_page_chip_is_read_as_a_title() -> None:
     corpus = load_corpus()
     moods = json.loads((ROOT / "eval" / "moods.json").read_text())
     queries = moods["hand"] + moods["pooled"] + moods["null"]
-    queries += re.findall(r"pickMood\('([^']+)'\)", (ROOT / "app/templates/index.html").read_text())
+    queries += re.findall(
+        r'\("[^"]+", "([^"]+)"\)', (ROOT / "app/templates/index.html").read_text()
+    )
     found = {q: find_title_references(q, corpus) for q in queries}
     hijacked = {q: ref.titles for q, ref in found.items() if ref is not None}
+    assert len(queries) > 65, "the home page's suggestions were not found"
     assert not hijacked
 
 

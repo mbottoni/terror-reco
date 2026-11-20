@@ -7,36 +7,37 @@
 {% block og_description %}{% if movies %}{{ movies | map(attribute="title") | select | join(", ") | truncate(190, false, "…") }}{% else %}Describe a mood and get horror films that fit it.{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container" style="padding-top:32px">
-  <a href="/" class="back-link">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd"/></svg>
-    Back
-  </a>
-
-  <div class="results-header">
-    <h1 class="page-title">Recommendations</h1>
-    <noscript>
-      <p class="noscript-note">
-        JavaScript is off, so film details and like/dislike are unavailable.
-        Each card links straight to IMDb instead.
-      </p>
-    </noscript>
-    {% if movies %}
-    {# Results are a random draw, so a plain URL would show the next visitor
-       something different. The shared link lists these exact films. #}
-    <button type="button" class="share-btn" id="share-btn"
-            onclick="shareResults()" title="Copy a link that shows exactly these films">
-      Share these results
-    </button>
-    {% endif %}
-    {% if is_shared %}
-    <p class="shared-note">
-      You are looking at a shared set.
-      <a href="{{ refine.shuffle_url }}">Run this search yourself</a> for a fresh draw.
+<div class="container results">
+  <header class="results-header">
+    <div class="results-heading">
+      <p class="eyebrow">{% if is_shared %}A shared set · {% endif %}{% if movies %}{{ movies | length }} film{{ "" if movies | length == 1 else "s" }} · {% endif %}{{ strategy_label }}</p>
+      <h1 class="page-title results-title"><q>{{ mood }}</q></h1>
+    </div>
+    <div class="results-actions">
+      <a class="share-btn refine-shuffle" href="{{ refine.shuffle_url }}"
+         title="Same search, a different draw">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H4.598a.75.75 0 0 0-.75.75v3.634a.75.75 0 0 0 1.5 0v-2.033l.312.311a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm-10.624-2.85a5.5 5.5 0 0 1 9.201-2.465l.312.31H11.77a.75.75 0 0 0 0 1.5h3.634a.75.75 0 0 0 .75-.75V3.535a.75.75 0 0 0-1.5 0v2.033l-.311-.311A7 7 0 0 0 2.63 8.395a.75.75 0 0 0 1.45.39Z" clip-rule="evenodd"/></svg>
+        Shuffle</a>
+      {% if movies %}
+      {# Results are a random draw, so a plain URL would show the next visitor
+         something different. The shared link lists these exact films. #}
+      <button type="button" class="share-btn" id="share-btn"
+              onclick="shareResults()" title="Copy a link that shows exactly these films">Share these results</button>
+      {% endif %}
+    </div>
+  </header>
+  <noscript>
+    <p class="noscript-note">
+      JavaScript is off, so film details and like/dislike are unavailable.
+      Each card links straight to IMDb instead.
     </p>
-    {% endif %}
-    <p class="results-mood">for <em>"{{ mood }}"</em> {% if strategy_label %}<span class="results-strategy">via {{ strategy_label }}</span>{% endif %}</p>
-  </div>
+  </noscript>
+  {% if is_shared %}
+  <p class="shared-note">
+    You are looking at a shared set.
+    <a href="{{ refine.shuffle_url }}">Run this search yourself</a> for a fresh draw.
+  </p>
+  {% endif %}
 
   {# Adjust the search from here: no need to go back and re-enter everything.
      Plain links and a GET form, so all of it works without JavaScript. #}
@@ -45,7 +46,7 @@
       <div class="search-bar refine-bar">
         <label class="visually-hidden" for="refine-mood">Describe a vibe</label>
         <input id="refine-mood" name="mood" type="text" value="{{ mood }}" required autocomplete="off">
-        <select name="strategy" class="refine-strategy" aria-label="Strategy">
+        <select name="strategy" class="refine-strategy" aria-label="Ranking">
           {% for key, label in strategy_labels.items() %}
           <option value="{{ key }}"{% if key == strategy %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -57,18 +58,19 @@
       <input type="hidden" name="{{ key }}" value="{{ value }}">
       {% endif %}{% endfor %}
     </form>
+    {% if refine.chips %}
     <div class="refine-row">
+      <span class="refine-label">Filters</span>
       {% for chip in refine.chips %}
       <a class="filter-chip" href="{{ chip.remove_url }}" title="Remove this filter"
          aria-label="Remove filter: {{ chip.label }}">{{ chip.label }} <span aria-hidden="true">&times;</span></a>
       {% endfor %}
-      <a class="share-btn refine-shuffle" href="{{ refine.shuffle_url }}"
-         title="Same search, a different draw">Shuffle</a>
     </div>
+    {% endif %}
     {% if movies and refine.suggestions %}
     {# Nudges relative to the films on screen. Each is a plain link. #}
     <div class="refine-row refine-suggest">
-      <span class="refine-label">Refine:</span>
+      <span class="refine-label">Refine</span>
       {% for s in refine.suggestions %}
       <a class="suggest-chip" href="{{ s.url }}" title="{{ s.title }}">{{ s.label }}</a>
       {% endfor %}
@@ -84,14 +86,17 @@
     {% for m in movies %}
     <li class="card" onclick="openDetail({{ loop.index0 }})" onkeydown="cardKey(event, {{ loop.index0 }})"
         role="button" tabindex="0" aria-haspopup="dialog">
-      {% if m.poster_url | safe_url and m.poster_url != 'N/A' %}
-      {# The grid never shows a poster at 500px; the browser picks from srcset. #}
-      <img class="card-poster" src="{{ m.poster_url | poster_variant('w342') }}"
-           srcset="{{ m.poster_url | poster_variant('w342') }} 342w, {{ m.poster_url | poster_variant('w500') }} 500w"
-           sizes="(max-width: 600px) 45vw, 240px" alt="{{ m.title }}" loading="lazy" decoding="async">
-      {% else %}
-      <div class="card-no-poster">🎬</div>
-      {% endif %}
+      <div class="card-media">
+        {% if m.poster_url | safe_url and m.poster_url != 'N/A' %}
+        {# The grid never shows a poster at 500px; the browser picks from srcset. #}
+        <img class="card-poster" src="{{ m.poster_url | poster_variant('w342') }}"
+             srcset="{{ m.poster_url | poster_variant('w342') }} 342w, {{ m.poster_url | poster_variant('w500') }} 500w"
+             sizes="(max-width: 520px) 46vw, (max-width: 1100px) 24vw, 180px" alt="" loading="lazy" decoding="async">
+        {% else %}
+        <div class="card-no-poster" aria-hidden="true">{{ m.title }}</div>
+        {% endif %}
+        {% if m.vote_average %}<span class="card-rating" title="IMDb rating"><span aria-hidden="true">★</span><span class="visually-hidden">IMDb </span>{{ m.vote_average }}</span>{% endif %}
+      </div>
       <div class="card-body">
         <h2 class="card-title">{{ m.title }}</h2>
         {# Without JS the card's onclick never fires, leaving no way to reach
@@ -102,16 +107,13 @@
              href="https://www.imdb.com/title/{{ m.imdb_id | urlencode }}/">View on IMDb</a>
         </noscript>
         <p class="card-meta">
-          {% if m.vote_average %}<span class="rating">★ {{ m.vote_average }}</span>{% endif %}
-          {% if m.release_date %}<span>{{ m.release_date }}</span>{% endif %}
+          {% if m.year %}<span>{{ (m.year | string)[:4] }}</span>{% endif %}
+          {% if m.runtime and m.runtime != 'N/A' %}<span aria-hidden="true">·</span><span>{{ m.runtime }}</span>{% endif %}
         </p>
-        {% if m.overview %}
-        <p class="card-overview">{{ m.overview }}</p>
-        {% endif %}
         {% if m.match_terms %}
         {# Why this film matched, in the user's own words #}
         <p class="card-match" title="Keywords your search matched">
-          {% for term in m.match_terms %}<a class="match-chip"
+          {% for term in (m.match_terms | unique | list)[:2] %}<a class="match-chip"
              href="/recommend?mood={{ term | urlencode }}&strategy={{ strategy }}"
              onclick="event.stopPropagation()"
              title="Search for {{ term }}">{{ term }}</a>{% endfor %}
@@ -136,7 +138,7 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <div class="empty-state-icon">👻</div>
+    <div class="empty-state-icon">Nothing in the dark.</div>
     {% if refine.chips %}
     {# Filters run before ranking, so an empty page is almost always a filter's
        doing. Say which one, and how much dropping it would open up. #}
@@ -173,7 +175,7 @@
     <div class="modal-layout">
       <div class="modal-poster-wrap">
         <img class="modal-poster" id="modal-poster" src="" alt="">
-        <div class="modal-no-poster" id="modal-no-poster">🎬</div>
+        <div class="modal-no-poster" id="modal-no-poster" aria-hidden="true">No poster</div>
       </div>
       <div class="modal-info">
         <h2 class="modal-title" id="modal-title"></h2>

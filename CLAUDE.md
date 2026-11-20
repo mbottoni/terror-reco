@@ -147,6 +147,10 @@ with holes as a measurement.
 Before claiming any ranking change helps, run `make eval` — and remember a single run is
 not a measurement, since the pipeline's stddev is comparable to most effects worth finding.
 
+## Interface
+
+One stylesheet, `app/static/styles.css`, built on the custom properties at its top (`--bg`, `--surface`, `--text`, `--red`, `--serif`, ...). **Use the tokens, never a literal colour**, and reuse the existing classes before adding one. Headlines are Instrument Serif, everything else Inter; both are self-hosted in `app/static/fonts/` and nothing loads from another origin. The nav, the account menu and the footer live in `_base.html` and read `user` from the template context: **a page that does not pass `user` shows "Log in" to a signed-in visitor** (`tests/test_ui_shell.py`). The film grid is `.grid` > `.card` > `.card-media` + `.card-body`, six columns down to two. Under `prefers-reduced-motion` transitions are set to `none`, not to a tiny duration: a near-zero `transition: all` on every element also transitions inherited `visibility` and left the film dialog blank. The home page's shelf links each poster to a `like <title>` search (`_catalogue()` in `main.py`), so it only offers films the title detector recognises.
+
 ## Adding a strategy
 
 Three coordinated edits: the ranking function in `services/`, a branch plus a `STRATEGY_LABELS` entry in `ui_recommendations()` in `app/main.py`, and the `<option>` in `index.html`. It must search the corpus — nothing on the request path may call OMDb or TMDB.

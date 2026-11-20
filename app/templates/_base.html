@@ -34,6 +34,7 @@ function csrfHeaders(headers){
 <link rel="apple-touch-icon" href="{{ static_url('apple-touch-icon.png') }}">
 <meta name="theme-color" content="#0b0b0f">
 <link rel="preload" href="/static/fonts/inter-latin-v20.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 {% block robots %}{% endblock %}
 {% block head %}{% endblock %}
 <link rel="stylesheet" href="{{ static_url('styles.css') }}">
@@ -41,23 +42,55 @@ function csrfHeaders(headers){
 <body>
 <div class="page-wrap">
 
-<nav class="nav">
+<a class="skip-link" href="#main">Skip to content</a>
+<nav class="nav" aria-label="Main">
   <div class="nav-inner">
-    <a href="/" class="nav-brand">Terror<em>Reco</em></a>
+    <a href="/" class="nav-brand" aria-label="TerrorReco home">Terror<em>Reco</em></a>
     <div class="nav-links">
       {% block nav_links %}
-      <a href="/">Home</a>
+      {% if user is defined and user %}
       <a href="/watchlist/" class="nav-link">Watchlist</a>
-        <a href="/history/">History</a>
+      <a href="/history/" class="nav-link">History</a>
+      {% endif %}
       {% endblock %}
     </div>
     <div class="nav-right">
-      {% block nav_right %}{% endblock %}
+      {% block nav_right %}
+      {% if user is defined and user %}
+      <div class="avatar-wrap">
+        <button type="button" class="avatar-btn" id="avatar-btn" aria-expanded="false"
+                aria-haspopup="true" aria-controls="avatar-menu" aria-label="Account menu"
+                onclick="toggleAvatar()">{{ user.email[0] }}</button>
+        <div class="avatar-menu" id="avatar-menu">
+          <div class="avatar-menu-header">
+            <div class="avatar-menu-label">Signed in as</div>
+            <div class="avatar-menu-email">{{ user.email }}</div>
+          </div>
+          <a href="/watchlist/" class="avatar-menu-item">Watchlist</a>
+          <a href="/history/" class="avatar-menu-item">Search history</a>
+          <a href="/account/" class="avatar-menu-item">Account settings</a>
+          <div class="avatar-menu-sep"></div>
+          <form action="/auth/logout" method="post">
+            <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+            <button type="submit" class="avatar-menu-item">Sign out</button>
+          </form>
+          <form action="/auth/logout-all" method="post">
+            <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+            <button type="submit" class="avatar-menu-item"
+                    title="Ends your session on every device, including this one">Sign out everywhere</button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <a href="/auth/login" class="btn btn-ghost btn-sm">Log in</a>
+      <a href="/auth/register" class="btn btn-sm">Sign up</a>
+      {% endif %}
+      {% endblock %}
     </div>
   </div>
 </nav>
 
-<main class="page-main">
+<main class="page-main" id="main">
   {% block flash_area %}
   {% if flash is defined and flash %}
   <div class="container" style="padding-top:20px">
@@ -69,13 +102,36 @@ function csrfHeaders(headers){
 </main>
 
 <footer class="site-footer">
-  <div class="container">
-    <p>TerrorReco &mdash; Horror movie recommendations &middot; <a href="/privacy">Privacy</a></p>
+  <div class="container footer-inner">
+    <p class="footer-brand">Terror<em>Reco</em> <span>Horror films, matched to a mood.</span></p>
+    <p class="footer-links">
+      {% if supporter is defined and supporter %}
+      <span class="coffee-link coffee-thanks">Thank you for supporting TerrorReco</span>
+      {% else %}
+      <a href="/stripe/coffee" class="coffee-link">Buy me a coffee</a>
+      {% endif %}
+      <a href="/privacy">Privacy</a>
+    </p>
+    <p class="footer-credit">Film data from TMDB and IMDb. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
   </div>
 </footer>
 
 </div>
 <script>
+function toggleAvatar(){
+  var m=document.getElementById('avatar-menu'), b=document.getElementById('avatar-btn');
+  if(!m||!b) return;
+  b.setAttribute('aria-expanded', String(m.classList.toggle('open')));
+}
+function closeAvatar(){
+  var m=document.getElementById('avatar-menu'), b=document.getElementById('avatar-btn');
+  if(m && m.classList.contains('open')){ m.classList.remove('open'); b.setAttribute('aria-expanded','false'); }
+}
+document.addEventListener('click', function(e){
+  var wrap=document.querySelector('.avatar-wrap');
+  if(wrap && !wrap.contains(e.target)) closeAvatar();
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeAvatar(); });
 (function(){
   var f=document.getElementById('flash-msg');
   if(!f)return;

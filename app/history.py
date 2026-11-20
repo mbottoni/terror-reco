@@ -28,7 +28,7 @@ async def history_page(
         .all()
     )
     resp: Response = request.app.state.templates.TemplateResponse(
-        request, "history.html", {"items": items}
+        request, "history.html", {"items": items, "user": user}
     )
     return resp
 
