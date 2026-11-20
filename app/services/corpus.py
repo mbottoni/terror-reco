@@ -29,6 +29,7 @@ CORPUS_DIR = _PROJECT_ROOT / "data"
 CORPUS_FILE = CORPUS_DIR / "horror_corpus.json"
 EMBEDDINGS_FILE = CORPUS_DIR / "corpus_embeddings.npy"
 EMBEDDINGS_META_FILE = CORPUS_DIR / "corpus_embeddings.meta.json"
+TAGS_FILE = CORPUS_DIR / "film_tags.json"
 
 # Fields every corpus record must carry (consumed by templates and scorers).
 REQUIRED_FIELDS = ("imdb_id", "title", "overview")
@@ -39,20 +40,50 @@ class CorpusNotBuiltError(RuntimeError):
 
 
 # ----------------------------------------------------------------- load/save
+def load_film_tags() -> dict[str, list[str]]:
+    """Descriptive tags per film (``imdb_id`` -> tags), or ``{}`` if absent.
+
+    Kept in a file of their own, not in the corpus JSON: they are written by a
+    model from a fixed vocabulary, not fetched from TMDB, and a corpus rebuild
+    must not be able to wipe them (which is how the keywords were once lost).
+    """
+    if not TAGS_FILE.exists():
+        return {}
+    try:
+        with open(TAGS_FILE) as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        logger.warning("Could not read %s; continuing without tags", TAGS_FILE)
+        return {}
+    tags: dict[str, list[str]] = raw.get("tags", {})
+    return tags
+
+
 def load_corpus() -> list[dict[str, Any]]:
-    """Load the cached corpus from disk.  Returns ``[]`` if not built yet."""
+    """Load the cached corpus from disk.  Returns ``[]`` if not built yet.
+
+    Each film's tags are attached as a comma-separated ``tags`` field, the same
+    shape as ``keywords``.
+    """
     if not CORPUS_FILE.exists():
         return []
     with open(CORPUS_FILE) as f:
         data: list[dict[str, Any]] = json.load(f)
+    tags = load_film_tags()
+    for movie in data:
+        own = tags.get(movie.get("imdb_id") or "")
+        if own:
+            movie["tags"] = ", ".join(own)
     return data
 
 
 def save_corpus(corpus: list[dict[str, Any]]) -> None:
     """Persist corpus to disk and invalidate stale embeddings."""
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
+    # ``tags`` is attached at load time from its own file; it is not corpus data.
+    records = [{k: v for k, v in movie.items() if k != "tags"} for movie in corpus]
     with open(CORPUS_FILE, "w") as f:
-        json.dump(corpus, f, indent=2, ensure_ascii=False)
+        json.dump(records, f, indent=2, ensure_ascii=False)
     for stale in (EMBEDDINGS_FILE, EMBEDDINGS_META_FILE):
         if stale.exists():
             stale.unlink()
@@ -226,12 +257,18 @@ def embedding_text(movie: dict[str, Any]) -> str:
 # against the mixed vector is the blend of its cosines against the two parts.
 # Nothing downstream needs to know there were two.
 KEYWORD_VECTOR_SHARE = 0.3
-EMBEDDING_RECIPE = f"concat+keywords:{KEYWORD_VECTOR_SHARE}"
+EMBEDDING_RECIPE = f"concat+tags,keywords:{KEYWORD_VECTOR_SHARE}"
 
 
 def keyword_text(movie: dict[str, Any]) -> str:
-    """The text of a film's keyword-only vector; empty when it has none."""
-    return (movie.get("keywords") or "").strip()
+    """The text of a film's second vector: its tags, then its TMDB keywords.
+
+    Empty when the film has neither. The tags are deliberately *not* added to
+    ``embedding_text()``: putting them in the long document was measured and
+    lost most of the gain, for the reason this second vector exists at all.
+    """
+    parts = [(movie.get("tags") or "").strip(), (movie.get("keywords") or "").strip()]
+    return ", ".join(p for p in parts if p)
 
 
 def mix_keyword_vectors(
@@ -264,6 +301,8 @@ def corpus_fingerprint(corpus: list[dict[str, Any]]) -> str:
         h.update((movie.get("imdb_id") or "").encode())
         h.update(b"\x00")
         h.update(embedding_text(movie).encode())
+        h.update(b"\x00")
+        h.update(keyword_text(movie).encode())
         h.update(b"\x00")
     return h.hexdigest()
 

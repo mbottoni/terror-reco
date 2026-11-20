@@ -129,6 +129,7 @@ def _item_text(item: dict[str, Any]) -> str:
     """Text used for lexical matching -- includes keywords when present."""
     parts = [
         item.get("title") or "",
+        item.get("tags") or "",
         item.get("keywords") or "",
         item.get("genre") or "",
         item.get("overview") or "",

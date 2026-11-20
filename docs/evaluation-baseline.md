@@ -425,3 +425,64 @@ holes left in either arm:
 - Not measured: "more like this" and the taste vector use the same stored
   vectors, so they changed too. Nothing in the benchmark covers them.
 
+## Descriptive tags (2026-11-20)
+
+Issue #27's diagnosis was that TMDB keywords name what is *in* a film
+("helicopter", "walrus") and almost never what it is *like*, so tonal requests
+have nothing to match. The weakest moods on the graded benchmark were exactly
+those. This change supplies the missing words.
+
+- **A fixed vocabulary of 140 tags** in seven facets (subgenre, tone, threat,
+  setting, theme, style, audience fit): "slow burn", "folk horror", "campy",
+  "very gory", "gateway horror", "single location", "80s horror" and so on.
+- **Each of the 500 films carries 1 to 10 of them** (8.4 on average), in
+  `data/film_tags.json`, separate from the corpus so a rebuild cannot wipe them.
+- **Both were written by an AI model**, from its knowledge of the films. The
+  vocabulary was designed by a pass that was not shown the benchmark's moods,
+  so the tags were not fitted to the test. The file says who wrote it.
+
+Where the tags go was measured, retrieval only, before any new judging:
+
+| Tags placed in | NDCG@6 difference | Unjudged films |
+|----------------|------------------:|---------------:|
+| the long document (`embedding_text`) | +0.012 | 32 |
+| both the document and the keyword vector | +0.017 | 38 |
+| **the keyword vector only** | +0.054 | 14 |
+| a third vector of their own (60/20/20) | +0.054 | 26 |
+| tags alone | -0.280 | 201 |
+
+So they join the keywords in the second vector and stay out of the document.
+Adding them to the text used for keyword matching (BM25) in the unified
+strategy was worth a further +0.023 there.
+
+Final comparison, after judging the 146 films the change newly surfaced
+(judged from titles and TMDB keywords, without sight of the tags). No holes:
+
+| Arm | Before | After | Difference | 95% CI | Dev half | Test half |
+|-----|-------:|------:|-----------:|:------:|---------:|----------:|
+| semantic | 0.6163 | 0.6665 | +0.0502 | [+0.0267, +0.0749] | +0.039 | +0.062 |
+| unified | 0.6315 | 0.7020 | +0.0705 | [+0.0425, +0.1006] | +0.080 | +0.060 |
+| unified, production noise | 0.6252 | 0.6952 | +0.0700 | [+0.0442, +0.0975] | +0.087 | +0.053 |
+
+- With unified, the share of a page that fits rose from 72% to 78%, and the
+  share that fits squarely from 45% to 54%.
+- 38 moods improved, 10 got worse, 7 did not move. The largest gains are the
+  tonal and stylistic requests #27 was about: "80s practical effects gore"
+  (0.15 to 0.57), "extreme, disturbing, hard to watch" (0.38 to 0.72),
+  "animals attack" (0.36 to 0.69), "self-aware teen horror from the 90s"
+  (0.17 to 0.39).
+- Largest losses: "Stephen King adaptation" (0.82 to 0.67), "grief and trauma
+  as the monster" (0.77 to 0.63), "Japanese or Korean ghost horror" (0.78 to
+  0.65). The last is a tagging gap: only two films carry "j-horror".
+- **The caveat that matters most:** the tags and the relevance judgments were
+  both written by the same kind of model. They share its idea of what, say,
+  "campy" means, which favours this change. The vocabulary was blind to the
+  moods and the judge was blind to the tags, but a human check of either would
+  be worth more than another round of this.
+- **A check that does not depend on the AI judge:** the CI slice of the
+  original benchmark, 8 moods scored against hand-written gold lists, moved
+  from 0.615 to 0.660 (semantic) and from 0.611 to 0.691 (unified). Eight moods
+  is a wide interval, but it points the same way.
+- Together with the keyword vector, the day's two changes took the unified
+  ranker from 0.599 to 0.702 on the judgments as they now stand.
+
