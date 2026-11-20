@@ -1,11 +1,11 @@
 {
  "model": "sentence-transformers/all-mpnet-base-v2",
- "recipe": "concat+keywords:0.3",
+ "recipe": "concat+tags,keywords:0.3",
  "k": 6,
  "tolerance": 0.1,
  "baseline": {
-  "semantic": 0.6148,
-  "unified": 0.6109
+  "semantic": 0.66,
+  "unified": 0.6907
  },
  "moods": [
   {
@@ -276,10 +276,6 @@
    "text_sha": "023f1ca74bff59c7a573bebdc4f16da9eacc56143aee15c1927b7bd0bc29487e"
   },
   {
-   "imdb_id": "tt13433802",
-   "text_sha": "6cf22c4f81c2c0921840a12737e0e36f1dac93850bd8eee773e43ecef0cf9c6f"
-  },
-  {
    "imdb_id": "tt0078748",
    "text_sha": "7614e8cb82509c3e2a1370ecf5257db39030c461a9c5f7721bcf67ca6a11dc72"
   },
@@ -308,12 +304,12 @@
    "text_sha": "c481277fb5c51812f845fc5ebd31029a6b2c0607801224375fed986904e3e554"
   },
   {
-   "imdb_id": "tt3322940",
-   "text_sha": "862e1c892933dc2fb529a2a368751055a30b2d99ea4bd97fd46ca9efdaecf067"
+   "imdb_id": "tt0092563",
+   "text_sha": "26e5d0d35f7fc3d779e32dcc5bce52f5111f7150be8fe204bf1f1c0d1ab2f161"
   },
   {
-   "imdb_id": "tt8350360",
-   "text_sha": "0dd99da83d1770bb420f89f40816b22fb3366d842a89924b4a3e3decc3cdf72d"
+   "imdb_id": "tt3322940",
+   "text_sha": "862e1c892933dc2fb529a2a368751055a30b2d99ea4bd97fd46ca9efdaecf067"
   },
   {
    "imdb_id": "tt5140878",
@@ -408,14 +404,6 @@
    "text_sha": "f38a62cd60ae6af3b3128a1ab28c15a4009ec39b1f48be310c4ca936aa434c92"
   },
   {
-   "imdb_id": "tt2554274",
-   "text_sha": "a4529807db09238f4e9d23f95e20e9aeb30a3306432ea92238957dacb3a5f685"
-  },
-  {
-   "imdb_id": "tt0090887",
-   "text_sha": "92ea3a4367af80116d85326a3cda13e3f61c3e4a99423ebe8d88727e7c645588"
-  },
-  {
    "imdb_id": "tt0455760",
    "text_sha": "e6896efee59603b36cb2c7a1585e9317abf2e05f69aea6c1422ddeddb2c8cc41"
   },
@@ -428,8 +416,16 @@
    "text_sha": "043a1ad75f1fbc8597c74f2e16daef59a1d3d5f2e55103e491aded1cdeffd031"
   },
   {
+   "imdb_id": "tt1314655",
+   "text_sha": "a2336eece343471087abb55b661a3bd0dfd49291ab4605a680dc37b3177c0e00"
+  },
+  {
    "imdb_id": "tt5606664",
    "text_sha": "9c9bfedffcb756dae2360795d6f22d5527a5b2ad168ec332f300375ff1b8a63c"
+  },
+  {
+   "imdb_id": "tt0419706",
+   "text_sha": "3eaa934b47f4ca20033d08d8ea3ac439dbcd32aa574cfdf383caff625b2ef582"
   },
   {
    "imdb_id": "tt0021814",
@@ -446,6 +442,10 @@
   {
    "imdb_id": "tt1127180",
    "text_sha": "6433f854e2a03b3ca525222474f49c5db5edb31acad7d8d736f818faf1fbce2d"
+  },
+  {
+   "imdb_id": "tt5886046",
+   "text_sha": "44078a3c06334fe63f0e3c2519529dad171f491c5877dfd1154920de8ff35cc1"
   },
   {
    "imdb_id": "tt0119081",
@@ -468,16 +468,20 @@
    "text_sha": "102a21888b61e7df5e74ddc535c74146f841afbbf24a9247a4d379861fbbb7da"
   },
   {
-   "imdb_id": "tt0983946",
-   "text_sha": "3a1048ffb34f7b493a11d9ec160a5a56545d87dbfa506f24f1f7b472f7e275d6"
-  },
-  {
    "imdb_id": "tt0016847",
    "text_sha": "0d15e6e937e7264c87868678f0cf8799678cac4d274494f172cc58dd9de020b0"
   },
   {
    "imdb_id": "tt6566576",
    "text_sha": "d2e4761daeafd4fd6ffce90824002d0e82e310172df7ddedd3503e8a3b68778e"
+  },
+  {
+   "imdb_id": "tt0195714",
+   "text_sha": "f893bf29efc89c4c2c4832834006d55ca01f1bc9cfa69b86e1987c30cf898f8a"
+  },
+  {
+   "imdb_id": "tt9619824",
+   "text_sha": "d17b4c0f84eeeab6196c7010472248ebb90bb474ab7129945a3271141ac7073e"
   },
   {
    "imdb_id": "tt0099582",
@@ -532,16 +536,8 @@
    "text_sha": "15c010e17fc5a40da59a2f935748c71329afa96ae2c3226432d98fff24691a57"
   },
   {
-   "imdb_id": "tt3748172",
-   "text_sha": "c682b9894f47ecf47cf7f338fb8d658225a6d7d459824a92405778070eb8d820"
-  },
-  {
    "imdb_id": "tt0288477",
    "text_sha": "0bf5a446c7b4e0ef56c69d175cc01d1aad7f978648908ec2c61946f2b6e808b9"
-  },
-  {
-   "imdb_id": "tt6195094",
-   "text_sha": "59d86fec389c2ade34cea1a628f2dcc6643fdbf57722bc77820c687f9f015926"
   },
   {
    "imdb_id": "tt1051904",
@@ -632,6 +628,14 @@
    "text_sha": "e7eb8b22e20910d68ec10b02c011f32d335e42d14cc217c8ee00c1056187b0f8"
   },
   {
+   "imdb_id": "tt0397065",
+   "text_sha": "a159e941ef49b4a60f963dfc168baae0eb8f793281f2e1e2771feec85a8273e9"
+  },
+  {
+   "imdb_id": "tt5022702",
+   "text_sha": "4d29ef789576816cfcc0e09caf3f0e39ada6fba6ecc5a0bbff2f52625a07e687"
+  },
+  {
    "imdb_id": "tt0013257",
    "text_sha": "f6fb550d982d9f91638d90432d8b3a59112bd762fe0f626a379b344092184804"
   },
@@ -688,16 +692,20 @@
    "text_sha": "902e48d8dfdf5b9a9bc778731175121feb53dd07081bba105187dd77b0cd9997"
   },
   {
+   "imdb_id": "tt0095444",
+   "text_sha": "95ece810db427ff212429505b860cf3e798f5dfda762af28cf0102d98af98cc7"
+  },
+  {
+   "imdb_id": "tt0058279",
+   "text_sha": "e988ed16439fa757f6896482da412c131d19ee0d837095156eb802426d059ebe"
+  },
+  {
    "imdb_id": "tt1139797",
    "text_sha": "d523b31a4750db33693d8b306414fbd9ccd0aa0c72fbf911f1de577f5774e31e"
   },
   {
    "imdb_id": "tt5442430",
    "text_sha": "b61d2c313a74347ba6866cf3f02ecd320640a25e03eddf532fc8797bc541c13a"
-  },
-  {
-   "imdb_id": "tt4786282",
-   "text_sha": "89b894eaaa51784ac2696f4a330fd5e8de863000949c8e53998584f41042c667"
   },
   {
    "imdb_id": "tt7958736",
@@ -772,6 +780,10 @@
    "text_sha": "b5962ab8796ac70c53af5651778cf501dce3bf557391bd86f78ecb474630009b"
   },
   {
+   "imdb_id": "tt0070531",
+   "text_sha": "5defc624468173c73ebe9fba4ff464ac67b538d92ff2d8829359a92f4e09a21b"
+  },
+  {
    "imdb_id": "tt0052077",
    "text_sha": "d801897658ffc641ab5ba28972dc6eba8e923e76a8c38c24aaa05cd6888c7ac3"
   },
@@ -804,8 +816,16 @@
    "text_sha": "df05d2f3d1545d274fbdf9fd1b295ebc0a87619f74a630ee26efe1d82cc8bf1b"
   },
   {
+   "imdb_id": "tt0054215",
+   "text_sha": "1cfc3c2993552fcb54e70beba5598036dce8d215f4330c9d2017ecf3df8ffdb6"
+  },
+  {
    "imdb_id": "tt0076590",
    "text_sha": "1b752b2588ab4febed11c94d2311158b13d86538baed63819017ce906f1f7dfe"
+  },
+  {
+   "imdb_id": "tt1486185",
+   "text_sha": "d8fb12d4ef77f768c853f719df55d4533203f453198cdbe781977b7611d08cdf"
   },
   {
    "imdb_id": "tt0059646",
@@ -854,6 +874,10 @@
   {
    "imdb_id": "tt1233227",
    "text_sha": "1ef1a3c900311fcfab9c088902ccdb5696e2a66226e3e266d2d4114d020e7423"
+  },
+  {
+   "imdb_id": "tt3387520",
+   "text_sha": "768dd71aabe264e904e4368a15485f90fc283140db21e7abd9b8374fa3097c71"
   },
   {
    "imdb_id": "tt0117571",
@@ -924,10 +948,6 @@
    "text_sha": "321586c834fe3f9e95046521bad84e3ee332772842be033bd8961ea7a4c44a3f"
   },
   {
-   "imdb_id": "tt7144666",
-   "text_sha": "4123f278d7fa625124b008d223f26bfa78b2522fd72fc810f4147c78ae40fd53"
-  },
-  {
    "imdb_id": "tt0185937",
    "text_sha": "c9bca6f3be444001c06859cb1ac554f98db1becdabc304cc52bc068f3b15efd7"
   },
@@ -946,6 +966,10 @@
   {
    "imdb_id": "tt1259521",
    "text_sha": "8ff2664c68c2181ca5e76a8f5b46f451f490ef6d436c1a3d047a3f9415a02d86"
+  },
+  {
+   "imdb_id": "tt0080516",
+   "text_sha": "64c3e1c28e502fe13d0171b4b69cac3b001c6c1e3cace14185eb6cf1ba512fec"
   },
   {
    "imdb_id": "tt2548396",
@@ -992,18 +1016,6 @@
    "text_sha": "39f4ed3e1977af1d29db2703b09f26092cd5c3ce9f223101256f394d9ca14970"
   },
   {
-   "imdb_id": "tt0391198",
-   "text_sha": "fc49ee9f09e80633f0dd173a4360ff389e3d976182a369f009760640174f8349"
-  },
-  {
-   "imdb_id": "tt0171363",
-   "text_sha": "11e14f54bf1b1e201ee8bfd2992caad5938cbf0f8f645fa169ee2047d065464e"
-  },
-  {
-   "imdb_id": "tt0057129",
-   "text_sha": "9fa3d9d3902eb91bc45a7e0477cefba55e1deb0f3dd0e397bbf99f4485998e17"
-  },
-  {
    "imdb_id": "tt4003440",
    "text_sha": "f40e2f7928c19c8e3bc20172704512a7e7cecc9b53210fba77c7187b1525eda0"
   },
@@ -1014,10 +1026,6 @@
   {
    "imdb_id": "tt1392170",
    "text_sha": "d3ce64c80b9ffea529847ac1eafef92113bcae0ce2178eafcab142fd13020550"
-  },
-  {
-   "imdb_id": "tt8244784",
-   "text_sha": "33a27ef03b669157fa46df42b3df9b359814635beb561dcdae8dc4e155975c4e"
   },
   {
    "imdb_id": "tt0050539",
@@ -1050,10 +1058,6 @@
   {
    "imdb_id": "tt0075005",
    "text_sha": "144268b977372295a389a37e1f7697a69b6a191a390e17ba914e0329bec1b9fc"
-  },
-  {
-   "imdb_id": "tt0230600",
-   "text_sha": "4c7e4e5181f7192ea12c0d3fa26b313df8edc3f4f63fcfc94e7f97ad399c340e"
   },
   {
    "imdb_id": "tt13375076",
@@ -1120,6 +1124,10 @@
    "text_sha": "cc05db146bd0bae395ada2c80bb14d9aabe07807ea2131f3fc135ce13754bce6"
   },
   {
+   "imdb_id": "tt0080040",
+   "text_sha": "2afa0e641f8b5d9e25ebbeaa77601559b52a1bb982d9c1e6262d74065c8bedb4"
+  },
+  {
    "imdb_id": "tt5774060",
    "text_sha": "6d57ea4434eb7fde06d9f188f95f1736547f8e525a7b728c5a6a259fbc03f619"
   },
@@ -1146,6 +1154,10 @@
   {
    "imdb_id": "tt0338526",
    "text_sha": "34ea380d2e59b7e9bea514b252e3d1ae8ca181d0e46bd435b64da856de106f50"
+  },
+  {
+   "imdb_id": "tt0086541",
+   "text_sha": "3cf2a6119a622b25209ddb03d0413cc9f97585f44ab3c59fbe7e00e27d3daa49"
   },
   {
    "imdb_id": "tt8368406",

@@ -1,0 +1,1081 @@
+{
+ "about": "Descriptive tags for each corpus film, chosen from the fixed vocabulary below. Written by an AI model (Claude) on 2026-11-20 from its knowledge of the films, not by a person and not from TMDB. The vocabulary was designed without sight of the evaluation moods. See docs/evaluation-baseline.md.",
+ "vocabulary": {
+  "subgenre": [
+   {
+    "tag": "slasher",
+    "means": "a killer stalks and picks off a group of victims one by one"
+   },
+   {
+    "tag": "supernatural horror",
+    "means": "the danger is plainly otherworldly rather than human or natural"
+   },
+   {
+    "tag": "psychological horror",
+    "means": "the fear comes from a character's mind, perception or unravelling sanity more than from a physical monster"
+   },
+   {
+    "tag": "folk horror",
+    "means": "rural communities, old pagan customs and the land itself turn on outsiders"
+   },
+   {
+    "tag": "body horror",
+    "means": "the horror is the human body mutating, decaying, merging or being violated"
+   },
+   {
+    "tag": "gothic horror",
+    "means": "old houses or castles, family secrets, doomed romance and a decaying grandeur"
+   },
+   {
+    "tag": "cosmic horror",
+    "means": "lovecraftian dread of vast unknowable forces that make humans insignificant"
+   },
+   {
+    "tag": "giallo",
+    "means": "italian-style murder mystery with a gloved killer, lurid set-piece killings and bold colour"
+   },
+   {
+    "tag": "creature feature",
+    "means": "the film is built around a physical monster or beast hunting people"
+   },
+   {
+    "tag": "haunted house",
+    "means": "a building with a malevolent presence torments the people living or staying in it"
+   },
+   {
+    "tag": "possession",
+    "means": "a person is taken over by a demon or spirit, often with an exorcism"
+   },
+   {
+    "tag": "home invasion",
+    "means": "intruders terrorise people inside their own home"
+   },
+   {
+    "tag": "survival horror",
+    "means": "ordinary people are trapped or hunted and the story is about getting out alive"
+   },
+   {
+    "tag": "sci-fi horror",
+    "means": "the horror grows out of science, space or technology"
+   },
+   {
+    "tag": "horror comedy",
+    "means": "it sets out to make you laugh as much as to scare you"
+   },
+   {
+    "tag": "splatter",
+    "means": "graphic gore and elaborate kill effects are the main attraction"
+   },
+   {
+    "tag": "torture horror",
+    "means": "captives are subjected to prolonged physical torment, as in saw or hostel"
+   },
+   {
+    "tag": "occult horror",
+    "means": "satanism, black magic, rituals and secret covens drive the plot"
+   },
+   {
+    "tag": "backwoods horror",
+    "means": "city people stray into remote country and meet murderous locals"
+   },
+   {
+    "tag": "revenge horror",
+    "means": "a wronged person, living or dead, takes violent revenge"
+   },
+   {
+    "tag": "eco horror",
+    "means": "nature strikes back, or environmental damage unleashes the threat"
+   },
+   {
+    "tag": "zombie apocalypse",
+    "means": "society collapses under an outbreak of the dead or the infected and survivors band together"
+   }
+  ],
+  "tone": [
+   {
+    "tag": "slow burn",
+    "means": "takes its time building tension, with little happening on the surface until late"
+   },
+   {
+    "tag": "fast-paced",
+    "means": "moves quickly from scare to scare with little downtime"
+   },
+   {
+    "tag": "atmospheric",
+    "means": "mood, setting and sound do more of the work than plot or shocks"
+   },
+   {
+    "tag": "creeping dread",
+    "means": "a steadily growing sense that something terrible is coming"
+   },
+   {
+    "tag": "jump scares",
+    "means": "relies heavily on sudden loud shocks"
+   },
+   {
+    "tag": "campy",
+    "means": "knowingly or unknowingly exaggerated, theatrical and a bit silly"
+   },
+   {
+    "tag": "darkly funny",
+    "means": "a serious horror film laced with black or deadpan humour"
+   },
+   {
+    "tag": "bleak",
+    "means": "hopeless in outlook, with no comfort and usually a downbeat ending"
+   },
+   {
+    "tag": "disturbing",
+    "means": "upsetting on a deep level and stays with you long after"
+   },
+   {
+    "tag": "dreamlike",
+    "means": "runs on surreal nightmare logic rather than a rational plot"
+   },
+   {
+    "tag": "suspenseful",
+    "means": "tightly wound thriller tension, with the viewer waiting for the strike"
+   },
+   {
+    "tag": "crowd-pleaser",
+    "means": "a fun, rollercoaster ride built to entertain an audience rather than upset it"
+   },
+   {
+    "tag": "melancholy",
+    "means": "sad, wistful and mournful more than frightening"
+   },
+   {
+    "tag": "relentless",
+    "means": "once it starts it never lets up or gives the viewer a breather"
+   },
+   {
+    "tag": "paranoid",
+    "means": "nobody can be trusted and the lead may be the only one who sees the danger"
+   },
+   {
+    "tag": "claustrophobic",
+    "means": "makes you feel trapped in tight, confined spaces"
+   },
+   {
+    "tag": "twist ending",
+    "means": "a late reveal changes how you understand everything before it"
+   },
+   {
+    "tag": "ambiguous",
+    "means": "leaves it open whether the events are real, and what they mean"
+   },
+   {
+    "tag": "sleazy",
+    "means": "grimy, lurid exploitation feel with a taste for sex and violence"
+   },
+   {
+    "tag": "tragic",
+    "means": "the monster or the victims are deeply sympathetic and the story plays as a tragedy"
+   },
+   {
+    "tag": "cerebral",
+    "means": "idea-driven and puzzle-like, asking the viewer to think it through"
+   },
+   {
+    "tag": "over the top",
+    "means": "gleefully excessive, pushing gore or mayhem to cartoonish extremes"
+   },
+   {
+    "tag": "quiet",
+    "means": "hushed and restrained, with subtle scares and very little shown"
+   }
+  ],
+  "threat": [
+   {
+    "tag": "zombies",
+    "means": "the walking dead or rabid infected hordes"
+   },
+   {
+    "tag": "vampires",
+    "means": "blood-drinking undead"
+   },
+   {
+    "tag": "werewolves",
+    "means": "people who transform into wolves or other beasts"
+   },
+   {
+    "tag": "ghosts",
+    "means": "spirits of the dead haunting the living"
+   },
+   {
+    "tag": "demons",
+    "means": "demonic entities or the devil himself"
+   },
+   {
+    "tag": "witches",
+    "means": "witches, covens and witchcraft as the source of danger"
+   },
+   {
+    "tag": "aliens",
+    "means": "an extraterrestrial creature or invasion"
+   },
+   {
+    "tag": "serial killer",
+    "means": "a realistic human murderer, often seen up close"
+   },
+   {
+    "tag": "masked killer",
+    "means": "a faceless, iconic and seemingly unstoppable killer"
+   },
+   {
+    "tag": "cult",
+    "means": "a sect or secret society with sinister plans for the lead"
+   },
+   {
+    "tag": "killer animals",
+    "means": "sharks, dogs, birds or other real animals attacking people"
+   },
+   {
+    "tag": "creepy kids",
+    "means": "a sinister, possessed or murderous child"
+   },
+   {
+    "tag": "curse",
+    "means": "a curse that passes from victim to victim and cannot simply be outrun"
+   },
+   {
+    "tag": "cannibals",
+    "means": "people who hunt and eat other people"
+   },
+   {
+    "tag": "infection",
+    "means": "a virus, parasite or contagion that spreads and transforms its hosts"
+   },
+   {
+    "tag": "evil doll",
+    "means": "a living doll, puppet or dummy"
+   },
+   {
+    "tag": "mad scientist",
+    "means": "a doctor or scientist whose experiments create the horror"
+   },
+   {
+    "tag": "unseen threat",
+    "means": "the danger is barely or never shown and left to the imagination"
+   },
+   {
+    "tag": "human monsters",
+    "means": "no supernatural element at all; ordinary people are the horror"
+   },
+   {
+    "tag": "shapeshifter",
+    "means": "something that imitates or replaces people, so anyone could be it"
+   },
+   {
+    "tag": "giant monster",
+    "means": "a colossal creature causing destruction on a large scale"
+   },
+   {
+    "tag": "killer family",
+    "means": "a deranged clan or household that preys on outsiders"
+   }
+  ],
+  "setting": [
+   {
+    "tag": "isolated setting",
+    "means": "characters are cut off from help, far from anyone"
+   },
+   {
+    "tag": "small town",
+    "means": "a tight-knit town with something wrong under the surface"
+   },
+   {
+    "tag": "suburbia",
+    "means": "horror arrives in ordinary, safe-looking suburban streets and homes"
+   },
+   {
+    "tag": "cabin in the woods",
+    "means": "a group in a remote cabin or deep in the forest"
+   },
+   {
+    "tag": "summer camp",
+    "means": "set at a camp with counsellors and campers"
+   },
+   {
+    "tag": "high school",
+    "means": "teenagers, school corridors, proms and house parties"
+   },
+   {
+    "tag": "big city",
+    "means": "urban horror among apartments, subways and city streets"
+   },
+   {
+    "tag": "at sea",
+    "means": "on a ship, an island, the open ocean or underwater"
+   },
+   {
+    "tag": "outer space",
+    "means": "aboard a spacecraft or on another world"
+   },
+   {
+    "tag": "snowbound",
+    "means": "arctic cold, blizzards or deep winter trap the characters"
+   },
+   {
+    "tag": "single location",
+    "means": "almost the whole film is confined to one house, room or building"
+   },
+   {
+    "tag": "road trip",
+    "means": "travellers on highways, at motels and in the middle of nowhere"
+   },
+   {
+    "tag": "asylum or hospital",
+    "means": "set in a psychiatric institution, clinic or hospital"
+   },
+   {
+    "tag": "old dark mansion",
+    "means": "a castle, manor or sprawling old estate full of shadows"
+   },
+   {
+    "tag": "convent or church",
+    "means": "set among nuns, priests and religious institutions"
+   },
+   {
+    "tag": "period piece",
+    "means": "set well before the time it was made, in costume"
+   },
+   {
+    "tag": "post-apocalyptic",
+    "means": "the world has already ended and the survivors scrape by"
+   },
+   {
+    "tag": "halloween night",
+    "means": "set on or around halloween, with the season's trappings"
+   },
+   {
+    "tag": "christmas horror",
+    "means": "set at christmas or in the winter holidays"
+   }
+  ],
+  "theme": [
+   {
+    "tag": "grief",
+    "means": "mourning a death is what the horror is really about"
+   },
+   {
+    "tag": "motherhood",
+    "means": "pregnancy, birth and the fears of being a mother or having one"
+   },
+   {
+    "tag": "family trauma",
+    "means": "inherited damage, abuse or secrets tearing a family apart"
+   },
+   {
+    "tag": "religion and faith",
+    "means": "belief, doubt, sin and religious fanaticism are central"
+   },
+   {
+    "tag": "descent into madness",
+    "means": "we watch a character lose their grip on reality"
+   },
+   {
+    "tag": "coming of age",
+    "means": "adolescence, puberty and growing up seen through horror"
+   },
+   {
+    "tag": "social commentary",
+    "means": "the horror is an open allegory for race, class, consumerism or politics"
+   },
+   {
+    "tag": "sexuality",
+    "means": "desire, repression and sexual anxiety drive the horror"
+   },
+   {
+    "tag": "obsession",
+    "means": "a consuming fixation on a person, art or goal leads to ruin"
+   },
+   {
+    "tag": "science gone wrong",
+    "means": "an experiment or human hubris unleashes catastrophe"
+   },
+   {
+    "tag": "technology",
+    "means": "screens, tapes, phones, the internet or ai carry the threat"
+   },
+   {
+    "tag": "gaslighting",
+    "means": "the lead is told it is all in their head and nobody believes them"
+   },
+   {
+    "tag": "female rage",
+    "means": "a woman's anger, power or monstrousness is the heart of the film"
+   },
+   {
+    "tag": "final girl",
+    "means": "centres on a lone young woman who outlasts and confronts the killer"
+   },
+   {
+    "tag": "childhood fears",
+    "means": "bogeymen, nightmares and the things that scared you as a kid"
+   },
+   {
+    "tag": "guilt",
+    "means": "a past sin or buried secret comes back to punish the characters"
+   },
+   {
+    "tag": "war and history",
+    "means": "wartime or national trauma haunts the story"
+   },
+   {
+    "tag": "troubled marriage",
+    "means": "a couple or relationship coming apart is the engine of the horror"
+   },
+   {
+    "tag": "loneliness",
+    "means": "an isolated outsider's longing for connection shapes the story"
+   }
+  ],
+  "style": [
+   {
+    "tag": "silent era",
+    "means": "silent films of the 1920s, including german expressionism"
+   },
+   {
+    "tag": "classic monster movie",
+    "means": "studio-era monsters of the 1930s to 1950s in the universal mould"
+   },
+   {
+    "tag": "black and white",
+    "means": "shot in black and white"
+   },
+   {
+    "tag": "hammer horror",
+    "means": "lush british gothic of the late 50s to 70s, or films in that style"
+   },
+   {
+    "tag": "70s grit",
+    "means": "raw, grainy, downbeat 1970s filmmaking"
+   },
+   {
+    "tag": "80s horror",
+    "means": "the 1980s look and feel: synths, rubber effects and vhs-era energy"
+   },
+   {
+    "tag": "90s horror",
+    "means": "glossy 1990s horror, often teen-led and self-aware"
+   },
+   {
+    "tag": "j-horror",
+    "means": "japanese ghost-and-curse horror with quiet dread and long-haired spirits"
+   },
+   {
+    "tag": "korean horror",
+    "means": "south korean horror, often blending genres with heavy emotion"
+   },
+   {
+    "tag": "italian horror",
+    "means": "stylised, operatic and often gory italian horror of the 60s to 80s"
+   },
+   {
+    "tag": "french extremity",
+    "means": "the brutal, transgressive french wave of the 2000s"
+   },
+   {
+    "tag": "spanish-language horror",
+    "means": "horror from spain or latin america, often ghostly and mournful"
+   },
+   {
+    "tag": "elevated horror",
+    "means": "modern arthouse-leaning horror that puts theme and craft ahead of scares"
+   },
+   {
+    "tag": "found footage",
+    "means": "presented as recovered camera, phone or screen recordings, or as a fake documentary"
+   },
+   {
+    "tag": "anthology",
+    "means": "several short stories in one film"
+   },
+   {
+    "tag": "practical effects",
+    "means": "celebrated for hands-on makeup, prosthetics and creature work"
+   },
+   {
+    "tag": "visually stylish",
+    "means": "striking colour, lighting and camerawork are a main draw"
+   },
+   {
+    "tag": "low budget indie",
+    "means": "scrappy independent production that makes a virtue of small means"
+   },
+   {
+    "tag": "meta horror",
+    "means": "self-aware horror that comments on or plays with horror movie rules"
+   },
+   {
+    "tag": "remake",
+    "means": "a new version of an earlier horror film"
+   },
+   {
+    "tag": "based on a book",
+    "means": "adapted from a novel or short story, including stephen king adaptations"
+   },
+   {
+    "tag": "based on a true story",
+    "means": "claims or draws on real events or real crimes"
+   },
+   {
+    "tag": "iconic score",
+    "means": "the music is famous and central to the effect"
+   }
+  ],
+  "audience": [
+   {
+    "tag": "gateway horror",
+    "means": "a good first horror film for someone new to the genre"
+   },
+   {
+    "tag": "family friendly",
+    "means": "spooky but suitable for older kids and a family watch"
+   },
+   {
+    "tag": "not too scary",
+    "means": "mild frights; fine for people who scare easily"
+   },
+   {
+    "tag": "genuinely terrifying",
+    "means": "widely held to be among the most frightening to sit through"
+   },
+   {
+    "tag": "very gory",
+    "means": "heavy, graphic blood and dismemberment on screen"
+   },
+   {
+    "tag": "little to no gore",
+    "means": "scares without explicit bloodshed"
+   },
+   {
+    "tag": "extreme",
+    "means": "transgressive content for hardened viewers only"
+   },
+   {
+    "tag": "sexual violence",
+    "means": "content warning: depicts rape or sexual assault"
+   },
+   {
+    "tag": "party movie",
+    "means": "best watched with a group, loud and with drinks"
+   },
+   {
+    "tag": "date night",
+    "means": "scary enough to grab an arm but still fun for a couple"
+   },
+   {
+    "tag": "cult classic",
+    "means": "has a devoted following and midnight-movie reputation outside the mainstream"
+   },
+   {
+    "tag": "watch it alone in the dark",
+    "means": "works best in silence with full attention, lights off"
+   }
+  ]
+ },
+ "tags": {
+  "tt1179933": ["claustrophobic", "single location", "paranoid", "suspenseful", "survival horror", "gaslighting", "aliens", "little to no gore"],
+  "tt0450385": ["haunted house", "supernatural horror", "psychological horror", "single location", "based on a book", "grief", "descent into madness", "claustrophobic"],
+  "tt6214928": ["guilt", "based on a book", "period piece", "slow burn", "psychological horror", "descent into madness", "bleak", "isolated setting", "troubled marriage"],
+  "tt0289043": ["zombie apocalypse", "infection", "zombies", "post-apocalyptic", "survival horror", "bleak", "science gone wrong", "big city", "iconic score"],
+  "tt0463854": ["zombie apocalypse", "infection", "zombies", "relentless", "fast-paced", "bleak", "very gory", "big city", "guilt"],
+  "tt0389722": ["vampires", "snowbound", "isolated setting", "small town", "survival horror", "very gory", "bleak", "relentless"],
+  "tt2932536": ["killer animals", "at sea", "survival horror", "claustrophobic", "suspenseful", "twist ending"],
+  "tt1038988": ["found footage", "spanish-language horror", "infection", "zombies", "single location", "claustrophobic", "relentless", "genuinely terrifying", "possession"],
+  "tt0067656": ["italian horror", "giallo", "slasher", "splatter", "very gory", "darkly funny", "twist ending", "human monsters", "cult classic"],
+  "tt4731136": ["asylum or hospital", "gothic horror", "visually stylish", "mad scientist", "gaslighting", "paranoid", "isolated setting", "slow burn", "body horror"],
+  "tt2375574": ["folk horror", "period piece", "black and white", "dreamlike", "psychological horror", "occult horror", "low budget indie", "war and history", "ambiguous"],
+  "tt2326554": ["vampires", "black and white", "visually stylish", "atmospheric", "loneliness", "melancholy", "slow burn", "low budget indie", "elevated horror"],
+  "tt0087800": ["slasher", "supernatural horror", "80s horror", "final girl", "childhood fears", "dreamlike", "suburbia", "practical effects", "high school", "guilt"],
+  "tt1179056": ["remake", "slasher", "supernatural horror", "jump scares", "high school", "suburbia", "guilt"],
+  "tt0093629": ["slasher", "supernatural horror", "80s horror", "asylum or hospital", "practical effects", "dreamlike", "crowd-pleaser", "darkly funny", "cult classic"],
+  "tt0095742": ["slasher", "supernatural horror", "80s horror", "practical effects", "dreamlike", "final girl", "campy", "high school", "crowd-pleaser"],
+  "tt0089686": ["slasher", "supernatural horror", "80s horror", "sexuality", "possession", "suburbia", "high school", "campy", "cult classic"],
+  "tt0097981": ["slasher", "supernatural horror", "80s horror", "motherhood", "dreamlike", "practical effects", "final girl"],
+  "tt6644200": ["creature feature", "aliens", "post-apocalyptic", "survival horror", "suspenseful", "isolated setting", "grief", "motherhood", "jump scares", "little to no gore"],
+  "tt8332922": ["creature feature", "aliens", "post-apocalyptic", "survival horror", "suspenseful", "grief", "jump scares", "coming of age", "little to no gore"],
+  "tt13433802": ["aliens", "creature feature", "big city", "survival horror", "melancholy", "suspenseful", "little to no gore"],
+  "tt1611224": ["vampires", "period piece", "based on a book", "over the top", "fast-paced", "revenge horror", "war and history", "not too scary"],
+  "tt0076150": ["slasher", "masked killer", "religion and faith", "70s grit", "creepy kids", "family trauma", "convent or church", "giallo", "cult classic"],
+  "tt0078748": ["sci-fi horror", "outer space", "creature feature", "aliens", "claustrophobic", "slow burn", "creeping dread", "body horror", "final girl", "practical effects"],
+  "tt0118583": ["sci-fi horror", "outer space", "aliens", "creature feature", "science gone wrong", "body horror", "darkly funny", "visually stylish", "motherhood"],
+  "tt2316204": ["sci-fi horror", "outer space", "aliens", "creature feature", "mad scientist", "body horror", "very gory", "bleak", "science gone wrong"],
+  "tt18412256": ["sci-fi horror", "outer space", "aliens", "creature feature", "claustrophobic", "survival horror", "body horror", "practical effects", "final girl", "relentless"],
+  "tt0090605": ["sci-fi horror", "outer space", "aliens", "creature feature", "fast-paced", "crowd-pleaser", "motherhood", "relentless", "practical effects", "80s horror"],
+  "tt0758730": ["aliens", "sci-fi horror", "creature feature", "small town", "very gory", "fast-paced", "survival horror"],
+  "tt0103644": ["sci-fi horror", "outer space", "aliens", "creature feature", "bleak", "isolated setting", "religion and faith", "claustrophobic", "tragic"],
+  "tt0082010": ["werewolves", "horror comedy", "practical effects", "darkly funny", "tragic", "80s horror", "body horror", "guilt", "cult classic"],
+  "tt0118615": ["killer animals", "creature feature", "campy", "crowd-pleaser", "90s horror", "party movie", "isolated setting", "survival horror", "not too scary"],
+  "tt0092563": ["occult horror", "twist ending", "atmospheric", "period piece", "slow burn", "creeping dread", "demons", "guilt", "based on a book"],
+  "tt3322940": ["evil doll", "supernatural horror", "demons", "jump scares", "motherhood", "cult", "period piece", "occult horror"],
+  "tt8350360": ["evil doll", "supernatural horror", "haunted house", "jump scares", "single location", "demons", "ghosts", "period piece", "not too scary"],
+  "tt5140878": ["evil doll", "supernatural horror", "demons", "possession", "jump scares", "haunted house", "period piece", "grief", "isolated setting"],
+  "tt2798920": ["sci-fi horror", "cosmic horror", "body horror", "cerebral", "atmospheric", "dreamlike", "ambiguous", "visually stylish", "based on a book", "aliens"],
+  "tt0870984": ["grief", "psychological horror", "disturbing", "extreme", "troubled marriage", "isolated setting", "descent into madness", "sexuality", "elevated horror", "guilt"],
+  "tt6217306": ["folk horror", "cult", "period piece", "isolated setting", "religion and faith", "very gory", "slow burn", "torture horror", "at sea"],
+  "tt0106308": ["horror comedy", "campy", "over the top", "cult classic", "crowd-pleaser", "party movie", "period piece", "demons", "practical effects", "not too scary"],
+  "tt0993840": ["zombies", "fast-paced", "very gory", "over the top", "big city", "survival horror"],
+  "tt2870612": ["found footage", "claustrophobic", "supernatural horror", "guilt", "occult horror", "survival horror", "jump scares", "creeping dread"],
+  "tt0080391": ["horror comedy", "campy", "cult classic", "low budget indie", "party movie", "over the top", "not too scary", "meta horror"],
+  "tt0370263": ["aliens", "sci-fi horror", "creature feature", "snowbound", "isolated setting", "fast-paced", "survival horror", "not too scary"],
+  "tt2944198": ["killer animals", "survival horror", "isolated setting", "based on a true story", "slow burn", "suspenseful", "troubled marriage", "low budget indie"],
+  "tt0092610": ["horror comedy", "splatter", "aliens", "low budget indie", "over the top", "very gory", "cult classic", "party movie", "practical effects"],
+  "tt15791034": ["suspenseful", "darkly funny", "creeping dread", "claustrophobic", "social commentary", "motherhood", "sexual violence", "jump scares"],
+  "tt2049403": ["horror comedy", "ghosts", "campy", "not too scary", "crowd-pleaser", "practical effects", "visually stylish", "halloween night", "small town"],
+  "tt2737304": ["post-apocalyptic", "unseen threat", "survival horror", "motherhood", "based on a book", "suspenseful", "little to no gore"],
+  "tt0071222": ["slasher", "christmas horror", "unseen threat", "creeping dread", "70s grit", "final girl", "suspenseful", "single location", "bleak", "cult classic"],
+  "tt0057603": ["anthology", "italian horror", "gothic horror", "visually stylish", "atmospheric", "vampires", "ghosts", "cult classic"],
+  "tt0054067": ["gothic horror", "italian horror", "black and white", "witches", "vampires", "atmospheric", "period piece", "old dark mansion", "revenge horror", "visually stylish"],
+  "tt0947798": ["psychological horror", "descent into madness", "obsession", "body horror", "sexuality", "visually stylish", "ambiguous", "tragic", "big city"],
+  "tt0120611": ["vampires", "fast-paced", "90s horror", "crowd-pleaser", "visually stylish", "big city", "party movie", "not too scary"],
+  "tt0187738": ["vampires", "fast-paced", "creature feature", "practical effects", "infection", "visually stylish", "crowd-pleaser", "very gory"],
+  "tt0359013": ["vampires", "fast-paced", "campy", "big city", "not too scary"],
+  "tt0058567": ["giallo", "italian horror", "masked killer", "visually stylish", "slasher", "suspenseful", "twist ending", "cult classic"],
+  "tt2494362": ["cannibals", "period piece", "slow burn", "very gory", "disturbing", "darkly funny", "isolated setting", "survival horror"],
+  "tt0103873": ["splatter", "horror comedy", "zombies", "over the top", "very gory", "practical effects", "cult classic", "party movie", "infection", "period piece"],
+  "tt0103874": ["vampires", "gothic horror", "visually stylish", "based on a book", "period piece", "tragic", "sexuality", "practical effects", "old dark mansion", "obsession"],
+  "tt0144120": ["evil doll", "horror comedy", "slasher", "meta horror", "campy", "90s horror", "road trip", "darkly funny", "crowd-pleaser", "party movie"],
+  "tt0026138": ["classic monster movie", "black and white", "mad scientist", "tragic", "loneliness", "campy", "darkly funny", "gothic horror", "science gone wrong", "based on a book"],
+  "tt7752126": ["creepy kids", "sci-fi horror", "aliens", "motherhood", "very gory", "small town", "coming of age", "bleak"],
+  "tt0040068": ["horror comedy", "classic monster movie", "black and white", "vampires", "werewolves", "family friendly", "not too scary", "gateway horror", "crowd-pleaser", "mad scientist"],
+  "tt0103919": ["supernatural horror", "social commentary", "big city", "gothic horror", "iconic score", "gaslighting", "tragic", "atmospheric", "based on a book", "descent into madness"],
+  "tt0078935": ["found footage", "cannibals", "extreme", "italian horror", "sexual violence", "very gory", "disturbing", "social commentary", "sleazy", "isolated setting"],
+  "tt3860916": ["zombies", "infection", "post-apocalyptic", "melancholy", "tragic", "slow burn", "isolated setting", "zombie apocalypse"],
+  "tt0055830": ["dreamlike", "black and white", "low budget indie", "atmospheric", "twist ending", "ghosts", "psychological horror", "loneliness", "cult classic", "little to no gore"],
+  "tt0074285": ["based on a book", "high school", "coming of age", "religion and faith", "female rage", "tragic", "supernatural horror", "revenge horror", "family trauma", "visually stylish"],
+  "tt1939659": ["remake", "based on a book", "high school", "coming of age", "religion and faith", "female rage", "revenge horror", "family trauma", "supernatural horror"],
+  "tt0034587": ["black and white", "atmospheric", "unseen threat", "sexuality", "psychological horror", "tragic", "quiet", "little to no gore", "troubled marriage", "big city"],
+  "tt0094862": ["evil doll", "slasher", "80s horror", "practical effects", "big city", "gaslighting", "suspenseful", "childhood fears"],
+  "tt0099253": ["evil doll", "slasher", "practical effects", "darkly funny", "childhood fears", "gaslighting", "crowd-pleaser", "suburbia"],
+  "tt0103956": ["evil doll", "slasher", "darkly funny", "practical effects", "supernatural horror"],
+  "tt0087050": ["creepy kids", "cult", "small town", "religion and faith", "based on a book", "folk horror", "80s horror", "road trip", "isolated setting", "cult classic"],
+  "tt0085333": ["based on a book", "obsession", "high school", "coming of age", "supernatural horror", "80s horror", "loneliness", "revenge horror", "little to no gore"],
+  "tt1060277": ["found footage", "giant monster", "big city", "creature feature", "fast-paced", "relentless", "sci-fi horror", "survival horror", "bleak"],
+  "tt5073642": ["cosmic horror", "body horror", "based on a book", "sci-fi horror", "isolated setting", "descent into madness", "visually stylish", "aliens", "over the top", "practical effects"],
+  "tt0077355": ["paranoid", "gaslighting", "asylum or hospital", "suspenseful", "based on a book", "sci-fi horror", "little to no gore"],
+  "tt0091251": ["war and history", "bleak", "disturbing", "coming of age", "human monsters", "dreamlike", "period piece", "descent into madness", "tragic"],
+  "tt0360486": ["demons", "supernatural horror", "religion and faith", "occult horror", "big city", "visually stylish", "possession", "not too scary", "cult classic"],
+  "tt8364368": ["killer animals", "creature feature", "survival horror", "claustrophobic", "single location", "suspenseful", "fast-paced", "relentless", "crowd-pleaser"],
+  "tt0046876": ["classic monster movie", "black and white", "creature feature", "isolated setting", "not too scary", "gateway horror", "little to no gore"],
+  "tt2428170": ["found footage", "low budget indie", "psychological horror", "darkly funny", "creeping dread", "serial killer", "human monsters", "loneliness", "isolated setting"],
+  "tt0083767": ["anthology", "horror comedy", "campy", "80s horror", "darkly funny", "practical effects", "revenge horror", "visually stylish", "cult classic", "crowd-pleaser"],
+  "tt2554274": ["gothic horror", "ghosts", "old dark mansion", "period piece", "visually stylish", "haunted house", "tragic", "family trauma", "atmospheric"],
+  "tt0090887": ["creature feature", "aliens", "horror comedy", "80s horror", "small town", "practical effects", "not too scary", "gateway horror", "crowd-pleaser"],
+  "tt0085382": ["killer animals", "based on a book", "claustrophobic", "survival horror", "suspenseful", "troubled marriage", "motherhood", "80s horror", "relentless"],
+  "tt0077394": ["demons", "creepy kids", "supernatural horror", "religion and faith", "occult horror", "coming of age", "cult", "paranoid"],
+  "tt0077402": ["zombie apocalypse", "zombies", "social commentary", "splatter", "very gory", "single location", "darkly funny", "practical effects", "70s grit", "cult classic"],
+  "tt0363547": ["remake", "zombie apocalypse", "zombies", "fast-paced", "relentless", "very gory", "survival horror", "single location", "bleak"],
+  "tt0088993": ["zombie apocalypse", "zombies", "claustrophobic", "bleak", "very gory", "practical effects", "splatter", "mad scientist", "post-apocalyptic", "80s horror"],
+  "tt0077713": ["revenge horror", "sexual violence", "extreme", "female rage", "70s grit", "sleazy", "backwoods horror", "disturbing", "human monsters", "isolated setting"],
+  "tt0455760": ["evil doll", "supernatural horror", "ghosts", "curse", "small town", "jump scares", "twist ending", "revenge horror", "atmospheric"],
+  "tt0104070": ["horror comedy", "campy", "darkly funny", "over the top", "body horror", "not too scary", "obsession", "crowd-pleaser", "cult classic"],
+  "tt1241317": ["supernatural horror", "high school", "very gory", "fast-paced", "twist ending"],
+  "tt0149261": ["killer animals", "creature feature", "science gone wrong", "at sea", "crowd-pleaser", "fast-paced", "90s horror", "party movie", "survival horror", "mad scientist"],
+  "tt0073582": ["giallo", "italian horror", "visually stylish", "iconic score", "twist ending", "suspenseful", "serial killer", "family trauma", "cult classic"],
+  "tt2377322": ["possession", "demons", "supernatural horror", "based on a true story", "big city", "religion and faith", "jump scares"],
+  "tt1314655": ["single location", "claustrophobic", "demons", "supernatural horror", "twist ending", "guilt", "religion and faith", "paranoid", "suspenseful"],
+  "tt0398913": ["campy", "over the top", "fast-paced", "crowd-pleaser", "at sea", "party movie", "not too scary", "little to no gore"],
+  "tt5606664": ["supernatural horror", "based on a book", "cult", "family trauma", "ghosts", "guilt", "melancholy", "atmospheric"],
+  "tt4160708": ["home invasion", "suspenseful", "claustrophobic", "single location", "survival horror", "human monsters", "relentless", "twist ending", "sexual violence"],
+  "tt6246322": ["home invasion", "human monsters", "suspenseful", "fast-paced", "twist ending", "very gory"],
+  "tt0069995": ["grief", "psychological horror", "slow burn", "atmospheric", "creeping dread", "twist ending", "based on a book", "melancholy", "visually stylish", "ambiguous"],
+  "tt0069019": ["giallo", "italian horror", "small town", "religion and faith", "serial killer", "disturbing", "social commentary"],
+  "tt10731256": ["paranoid", "gaslighting", "psychological horror", "suburbia", "twist ending", "troubled marriage", "technology", "visually stylish", "social commentary", "sci-fi horror"],
+  "tt0419706": ["sci-fi horror", "outer space", "creature feature", "fast-paced", "science gone wrong", "infection", "claustrophobic"],
+  "tt0021814": ["vampires", "classic monster movie", "black and white", "gothic horror", "based on a book", "atmospheric", "old dark mansion", "little to no gore", "quiet"],
+  "tt0051554": ["vampires", "hammer horror", "gothic horror", "based on a book", "period piece", "old dark mansion", "visually stylish"],
+  "tt0829150": ["vampires", "period piece", "war and history", "tragic", "fast-paced", "not too scary"],
+  "tt1127180": ["curse", "supernatural horror", "demons", "jump scares", "darkly funny", "over the top", "crowd-pleaser", "fast-paced", "guilt", "date night"],
+  "tt0080661": ["suspenseful", "sexuality", "visually stylish", "twist ending", "serial killer", "big city", "sleazy"],
+  "tt1020530": ["survival horror", "bleak", "human monsters", "relentless", "disturbing", "isolated setting", "social commentary", "backwoods horror"],
+  "tt0146675": ["demons", "supernatural horror", "religion and faith", "big city", "fast-paced", "occult horror", "90s horror"],
+  "tt0074486": ["dreamlike", "black and white", "disturbing", "body horror", "atmospheric", "cult classic", "ambiguous", "low budget indie", "loneliness", "psychological horror"],
+  "tt5886046": ["survival horror", "suspenseful", "claustrophobic", "fast-paced", "crowd-pleaser", "little to no gore", "gateway horror"],
+  "tt0119081": ["sci-fi horror", "outer space", "cosmic horror", "claustrophobic", "disturbing", "guilt", "very gory", "cult classic", "90s horror"],
+  "tt1288558": ["remake", "cabin in the woods", "possession", "demons", "very gory", "relentless", "splatter", "practical effects", "supernatural horror"],
+  "tt0092991": ["horror comedy", "cabin in the woods", "splatter", "over the top", "demons", "possession", "cult classic", "practical effects", "80s horror", "party movie"],
+  "tt13345606": ["possession", "demons", "very gory", "big city", "single location", "motherhood", "relentless", "splatter", "claustrophobic"],
+  "tt0076009": ["possession", "demons", "supernatural horror", "religion and faith", "dreamlike"],
+  "tt0053459": ["mad scientist", "black and white", "tragic", "atmospheric", "body horror", "dreamlike", "melancholy", "guilt", "obsession", "quiet"],
+  "tt0983946": ["at sea", "isolated setting", "twist ending", "supernatural horror", "not too scary"],
+  "tt0016847": ["silent era", "black and white", "demons", "visually stylish", "tragic", "religion and faith", "period piece", "supernatural horror"],
+  "tt6566576": ["slasher", "90s horror", "witches", "curse", "small town", "high school", "masked killer", "based on a book", "fast-paced", "crowd-pleaser"],
+  "tt0195714": ["unseen threat", "supernatural horror", "suspenseful", "paranoid", "crowd-pleaser", "high school"],
+  "tt0309593": ["unseen threat", "supernatural horror", "very gory", "over the top", "crowd-pleaser", "fast-paced", "party movie"],
+  "tt0414982": ["unseen threat", "supernatural horror", "very gory", "high school", "crowd-pleaser", "over the top", "party movie"],
+  "tt1622979": ["unseen threat", "supernatural horror", "very gory", "twist ending", "crowd-pleaser", "over the top", "darkly funny"],
+  "tt9619824": ["unseen threat", "supernatural horror", "very gory", "family trauma", "curse", "crowd-pleaser", "darkly funny", "over the top"],
+  "tt4589218": ["gateway horror", "not too scary", "ghosts", "single location", "little to no gore", "childhood fears", "family trauma"],
+  "tt0099582": ["sci-fi horror", "guilt", "science gone wrong", "visually stylish", "psychological horror", "not too scary"],
+  "tt0066735": ["giallo", "italian horror", "visually stylish", "twist ending", "paranoid", "suspenseful", "troubled marriage"],
+  "tt0021884": ["classic monster movie", "mad scientist", "black and white", "tragic", "science gone wrong", "based on a book", "gothic horror", "loneliness", "little to no gore", "gateway horror"],
+  "tt0022913": ["black and white", "revenge horror", "disturbing", "cult classic", "human monsters", "tragic"],
+  "tt0329101": ["slasher", "masked killer", "over the top", "very gory", "party movie", "crowd-pleaser", "campy", "supernatural horror", "summer camp"],
+  "tt0068611": ["serial killer", "suspenseful", "darkly funny", "sexual violence", "big city", "human monsters", "disturbing"],
+  "tt0080761": ["slasher", "summer camp", "80s horror", "final girl", "twist ending", "practical effects", "isolated setting", "iconic score"],
+  "tt0758746": ["slasher", "remake", "masked killer", "summer camp", "very gory", "fast-paced", "sleazy"],
+  "tt0082418": ["slasher", "summer camp", "masked killer", "80s horror", "final girl", "isolated setting"],
+  "tt0083972": ["slasher", "masked killer", "80s horror", "final girl", "isolated setting", "campy"],
+  "tt0095179": ["slasher", "masked killer", "80s horror", "final girl", "supernatural horror", "practical effects", "guilt"],
+  "tt0097388": ["slasher", "masked killer", "at sea", "big city", "80s horror", "campy"],
+  "tt0089173": ["slasher", "masked killer", "twist ending", "sleazy", "80s horror"],
+  "tt0087298": ["slasher", "masked killer", "80s horror", "practical effects", "very gory", "isolated setting"],
+  "tt0089175": ["vampires", "horror comedy", "suburbia", "80s horror", "practical effects", "crowd-pleaser", "meta horror", "coming of age", "cult classic", "gateway horror"],
+  "tt0091083": ["body horror", "cosmic horror", "mad scientist", "science gone wrong", "practical effects", "sexuality", "80s horror", "based on a book", "splatter", "cult classic"],
+  "tt0116367": ["vampires", "over the top", "party movie", "splatter", "darkly funny", "road trip", "practical effects", "cult classic", "fast-paced"],
+  "tt0120681": ["serial killer", "period piece", "based on a true story", "based on a book", "big city", "atmospheric", "visually stylish", "paranoid"],
+  "tt0119167": ["home invasion", "disturbing", "bleak", "human monsters", "meta horror", "cerebral", "single location", "social commentary", "little to no gore"],
+  "tt3748172": ["based on a book", "psychological horror", "single location", "survival horror", "family trauma", "troubled marriage", "isolated setting", "claustrophobic", "suspenseful"],
+  "tt5052448": ["social commentary", "paranoid", "psychological horror", "suspenseful", "darkly funny", "twist ending", "gaslighting", "elevated horror", "crowd-pleaser"],
+  "tt0288477": ["ghosts", "at sea", "supernatural horror", "twist ending", "isolated setting", "very gory"],
+  "tt6195094": ["home invasion", "disturbing", "twist ending", "psychological horror", "human monsters", "relentless", "family trauma", "sexual violence"],
+  "tt0047034": ["giant monster", "black and white", "war and history", "social commentary", "bleak", "tragic", "science gone wrong", "iconic score", "melancholy"],
+  "tt23289160": ["giant monster", "war and history", "period piece", "guilt", "crowd-pleaser", "at sea", "little to no gore", "not too scary"],
+  "tt9000184": ["remake", "psychological horror", "twist ending", "creepy kids", "isolated setting", "motherhood", "paranoid", "slow burn", "grief"],
+  "tt1051904": ["family friendly", "horror comedy", "not too scary", "gateway horror", "based on a book", "small town", "evil doll", "crowd-pleaser", "meta horror", "little to no gore"],
+  "tt0348836": ["asylum or hospital", "ghosts", "supernatural horror", "gaslighting", "possession", "jump scares", "twist ending", "revenge horror", "paranoid"],
+  "tt1703199": ["found footage", "asylum or hospital", "ghosts", "haunted house", "claustrophobic", "jump scares", "low budget indie", "single location", "supernatural horror"],
+  "tt4062536": ["survival horror", "claustrophobic", "single location", "human monsters", "suspenseful", "relentless", "very gory", "isolated setting"],
+  "tt0087363": ["horror comedy", "christmas horror", "creature feature", "small town", "80s horror", "practical effects", "gateway horror", "crowd-pleaser", "darkly funny", "not too scary"],
+  "tt0099700": ["horror comedy", "creature feature", "meta horror", "over the top", "campy", "big city", "practical effects", "single location", "social commentary", "not too scary"],
+  "tt7323600": ["folk horror", "slow burn", "atmospheric", "witches", "period piece", "descent into madness", "isolated setting", "loneliness", "disturbing", "elevated horror"],
+  "tt0077651": ["slasher", "masked killer", "halloween night", "suburbia", "iconic score", "final girl", "suspenseful", "low budget indie", "little to no gore", "small town"],
+  "tt0373883": ["remake", "slasher", "masked killer", "halloween night", "family trauma", "very gory", "sleazy", "bleak"],
+  "tt1502407": ["slasher", "masked killer", "halloween night", "final girl", "family trauma", "small town", "crowd-pleaser"],
+  "tt0095271": ["slasher", "masked killer", "halloween night", "small town", "80s horror", "twist ending", "atmospheric"],
+  "tt0097474": ["slasher", "masked killer", "halloween night", "small town", "80s horror"],
+  "tt0120694": ["slasher", "masked killer", "halloween night", "final girl", "90s horror", "high school", "family trauma", "fast-paced"],
+  "tt0082495": ["slasher", "masked killer", "halloween night", "asylum or hospital", "80s horror", "final girl"],
+  "tt0085636": ["halloween night", "small town", "sci-fi horror", "occult horror", "paranoid", "bleak", "cult classic", "80s horror", "technology"],
+  "tt10665338": ["slasher", "masked killer", "halloween night", "very gory", "small town", "relentless", "social commentary", "bleak"],
+  "tt0367959": ["serial killer", "cannibals", "revenge horror", "war and history", "period piece", "based on a book", "family trauma"],
+  "tt1428538": ["witches", "over the top", "fast-paced", "very gory", "campy", "period piece", "party movie", "crowd-pleaser", "not too scary"],
+  "tt5308322": ["horror comedy", "slasher", "masked killer", "twist ending", "crowd-pleaser", "gateway horror", "not too scary", "little to no gore", "date night"],
+  "tt8155288": ["horror comedy", "sci-fi horror", "not too scary", "crowd-pleaser", "grief", "science gone wrong", "masked killer", "little to no gore"],
+  "tt0095294": ["body horror", "demons", "asylum or hospital", "very gory", "dreamlike", "practical effects", "80s horror", "obsession", "supernatural horror", "splatter"],
+  "tt2274648": ["demons", "witches", "very gory", "fast-paced", "over the top"],
+  "tt0093177": ["body horror", "demons", "sexuality", "based on a book", "practical effects", "80s horror", "obsession", "very gory", "cult classic", "supernatural horror"],
+  "tt7784604": ["grief", "family trauma", "elevated horror", "occult horror", "cult", "slow burn", "creeping dread", "disturbing", "genuinely terrifying", "demons"],
+  "tt0068713": ["snowbound", "period piece", "sci-fi horror", "aliens", "single location", "shapeshifter", "claustrophobic", "cult classic", "hammer horror"],
+  "tt0450278": ["torture horror", "very gory", "extreme", "sleazy", "human monsters", "disturbing", "splatter"],
+  "tt0063759": ["psychological horror", "descent into madness", "black and white", "dreamlike", "isolated setting", "at sea", "ambiguous", "troubled marriage", "atmospheric", "cerebral"],
+  "tt0076162": ["dreamlike", "haunted house", "horror comedy", "over the top", "campy", "visually stylish", "cult classic", "ghosts", "party movie"],
+  "tt0053925": ["gothic horror", "old dark mansion", "based on a book", "period piece", "family trauma", "atmospheric", "descent into madness", "visually stylish", "single location"],
+  "tt0397065": ["slasher", "remake", "backwoods horror", "very gory", "small town", "road trip", "killer family"],
+  "tt0045888": ["obsession", "period piece", "remake", "gothic horror", "little to no gore", "not too scary"],
+  "tt0051744": ["haunted house", "old dark mansion", "black and white", "campy", "twist ending", "single location", "troubled marriage", "not too scary", "little to no gore", "cult classic"],
+  "tt5022702": ["home invasion", "masked killer", "single location", "isolated setting", "suspenseful", "survival horror", "final girl", "low budget indie"],
+  "tt0013257": ["silent era", "black and white", "witches", "demons", "religion and faith", "period piece", "visually stylish", "social commentary", "cult classic"],
+  "tt0119345": ["slasher", "90s horror", "guilt", "small town", "based on a book", "final girl", "revenge horror", "crowd-pleaser"],
+  "tt1588170": ["korean horror", "revenge horror", "serial killer", "bleak", "disturbing", "very gory", "relentless", "extreme", "grief", "sexual violence"],
+  "tt1242432": ["revenge horror", "remake", "sexual violence", "extreme", "torture horror", "backwoods horror", "female rage", "cabin in the woods", "very gory", "human monsters"],
+  "tt0130018": ["slasher", "90s horror", "at sea", "isolated setting", "guilt", "twist ending", "final girl"],
+  "tt0071650": ["sleazy", "extreme", "torture horror", "sexual violence", "mad scientist", "war and history", "cult classic", "70s grit", "human monsters"],
+  "tt0113409": ["cosmic horror", "descent into madness", "meta horror", "small town", "paranoid", "dreamlike", "cult classic", "bleak", "psychological horror", "practical effects"],
+  "tt4687108": ["based on a book", "isolated setting", "supernatural horror", "dreamlike", "claustrophobic", "cosmic horror", "cerebral", "motherhood"],
+  "tt1591095": ["haunted house", "supernatural horror", "demons", "jump scares", "possession", "ghosts", "suburbia", "childhood fears", "date night"],
+  "tt2226417": ["supernatural horror", "ghosts", "possession", "jump scares", "haunted house", "family trauma", "date night"],
+  "tt3195644": ["supernatural horror", "demons", "jump scares", "grief", "ghosts"],
+  "tt5726086": ["supernatural horror", "demons", "jump scares", "family trauma", "haunted house", "ghosts"],
+  "tt0110148": ["vampires", "gothic horror", "period piece", "based on a book", "melancholy", "tragic", "loneliness", "visually stylish", "90s horror"],
+  "tt0049366": ["sci-fi horror", "paranoid", "shapeshifter", "aliens", "small town", "black and white", "gaslighting", "social commentary", "based on a book", "little to no gore"],
+  "tt0077745": ["sci-fi horror", "paranoid", "shapeshifter", "aliens", "big city", "remake", "bleak", "creeping dread", "70s grit", "practical effects"],
+  "tt1396484": ["supernatural horror", "coming of age", "childhood fears", "small town", "based on a book", "shapeshifter", "jump scares", "crowd-pleaser", "period piece"],
+  "tt7349950": ["supernatural horror", "childhood fears", "small town", "based on a book", "shapeshifter", "jump scares", "guilt"],
+  "tt4695012": ["psychological horror", "paranoid", "bleak", "slow burn", "isolated setting", "infection", "post-apocalyptic", "unseen threat", "claustrophobic", "elevated horror"],
+  "tt3235888": ["supernatural horror", "curse", "creeping dread", "sexuality", "suburbia", "atmospheric", "iconic score", "coming of age", "elevated horror", "slow burn"],
+  "tt0099871": ["psychological horror", "descent into madness", "twist ending", "dreamlike", "war and history", "paranoid", "disturbing", "big city", "demons"],
+  "tt0091080": ["slasher", "masked killer", "summer camp", "80s horror", "meta horror", "darkly funny", "crowd-pleaser", "party movie"],
+  "tt0073195": ["killer animals", "creature feature", "at sea", "suspenseful", "iconic score", "small town", "based on a book", "crowd-pleaser", "gateway horror", "unseen threat"],
+  "tt0077766": ["killer animals", "creature feature", "at sea", "small town", "suspenseful"],
+  "tt0085750": ["killer animals", "creature feature", "at sea", "campy", "80s horror"],
+  "tt0093300": ["killer animals", "creature feature", "at sea", "campy", "revenge horror"],
+  "tt0263488": ["creature feature", "road trip", "supernatural horror", "suspenseful", "isolated setting", "bleak", "practical effects"],
+  "tt1131734": ["horror comedy", "high school", "female rage", "demons", "possession", "small town", "sexuality", "darkly funny", "cult classic", "occult horror"],
+  "tt3348730": ["torture horror", "serial killer", "twist ending", "very gory", "splatter"],
+  "tt1788391": ["folk horror", "cult", "bleak", "disturbing", "slow burn", "twist ending", "occult horror", "creeping dread", "troubled marriage", "low budget indie"],
+  "tt0095444": ["horror comedy", "campy", "aliens", "small town", "80s horror", "cult classic", "practical effects", "party movie", "over the top", "sci-fi horror"],
+  "tt0024216": ["giant monster", "classic monster movie", "black and white", "tragic", "creature feature", "at sea", "practical effects", "big city", "not too scary"],
+  "tt0074751": ["giant monster", "remake", "creature feature", "tragic", "at sea", "big city", "not too scary"],
+  "tt15679400": ["home invasion", "cabin in the woods", "single location", "suspenseful", "religion and faith", "isolated setting", "based on a book", "little to no gore"],
+  "tt3605418": ["home invasion", "sleazy", "sexuality", "human monsters", "remake", "single location", "campy"],
+  "tt3850590": ["christmas horror", "horror comedy", "creature feature", "snowbound", "demons", "practical effects", "suburbia", "darkly funny", "gateway horror"],
+  "tt0058279": ["anthology", "ghosts", "visually stylish", "atmospheric", "period piece", "dreamlike", "slow burn", "supernatural horror", "based on a book", "little to no gore"],
+  "tt9639470": ["psychological horror", "visually stylish", "ghosts", "big city", "descent into madness", "twist ending", "giallo", "period piece"],
+  "tt1038686": ["supernatural horror", "religion and faith", "single location", "isolated setting", "survival horror", "possession", "fast-paced"],
+  "tt1139797": ["vampires", "melancholy", "coming of age", "loneliness", "snowbound", "quiet", "atmospheric", "based on a book", "elevated horror", "slow burn"],
+  "tt5442430": ["sci-fi horror", "outer space", "aliens", "creature feature", "claustrophobic", "bleak", "twist ending", "survival horror", "suspenseful"],
+  "tt4786282": ["supernatural horror", "jump scares", "ghosts", "childhood fears", "family trauma", "motherhood", "date night"],
+  "tt0091419": ["horror comedy", "campy", "practical effects", "creature feature", "cult classic", "not too scary", "remake", "big city", "aliens", "crowd-pleaser"],
+  "tt8760708": ["evil doll", "sci-fi horror", "technology", "horror comedy", "campy", "crowd-pleaser", "science gone wrong", "grief", "gateway horror", "little to no gore"],
+  "tt7958736": ["psychological horror", "revenge horror", "small town", "high school", "human monsters", "loneliness", "guilt", "obsession"],
+  "tt0077889": ["evil doll", "psychological horror", "descent into madness", "based on a book", "obsession", "loneliness", "slow burn", "isolated setting"],
+  "tt3811906": ["over the top", "giallo", "body horror", "twist ending", "campy", "visually stylish", "family trauma", "asylum or hospital", "crowd-pleaser"],
+  "tt2023587": ["supernatural horror", "ghosts", "motherhood", "jump scares", "creepy kids", "tragic", "melancholy"],
+  "tt0091474": ["serial killer", "suspenseful", "visually stylish", "based on a book", "cerebral", "psychological horror", "human monsters", "obsession", "cult classic"],
+  "tt0077914": ["vampires", "ambiguous", "loneliness", "70s grit", "low budget indie", "melancholy", "psychological horror", "serial killer", "sexual violence", "cult classic"],
+  "tt1029234": ["french extremity", "extreme", "torture horror", "disturbing", "bleak", "cult", "revenge horror", "very gory", "religion and faith", "relentless"],
+  "tt9224104": ["giant monster", "killer animals", "creature feature", "at sea", "over the top", "crowd-pleaser", "fast-paced", "based on a book", "not too scary", "party movie"],
+  "tt8772262": ["folk horror", "cult", "grief", "troubled marriage", "elevated horror", "slow burn", "disturbing", "visually stylish", "isolated setting", "creeping dread"],
+  "tt5109784": ["psychological horror", "dreamlike", "single location", "religion and faith", "motherhood", "home invasion", "disturbing", "troubled marriage", "relentless", "elevated horror"],
+  "tt0063350": ["zombies", "zombie apocalypse", "black and white", "single location", "bleak", "social commentary", "low budget indie", "survival horror", "claustrophobic", "cult classic"],
+  "tt10954984": ["sci-fi horror", "aliens", "creature feature", "social commentary", "visually stylish", "suspenseful", "isolated setting", "cerebral"],
+  "tt0013442": ["silent era", "vampires", "black and white", "gothic horror", "atmospheric", "visually stylish", "based on a book", "period piece", "little to no gore"],
+  "tt5040012": ["vampires", "gothic horror", "remake", "period piece", "atmospheric", "visually stylish", "sexuality", "creeping dread", "obsession", "bleak"],
+  "tt0079641": ["vampires", "gothic horror", "remake", "melancholy", "atmospheric", "slow burn", "tragic", "loneliness", "period piece", "dreamlike"],
+  "tt2388715": ["supernatural horror", "psychological horror", "family trauma", "haunted house", "ambiguous", "bleak", "cerebral", "descent into madness", "single location"],
+  "tt10954652": ["at sea", "isolated setting", "twist ending", "body horror", "based on a book", "science gone wrong", "single location"],
+  "tt0058430": ["black and white", "period piece", "war and history", "sexuality", "atmospheric", "human monsters", "isolated setting", "bleak"],
+  "tt1714915": ["vampires", "melancholy", "atmospheric", "slow burn", "quiet", "visually stylish", "loneliness", "darkly funny", "little to no gore", "not too scary"],
+  "tt0076504": ["killer animals", "revenge horror", "at sea", "eco horror", "tragic", "creature feature", "small town"],
+  "tt1148204": ["creepy kids", "twist ending", "psychological horror", "troubled marriage", "gaslighting", "suspenseful", "motherhood", "grief", "human monsters"],
+  "tt1204977": ["supernatural horror", "ghosts", "jump scares", "suburbia"],
+  "tt4361050": ["supernatural horror", "possession", "creepy kids", "period piece", "ghosts", "grief", "suburbia", "haunted house", "motherhood", "jump scares"],
+  "tt4530422": ["war and history", "sci-fi horror", "mad scientist", "zombies", "fast-paced", "period piece", "body horror", "crowd-pleaser", "science gone wrong", "very gory"],
+  "tt1188729": ["sci-fi horror", "outer space", "claustrophobic", "twist ending", "creature feature", "descent into madness", "cannibals", "survival horror", "paranoid"],
+  "tt1179904": ["found footage", "demons", "supernatural horror", "haunted house", "suburbia", "slow burn", "unseen threat", "low budget indie", "single location", "little to no gore"],
+  "tt1536044": ["found footage", "demons", "supernatural horror", "haunted house", "suburbia", "unseen threat", "slow burn", "single location", "possession"],
+  "tt18925334": ["psychological horror", "descent into madness", "female rage", "period piece", "visually stylish", "isolated setting", "serial killer", "loneliness", "family trauma", "obsession"],
+  "tt0054167": ["psychological horror", "serial killer", "obsession", "family trauma", "sexuality", "tragic", "visually stylish", "loneliness", "big city", "cult classic"],
+  "tt8850222": ["korean horror", "zombies", "post-apocalyptic", "fast-paced", "zombie apocalypse", "survival horror"],
+  "tt0098084": ["supernatural horror", "grief", "based on a book", "creepy kids", "bleak", "tragic", "80s horror", "disturbing"],
+  "tt0837563": ["supernatural horror", "grief", "based on a book", "remake", "creepy kids", "bleak", "jump scares"],
+  "tt0079714": ["dreamlike", "supernatural horror", "cult classic", "low budget indie", "grief", "childhood fears", "iconic score", "sci-fi horror", "coming of age", "small town"],
+  "tt0071994": ["campy", "cult classic", "visually stylish", "horror comedy", "tragic", "obsession", "over the top", "revenge horror", "not too scary"],
+  "tt0070531": ["sci-fi horror", "eco horror", "killer animals", "cerebral", "isolated setting", "atmospheric", "visually stylish", "slow burn", "ambiguous", "cult classic"],
+  "tt0078087": ["killer animals", "creature feature", "horror comedy", "science gone wrong", "summer camp", "low budget indie", "darkly funny", "cult classic"],
+  "tt0464154": ["killer animals", "creature feature", "horror comedy", "splatter", "very gory", "over the top", "sleazy", "party movie", "remake"],
+  "tt0052077": ["campy", "aliens", "zombies", "black and white", "cult classic", "low budget indie", "sci-fi horror", "party movie", "not too scary"],
+  "tt1077258": ["zombies", "splatter", "over the top", "horror comedy", "infection", "sleazy", "very gory", "party movie", "fast-paced", "practical effects"],
+  "tt0084516": ["haunted house", "ghosts", "supernatural horror", "suburbia", "crowd-pleaser", "gateway horror", "80s horror", "practical effects", "childhood fears", "technology"],
+  "tt0082933": ["troubled marriage", "psychological horror", "descent into madness", "disturbing", "body horror", "dreamlike", "sexuality", "ambiguous", "cult classic", "big city"],
+  "tt5918982": ["sci-fi horror", "body horror", "technology", "very gory", "disturbing", "cerebral", "visually stylish", "bleak", "psychological horror", "practical effects"],
+  "tt11866324": ["sci-fi horror", "aliens", "creature feature", "survival horror", "period piece", "suspenseful", "crowd-pleaser", "isolated setting"],
+  "tt0822847": ["vampires", "post-apocalyptic", "religion and faith", "fast-paced", "based on a book"],
+  "tt0093777": ["cosmic horror", "religion and faith", "single location", "convent or church", "demons", "creeping dread", "atmospheric", "possession", "80s horror", "cerebral"],
+  "tt1446714": ["sci-fi horror", "outer space", "aliens", "body horror", "visually stylish", "religion and faith", "cosmic horror", "science gone wrong", "cerebral", "infection"],
+  "tt0054215": ["psychological horror", "twist ending", "serial killer", "suspenseful", "black and white", "iconic score", "based on a book", "human monsters", "road trip", "slasher"],
+  "tt0076590": ["body horror", "infection", "sci-fi horror", "science gone wrong", "70s grit", "sexuality", "big city", "low budget indie", "bleak"],
+  "tt4954522": ["body horror", "cannibals", "coming of age", "french extremity", "sexuality", "disturbing", "elevated horror", "family trauma", "twist ending"],
+  "tt0089885": ["horror comedy", "mad scientist", "splatter", "body horror", "zombies", "80s horror", "over the top", "cult classic", "practical effects", "based on a book"],
+  "tt7798634": ["horror comedy", "darkly funny", "survival horror", "old dark mansion", "killer family", "social commentary", "final girl", "crowd-pleaser", "occult horror", "single location"],
+  "tt0289765": ["serial killer", "suspenseful", "based on a book", "psychological horror", "human monsters", "remake", "family trauma"],
+  "tt1486185": ["werewolves", "period piece", "small town", "paranoid", "snowbound", "not too scary", "little to no gore"],
+  "tt0059646": ["psychological horror", "descent into madness", "black and white", "sexuality", "claustrophobic", "single location", "loneliness", "disturbing", "big city", "slow burn"],
+  "tt0120804": ["zombies", "sci-fi horror", "infection", "fast-paced", "science gone wrong", "claustrophobic", "survival horror", "technology", "crowd-pleaser"],
+  "tt1220634": ["zombies", "sci-fi horror", "post-apocalyptic", "fast-paced", "over the top", "infection"],
+  "tt0318627": ["zombies", "sci-fi horror", "infection", "fast-paced", "big city", "zombie apocalypse", "science gone wrong"],
+  "tt0432021": ["zombies", "post-apocalyptic", "sci-fi horror", "road trip", "infection", "fast-paced", "zombie apocalypse", "science gone wrong"],
+  "tt1855325": ["zombies", "sci-fi horror", "fast-paced", "over the top", "infection", "technology"],
+  "tt2592614": ["zombies", "post-apocalyptic", "sci-fi horror", "fast-paced", "infection"],
+  "tt6920084": ["zombies", "infection", "sci-fi horror", "small town", "science gone wrong", "survival horror"],
+  "tt0089905": ["supernatural horror"],
+  "tt0178868": ["j-horror", "curse", "technology", "ghosts", "creeping dread", "supernatural horror", "quiet", "atmospheric", "based on a book", "genuinely terrifying"],
+  "tt0498381": ["supernatural horror", "curse", "technology", "ghosts", "jump scares"],
+  "tt0805647": ["witches", "family friendly", "based on a book", "remake", "not too scary", "horror comedy", "period piece", "gateway horror"],
+  "tt0063522": ["occult horror", "paranoid", "motherhood", "gaslighting", "cult", "psychological horror", "slow burn", "big city", "based on a book", "creeping dread"],
+  "tt8633478": ["suspenseful", "motherhood", "human monsters", "gaslighting", "isolated setting", "family trauma", "little to no gore"],
+  "tt0073650": ["extreme", "disturbing", "sexual violence", "bleak", "human monsters", "social commentary", "war and history", "torture horror", "based on a book", "period piece"],
+  "tt0387564": ["torture horror", "twist ending", "serial killer", "single location", "claustrophobic", "low budget indie", "suspenseful", "bleak"],
+  "tt1477076": ["torture horror", "splatter", "very gory", "serial killer", "over the top", "twist ending"],
+  "tt0432348": ["torture horror", "serial killer", "twist ending", "very gory", "single location", "claustrophobic", "survival horror"],
+  "tt0489270": ["torture horror", "very gory", "serial killer", "grief", "bleak", "splatter", "twist ending"],
+  "tt0890870": ["torture horror", "very gory", "serial killer", "splatter", "twist ending"],
+  "tt1132626": ["torture horror", "very gory", "serial killer", "splatter", "survival horror"],
+  "tt1233227": ["torture horror", "very gory", "serial killer", "social commentary", "splatter", "twist ending"],
+  "tt21807222": ["torture horror", "very gory", "serial killer", "revenge horror", "splatter", "twist ending"],
+  "tt0081455": ["sci-fi horror", "body horror", "practical effects", "paranoid", "80s horror", "science gone wrong", "cult classic"],
+  "tt3387520": ["gateway horror", "supernatural horror", "based on a book", "small town", "curse", "period piece", "childhood fears", "halloween night", "coming of age", "not too scary"],
+  "tt0117571": ["slasher", "meta horror", "masked killer", "90s horror", "high school", "final girl", "small town", "twist ending", "darkly funny", "crowd-pleaser"],
+  "tt11245972": ["slasher", "meta horror", "masked killer", "small town", "twist ending", "crowd-pleaser"],
+  "tt0120082": ["slasher", "meta horror", "masked killer", "90s horror", "final girl", "twist ending", "crowd-pleaser"],
+  "tt0134084": ["slasher", "meta horror", "masked killer", "final girl", "twist ending", "family trauma"],
+  "tt1262416": ["slasher", "meta horror", "masked killer", "small town", "final girl", "twist ending", "social commentary", "high school"],
+  "tt17663992": ["slasher", "meta horror", "masked killer", "big city", "fast-paced", "halloween night", "crowd-pleaser"],
+  "tt0060955": ["psychological horror", "paranoid", "sci-fi horror", "black and white", "bleak", "cerebral", "disturbing", "visually stylish", "based on a book"],
+  "tt0365748": ["horror comedy", "zombies", "zombie apocalypse", "crowd-pleaser", "gateway horror", "party movie", "cult classic"],
+  "tt0073705": ["body horror", "infection", "sexuality", "sci-fi horror", "science gone wrong", "70s grit", "single location", "mad scientist", "low budget indie", "sleazy"],
+  "tt0286106": ["aliens", "religion and faith", "suspenseful", "grief", "isolated setting", "sci-fi horror", "slow burn", "little to no gore", "gateway horror"],
+  "tt0384537": ["supernatural horror", "atmospheric", "dreamlike", "cult", "motherhood", "visually stylish", "small town", "religion and faith", "revenge horror"],
+  "tt1922777": ["supernatural horror", "creeping dread", "demons", "creepy kids", "jump scares", "genuinely terrifying", "obsession", "haunted house", "technology", "curse"],
+  "tt0070698": ["psychological horror", "suspenseful", "visually stylish", "twist ending", "gaslighting", "paranoid", "70s grit", "cult classic"],
+  "tt0162661": ["gothic horror", "period piece", "visually stylish", "atmospheric", "supernatural horror", "small town", "based on a book", "witches", "hammer horror", "crowd-pleaser"],
+  "tt0439815": ["horror comedy", "creature feature", "aliens", "body horror", "infection", "small town", "practical effects", "over the top", "sci-fi horror", "party movie"],
+  "tt15474916": ["supernatural horror", "curse", "jump scares", "psychological horror", "creeping dread", "gaslighting", "family trauma", "guilt", "bleak"],
+  "tt0098354": ["body horror", "social commentary", "practical effects", "paranoid", "cult classic", "over the top", "darkly funny", "gaslighting", "cult", "80s horror"],
+  "tt0114508": ["sci-fi horror", "aliens", "creature feature", "sexuality", "science gone wrong", "90s horror", "big city"],
+  "tt1017460": ["sci-fi horror", "body horror", "science gone wrong", "mad scientist", "creature feature", "motherhood", "sexuality", "disturbing", "sexual violence"],
+  "tt4972582": ["psychological horror", "suspenseful", "twist ending", "claustrophobic", "survival horror", "family trauma", "final girl"],
+  "tt1682180": ["psychological horror", "visually stylish", "gothic horror", "slow burn", "coming of age", "sexuality", "family trauma", "serial killer", "atmospheric", "human monsters"],
+  "tt0448134": ["sci-fi horror", "outer space", "visually stylish", "claustrophobic", "suspenseful", "cerebral", "isolated setting", "iconic score"],
+  "tt0076786": ["witches", "italian horror", "visually stylish", "iconic score", "dreamlike", "supernatural horror", "occult horror", "atmospheric", "cult classic"],
+  "tt1034415": ["witches", "occult horror", "remake", "elevated horror", "slow burn", "body horror", "period piece", "war and history", "motherhood", "disturbing"],
+  "tt0408236": ["gothic horror", "revenge horror", "period piece", "tragic", "visually stylish", "darkly funny", "serial killer", "very gory", "obsession", "big city"],
+  "tt0069341": ["anthology", "revenge horror", "guilt", "twist ending", "darkly funny", "supernatural horror", "cult classic"],
+  "tt10638522": ["possession", "supernatural horror", "grief", "ghosts", "disturbing", "bleak", "suburbia", "loneliness"],
+  "tt4281724": ["slasher", "splatter", "very gory", "extreme", "halloween night", "low budget indie", "practical effects", "relentless", "sleazy"],
+  "tt10403420": ["slasher", "splatter", "very gory", "extreme", "halloween night", "final girl", "practical effects", "over the top", "supernatural horror", "low budget indie"],
+  "tt0096734": ["horror comedy", "suburbia", "paranoid", "not too scary", "darkly funny", "80s horror", "cult classic", "gateway horror"],
+  "tt0066740": ["campy", "revenge horror", "darkly funny", "visually stylish", "mad scientist", "horror comedy", "cult classic", "period piece"],
+  "tt0041094": ["family friendly", "not too scary", "anthology", "based on a book", "gateway horror", "halloween night", "little to no gore", "period piece"],
+  "tt0384806": ["haunted house", "remake", "based on a true story", "supernatural horror", "jump scares", "ghosts", "period piece", "suburbia"],
+  "tt0078767": ["haunted house", "based on a true story", "supernatural horror", "based on a book", "suburbia", "descent into madness", "religion and faith"],
+  "tt3289956": ["supernatural horror", "single location", "claustrophobic", "creeping dread", "witches", "atmospheric", "watch it alone in the dark"],
+  "tt2321549": ["psychological horror", "grief", "motherhood", "elevated horror", "ambiguous", "creeping dread", "childhood fears", "descent into madness", "little to no gore"],
+  "tt4225622": ["horror comedy", "cult", "over the top", "party movie", "coming of age", "suburbia", "fast-paced", "occult horror"],
+  "tt0061402": ["social commentary", "war and history", "single location", "darkly funny", "low budget indie"],
+  "tt0065143": ["giallo", "italian horror", "visually stylish", "serial killer", "suspenseful", "twist ending", "big city"],
+  "tt0056869": ["killer animals", "eco horror", "suspenseful", "small town", "creeping dread", "ambiguous", "survival horror", "based on a book"],
+  "tt7144666": ["serial killer", "ghosts", "suspenseful", "period piece", "claustrophobic", "suburbia", "based on a book", "coming of age", "supernatural horror", "survival horror"],
+  "tt0185937": ["found footage", "unseen threat", "low budget indie", "witches", "isolated setting", "creeping dread", "ambiguous", "little to no gore", "watch it alone in the dark"],
+  "tt0051418": ["creature feature", "sci-fi horror", "aliens", "small town", "campy", "not too scary", "gateway horror", "cult classic"],
+  "tt0094761": ["creature feature", "remake", "practical effects", "80s horror", "sci-fi horror", "small town", "very gory", "body horror", "science gone wrong", "crowd-pleaser"],
+  "tt3882082": ["evil doll", "twist ending", "old dark mansion", "isolated setting", "gothic horror", "jump scares", "little to no gore"],
+  "tt0078908": ["body horror", "motherhood", "family trauma", "creepy kids", "troubled marriage", "female rage", "disturbing", "mad scientist", "science gone wrong", "70s grit"],
+  "tt1259521": ["meta horror", "horror comedy", "cabin in the woods", "twist ending", "crowd-pleaser", "cosmic horror", "creature feature", "cerebral", "party movie"],
+  "tt0010323": ["silent era", "black and white", "visually stylish", "dreamlike", "twist ending", "psychological horror", "asylum or hospital", "mad scientist", "descent into madness"],
+  "tt0075809": ["supernatural horror", "small town", "cult classic", "campy", "isolated setting"],
+  "tt0065761": ["giallo", "italian horror", "serial killer", "suspenseful", "big city"],
+  "tt0080516": ["haunted house", "ghosts", "grief", "atmospheric", "slow burn", "old dark mansion", "quiet", "creeping dread", "little to no gore", "watch it alone in the dark"],
+  "tt2548396": ["sci-fi horror", "outer space", "science gone wrong", "claustrophobic", "survival horror"],
+  "tt1457767": ["haunted house", "supernatural horror", "based on a true story", "possession", "jump scares", "period piece", "demons", "witches", "genuinely terrifying", "crowd-pleaser"],
+  "tt3065204": ["haunted house", "supernatural horror", "based on a true story", "possession", "demons", "jump scares", "period piece", "ghosts", "crowd-pleaser"],
+  "tt7069210": ["supernatural horror", "possession", "based on a true story", "occult horror", "demons", "witches", "curse", "period piece", "jump scares"],
+  "tt0115963": ["witches", "high school", "90s horror", "coming of age", "female rage", "cult classic", "occult horror", "supernatural horror", "gateway horror"],
+  "tt0069895": ["infection", "70s grit", "social commentary", "small town", "paranoid", "bleak", "low budget indie", "science gone wrong", "sci-fi horror"],
+  "tt0050280": ["hammer horror", "gothic horror", "mad scientist", "science gone wrong", "period piece", "based on a book", "obsession", "old dark mansion"],
+  "tt4913966": ["supernatural horror", "ghosts", "jump scares", "curse", "motherhood", "period piece", "childhood fears"],
+  "tt8695030": ["horror comedy", "zombies", "small town", "darkly funny", "meta horror", "social commentary", "zombie apocalypse"],
+  "tt0085407": ["based on a book", "melancholy", "tragic", "supernatural horror", "small town", "loneliness", "suspenseful", "little to no gore"],
+  "tt0435625": ["claustrophobic", "creature feature", "survival horror", "isolated setting", "relentless", "grief", "genuinely terrifying", "very gory", "bleak"],
+  "tt0118971": ["demons", "supernatural horror", "big city", "religion and faith", "twist ending", "over the top", "troubled marriage", "90s horror", "based on a book"],
+  "tt0066993": ["religion and faith", "period piece", "convent or church", "based on a true story", "sexuality", "extreme", "disturbing", "visually stylish", "social commentary", "over the top"],
+  "tt0083907": ["cabin in the woods", "demons", "possession", "low budget indie", "splatter", "very gory", "cult classic", "80s horror", "practical effects", "relentless"],
+  "tt0404032": ["possession", "religion and faith", "based on a true story", "demons", "ambiguous", "supernatural horror", "little to no gore"],
+  "tt0070047": ["possession", "demons", "religion and faith", "genuinely terrifying", "supernatural horror", "based on a book", "motherhood", "disturbing", "iconic score", "practical effects"],
+  "tt0133751": ["sci-fi horror", "aliens", "high school", "90s horror", "paranoid", "shapeshifter", "infection", "crowd-pleaser", "meta horror"],
+  "tt0061655": ["horror comedy", "vampires", "gothic horror", "snowbound", "period piece", "old dark mansion", "campy", "atmospheric"],
+  "tt1144884": ["splatter", "over the top", "very gory", "fast-paced", "supernatural horror", "unseen threat", "party movie"],
+  "tt6133466": ["social commentary", "survival horror", "human monsters", "big city", "fast-paced"],
+  "tt0091064": ["body horror", "sci-fi horror", "tragic", "practical effects", "science gone wrong", "remake", "mad scientist", "80s horror", "disturbing"],
+  "tt0051622": ["sci-fi horror", "science gone wrong", "mad scientist", "classic monster movie", "tragic", "body horror", "based on a book"],
+  "tt0080749": ["ghosts", "atmospheric", "small town", "supernatural horror", "revenge horror", "curse", "guilt", "iconic score", "80s horror"],
+  "tt3387542": ["supernatural horror", "ghosts", "isolated setting", "jump scares", "psychological horror"],
+  "tt10327252": ["social commentary", "survival horror", "human monsters", "fast-paced"],
+  "tt0116365": ["horror comedy", "ghosts", "supernatural horror", "serial killer", "small town", "90s horror", "crowd-pleaser", "grief", "cult classic"],
+  "tt0077588": ["supernatural horror", "visually stylish", "paranoid", "based on a book", "over the top", "very gory"],
+  "tt4547056": ["zombies", "infection", "post-apocalyptic", "zombie apocalypse", "based on a book", "cerebral", "sci-fi horror", "bleak", "coming of age", "survival horror"],
+  "tt0391198": ["curse", "ghosts", "remake", "j-horror", "haunted house", "supernatural horror", "jump scares", "creeping dread"],
+  "tt0171363": ["haunted house", "remake", "old dark mansion", "ghosts", "based on a book", "supernatural horror", "over the top", "not too scary"],
+  "tt0057129": ["haunted house", "psychological horror", "black and white", "old dark mansion", "unseen threat", "ambiguous", "atmospheric", "based on a book", "little to no gore", "loneliness"],
+  "tt0454841": ["backwoods horror", "remake", "cannibals", "killer family", "very gory", "survival horror", "relentless", "sexual violence", "isolated setting", "road trip"],
+  "tt0077681": ["backwoods horror", "cannibals", "killer family", "70s grit", "survival horror", "isolated setting", "road trip", "low budget indie", "cult classic"],
+  "tt0091209": ["road trip", "serial killer", "suspenseful", "relentless", "human monsters", "isolated setting", "paranoid", "80s horror", "cult classic", "bleak"],
+  "tt0468492": ["creature feature", "korean horror", "social commentary", "darkly funny", "tragic", "big city", "science gone wrong", "eco horror", "crowd-pleaser"],
+  "tt0052905": ["hammer horror", "gothic horror", "based on a book", "period piece", "old dark mansion", "atmospheric", "curse", "isolated setting", "not too scary", "little to no gore"],
+  "tt4003440": ["serial killer", "disturbing", "extreme", "darkly funny", "cerebral", "human monsters", "elevated horror", "very gory", "period piece", "obsession"],
+  "tt0074287": ["giallo", "italian horror", "slow burn", "atmospheric", "small town", "creeping dread", "twist ending", "paranoid", "cult classic"],
+  "tt1467304": ["body horror", "mad scientist", "torture horror", "extreme", "disturbing", "isolated setting", "science gone wrong", "cult classic"],
+  "tt1392170": ["survival horror", "social commentary", "based on a book", "suspenseful", "not too scary", "little to no gore", "crowd-pleaser"],
+  "tt8244784": ["darkly funny", "social commentary", "survival horror", "human monsters", "fast-paced", "very gory", "over the top"],
+  "tt0050539": ["sci-fi horror", "black and white", "based on a book", "cerebral", "melancholy", "loneliness", "little to no gore"],
+  "tt0055018": ["gothic horror", "ghosts", "psychological horror", "ambiguous", "black and white", "atmospheric", "old dark mansion", "creepy kids", "based on a book", "period piece"],
+  "tt0024184": ["classic monster movie", "mad scientist", "black and white", "sci-fi horror", "based on a book", "science gone wrong", "descent into madness", "darkly funny"],
+  "tt1051906": ["gaslighting", "psychological horror", "sci-fi horror", "suspenseful", "paranoid", "technology", "social commentary", "remake"],
+  "tt2400463": ["slow burn", "cult", "grief", "paranoid", "single location", "psychological horror", "creeping dread", "suspenseful", "low budget indie"],
+  "tt1320244": ["found footage", "possession", "religion and faith", "demons", "cult", "twist ending", "isolated setting", "low budget indie"],
+  "tt0068833": ["revenge horror", "sexual violence", "70s grit", "sleazy", "disturbing", "human monsters", "extreme", "low budget indie", "cult classic"],
+  "tt0058700": ["post-apocalyptic", "vampires", "based on a book", "black and white", "loneliness", "melancholy", "bleak", "infection", "sci-fi horror"],
+  "tt7984734": ["psychological horror", "descent into madness", "black and white", "isolated setting", "claustrophobic", "elevated horror", "period piece", "at sea", "ambiguous", "darkly funny"],
+  "tt0054033": ["horror comedy", "campy", "black and white", "low budget indie", "cult classic", "creature feature", "not too scary", "darkly funny"],
+  "tt0093437": ["vampires", "80s horror", "horror comedy", "coming of age", "crowd-pleaser", "small town", "cult classic", "gateway horror", "visually stylish"],
+  "tt0058333": ["gothic horror", "visually stylish", "based on a book", "period piece", "occult horror", "old dark mansion", "religion and faith"],
+  "tt4779682": ["giant monster", "killer animals", "creature feature", "at sea", "crowd-pleaser", "based on a book", "not too scary", "fast-paced", "little to no gore"],
+  "tt9764362": ["darkly funny", "social commentary", "single location", "isolated setting", "human monsters", "suspenseful", "obsession"],
+  "tt0884328": ["creature feature", "cosmic horror", "bleak", "based on a book", "small town", "religion and faith", "claustrophobic", "single location", "survival horror", "disturbing"],
+  "tt0023245": ["classic monster movie", "black and white", "curse", "atmospheric", "slow burn", "supernatural horror", "obsession", "little to no gore", "not too scary"],
+  "tt2345759": ["remake", "supernatural horror", "curse", "fast-paced", "not too scary", "little to no gore"],
+  "tt1724572": ["period piece", "based on a true story", "based on a book"],
+  "tt1974419": ["visually stylish", "big city", "obsession", "dreamlike", "slow burn", "elevated horror", "cannibals", "sexuality", "disturbing", "psychological horror"],
+  "tt4682266": ["asylum or hospital", "coming of age", "sci-fi horror", "single location", "not too scary", "little to no gore"],
+  "tt0142688": ["occult horror", "slow burn", "based on a book", "cerebral", "atmospheric", "obsession", "cult", "demons", "ambiguous"],
+  "tt5814060": ["demons", "convent or church", "gothic horror", "jump scares", "supernatural horror", "period piece", "religion and faith", "atmospheric"],
+  "tt10160976": ["demons", "convent or church", "jump scares", "supernatural horror", "period piece", "religion and faith", "possession"],
+  "tt0075005": ["creepy kids", "demons", "occult horror", "supernatural horror", "iconic score", "religion and faith", "creeping dread", "paranoid", "suspenseful"],
+  "tt0466909": ["remake", "creepy kids", "demons", "occult horror", "supernatural horror", "religion and faith"],
+  "tt0464141": ["ghosts", "spanish-language horror", "grief", "motherhood", "haunted house", "melancholy", "tragic", "atmospheric", "old dark mansion", "little to no gore"],
+  "tt0230600": ["ghosts", "twist ending", "gothic horror", "haunted house", "atmospheric", "old dark mansion", "slow burn", "period piece", "motherhood", "little to no gore"],
+  "tt0012364": ["silent era", "black and white", "ghosts", "guilt", "melancholy", "supernatural horror", "based on a book", "tragic", "atmospheric"],
+  "tt0016220": ["silent era", "classic monster movie", "black and white", "gothic horror", "obsession", "based on a book", "tragic", "loneliness"],
+  "tt0055304": ["gothic horror", "old dark mansion", "based on a book", "period piece", "descent into madness", "twist ending", "gaslighting", "guilt", "atmospheric", "visually stylish"],
+  "tt13375076": ["possession", "demons", "religion and faith", "convent or church", "supernatural horror", "based on a true story", "jump scares", "guilt"],
+  "tt2184339": ["home invasion", "social commentary", "suburbia", "single location", "suspenseful", "human monsters"],
+  "tt2975578": ["social commentary", "survival horror", "big city", "human monsters", "fast-paced", "suspenseful"],
+  "tt4094724": ["social commentary", "survival horror", "big city", "human monsters", "fast-paced"],
+  "tt0089907": ["zombies", "horror comedy", "80s horror", "cult classic", "party movie", "practical effects", "over the top", "very gory"],
+  "tt0298130": ["curse", "ghosts", "remake", "technology", "creeping dread", "supernatural horror", "atmospheric", "creepy kids", "little to no gore"],
+  "tt0377109": ["curse", "ghosts", "supernatural horror", "motherhood", "creepy kids", "possession", "technology"],
+  "tt1161864": ["possession", "demons", "religion and faith", "convent or church", "based on a true story", "based on a book", "slow burn", "supernatural horror"],
+  "tt5638642": ["folk horror", "creature feature", "guilt", "cabin in the woods", "isolated setting", "atmospheric", "cult", "grief", "based on a book", "survival horror"],
+  "tt0073629": ["campy", "cult classic", "party movie", "horror comedy", "sexuality", "over the top", "mad scientist", "old dark mansion", "aliens", "not too scary"],
+  "tt0963794": ["survival horror", "eco horror", "body horror", "isolated setting", "bleak", "based on a book", "very gory", "single location"],
+  "tt4052882": ["killer animals", "survival horror", "at sea", "suspenseful", "single location", "isolated setting", "crowd-pleaser"],
+  "tt0081505": ["psychological horror", "descent into madness", "haunted house", "snowbound", "isolated setting", "based on a book", "ghosts", "creeping dread", "family trauma", "visually stylish"],
+  "tt0167404": ["ghosts", "twist ending", "supernatural horror", "grief", "melancholy", "slow burn", "childhood fears", "little to no gore", "gateway horror"],
+  "tt1189073": ["body horror", "mad scientist", "obsession", "revenge horror", "twist ending", "disturbing", "spanish-language horror", "sexual violence", "visually stylish", "based on a book"],
+  "tt0073747": ["social commentary", "suburbia", "paranoid", "sci-fi horror", "gaslighting", "slow burn", "based on a book", "creeping dread", "troubled marriage", "little to no gore"],
+  "tt0482606": ["home invasion", "masked killer", "isolated setting", "bleak", "suspenseful", "single location", "human monsters", "creeping dread", "troubled marriage"],
+  "tt17526714": ["body horror", "social commentary", "over the top", "very gory", "female rage", "darkly funny", "visually stylish", "practical effects", "sci-fi horror", "obsession"],
+  "tt0072271": ["backwoods horror", "killer family", "cannibals", "70s grit", "relentless", "masked killer", "final girl", "genuinely terrifying", "low budget indie", "disturbing"],
+  "tt0324216": ["remake", "backwoods horror", "killer family", "masked killer", "slasher", "very gory", "final girl", "relentless", "road trip"],
+  "tt0092076": ["horror comedy", "over the top", "killer family", "cannibals", "campy", "80s horror", "splatter", "practical effects", "darkly funny", "cult classic"],
+  "tt0084787": ["shapeshifter", "paranoid", "sci-fi horror", "snowbound", "practical effects", "body horror", "aliens", "isolated setting", "creature feature", "bleak"],
+  "tt0905372": ["shapeshifter", "aliens", "snowbound", "sci-fi horror", "isolated setting", "paranoid", "body horror", "creature feature"],
+  "tt0044121": ["aliens", "snowbound", "sci-fi horror", "black and white", "creature feature", "isolated setting", "classic monster movie", "based on a book", "little to no gore"],
+  "tt3567288": ["found footage", "twist ending", "darkly funny", "human monsters", "isolated setting", "family trauma"],
+  "tt4255304": ["cosmic horror", "practical effects", "body horror", "cult", "asylum or hospital", "single location", "creature feature", "occult horror", "low budget indie"],
+  "tt0070917": ["folk horror", "cult", "religion and faith", "isolated setting", "twist ending", "cult classic", "slow burn", "creeping dread", "sexuality", "little to no gore"],
+  "tt4263482": ["folk horror", "witches", "period piece", "slow burn", "religion and faith", "elevated horror", "atmospheric", "isolated setting", "coming of age", "creeping dread"],
+  "tt0094332": ["witches", "horror comedy", "demons", "small town", "based on a book", "sexuality", "not too scary", "crowd-pleaser", "date night"],
+  "tt0034398": ["classic monster movie", "werewolves", "black and white", "tragic", "curse", "atmospheric", "little to no gore"],
+  "tt1596365": ["ghosts", "gothic horror", "haunted house", "old dark mansion", "period piece", "atmospheric", "jump scares", "based on a book", "grief", "isolated setting"],
+  "tt0047573": ["giant monster", "creature feature", "black and white", "sci-fi horror", "science gone wrong", "classic monster movie", "little to no gore"],
+  "tt10944760": ["body horror", "elevated horror", "disturbing", "extreme", "sexuality", "serial killer", "motherhood", "loneliness", "visually stylish"],
+  "tt0080040": ["slasher", "evil doll", "masked killer", "road trip", "backwoods horror", "dreamlike", "low budget indie", "cult classic"],
+  "tt5700672": ["zombies", "korean horror", "fast-paced", "relentless", "zombie apocalypse", "tragic", "social commentary", "claustrophobic", "infection", "survival horror"],
+  "tt26753003": ["serial killer", "suspenseful", "human monsters", "little to no gore", "not too scary"],
+  "tt0100814": ["creature feature", "horror comedy", "small town", "isolated setting", "crowd-pleaser", "practical effects", "gateway horror", "cult classic", "not too scary"],
+  "tt1187064": ["twist ending", "cerebral", "at sea", "psychological horror", "guilt", "masked killer", "motherhood", "bleak", "ambiguous"],
+  "tt6772950": ["curse", "demons", "supernatural horror", "possession", "not too scary"],
+  "tt1465522": ["horror comedy", "meta horror", "cabin in the woods", "backwoods horror", "very gory", "crowd-pleaser", "party movie", "cult classic", "over the top", "low budget indie"],
+  "tt3099498": ["body horror", "horror comedy", "mad scientist", "darkly funny", "disturbing", "isolated setting", "obsession", "campy"],
+  "tt0105665": ["dreamlike", "psychological horror", "small town", "family trauma", "disturbing", "sexual violence", "tragic", "supernatural horror", "bleak", "cult classic"],
+  "tt0020530": ["silent era", "black and white", "dreamlike", "sexuality", "ambiguous"],
+  "tt5774060": ["creature feature", "cosmic horror", "at sea", "claustrophobic", "sci-fi horror", "survival horror", "fast-paced", "giant monster", "isolated setting", "relentless"],
+  "tt1496025": ["vampires", "werewolves", "fast-paced", "visually stylish", "big city", "not too scary"],
+  "tt3717252": ["vampires", "werewolves", "fast-paced", "visually stylish", "not too scary"],
+  "tt3713166": ["found footage", "technology", "ghosts", "revenge horror", "guilt", "high school", "single location", "supernatural horror", "low budget indie"],
+  "tt6857112": ["home invasion", "social commentary", "twist ending", "darkly funny", "suspenseful", "iconic score", "visually stylish"],
+  "tt0023649": ["vampires", "dreamlike", "atmospheric", "black and white", "slow burn", "quiet", "ambiguous", "based on a book", "watch it alone in the dark"],
+  "tt0338526": ["vampires", "werewolves", "over the top", "fast-paced", "crowd-pleaser", "campy", "period piece", "gothic horror", "not too scary"],
+  "tt0086541": ["body horror", "technology", "sci-fi horror", "practical effects", "cerebral", "paranoid", "dreamlike", "social commentary", "sexuality", "cult classic"],
+  "tt0054443": ["creepy kids", "sci-fi horror", "small town", "black and white", "based on a book", "aliens", "creeping dread", "little to no gore"],
+  "tt8368406": ["suburbia", "sci-fi horror", "psychological horror", "bleak", "claustrophobic", "creepy kids", "social commentary", "dreamlike", "single location"],
+  "tt0062467": ["home invasion", "suspenseful", "single location", "human monsters", "claustrophobic", "big city", "little to no gore"],
+  "tt1588173": ["zombies", "horror comedy", "post-apocalyptic", "based on a book", "not too scary", "date night", "gateway horror", "loneliness", "little to no gore", "crowd-pleaser"],
+  "tt0111686": ["meta horror", "slasher", "supernatural horror", "90s horror", "motherhood", "childhood fears", "dreamlike", "demons"],
+  "tt0056687": ["psychological horror", "family trauma", "black and white", "descent into madness", "campy", "human monsters", "single location", "guilt", "cult classic", "based on a book"],
+  "tt3416742": ["horror comedy", "vampires", "found footage", "werewolves", "not too scary", "cult classic", "party movie", "low budget indie", "crowd-pleaser"],
+  "tt0080130": ["suspenseful", "home invasion", "serial killer", "suburbia", "slow burn", "human monsters", "creeping dread", "little to no gore"],
+  "tt0816711": ["zombies", "zombie apocalypse", "infection", "fast-paced", "based on a book", "suspenseful", "crowd-pleaser", "little to no gore"],
+  "tt0295700": ["backwoods horror", "cannibals", "killer family", "survival horror", "slasher", "very gory", "isolated setting", "practical effects"],
+  "tt13560574": ["slasher", "period piece", "sexuality", "backwoods horror", "isolated setting", "final girl", "darkly funny", "very gory", "slow burn"],
+  "tt1853739": ["home invasion", "masked killer", "darkly funny", "final girl", "slasher", "twist ending", "isolated setting", "very gory", "crowd-pleaser", "low budget indie"],
+  "tt0080057": ["zombies", "italian horror", "very gory", "splatter", "practical effects", "at sea", "cult classic", "sleazy"],
+  "tt1156398": ["zombies", "horror comedy", "zombie apocalypse", "road trip", "post-apocalyptic", "crowd-pleaser", "party movie", "gateway horror", "not too scary", "fast-paced"],
+  "tt1560220": ["zombies", "horror comedy", "zombie apocalypse", "road trip", "post-apocalyptic", "crowd-pleaser", "party movie", "not too scary"]
+ }
+}

@@ -88,7 +88,7 @@ def films_by_ids(ids: list[str]) -> list[dict[str, Any]]:
 
 
 def explain_match(mood: str, movie: dict[str, Any], max_terms: int = 4) -> list[str]:
-    """Which of the film's keywords the query actually hit.
+    """Which of the film's tags and keywords the query actually hit.
 
     The tone/subgenre vocabulary in `keywords` is what makes mood queries work
     at all, so showing the overlap explains a recommendation in the user's own
@@ -108,7 +108,10 @@ def explain_match(mood: str, movie: dict[str, Any], max_terms: int = 4) -> list[
         return []
 
     matched: list[str] = []
-    for keyword in (movie.get("keywords") or "").split(","):
+    # Tags first: they are the words for what a film is like ("slow burn",
+    # "folk horror"); TMDB keywords are mostly what is in it.
+    terms = f"{movie.get('tags') or ''},{movie.get('keywords') or ''}"
+    for keyword in dict.fromkeys(terms.split(",")):
         keyword = keyword.strip()
         if not keyword:
             continue

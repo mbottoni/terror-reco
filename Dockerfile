@@ -62,6 +62,7 @@ RUN mkdir -p /app/app/services /app/data
 COPY --chown=app:app app/__init__.py /app/app/__init__.py
 COPY --chown=app:app app/services/__init__.py app/services/corpus.py app/services/unified_recommender.py /app/app/services/
 COPY --chown=app:app data/horror_corpus.json /app/data/horror_corpus.json
+COPY --chown=app:app data/film_tags.json /app/data/film_tags.json
 RUN python -c "from app.services.corpus import get_corpus_embeddings, load_corpus; get_corpus_embeddings(load_corpus())"
 
 # The rest of the application, and the rest of the data (the where-to-watch
