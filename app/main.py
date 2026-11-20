@@ -7,7 +7,6 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -35,6 +34,7 @@ from .services.recommender import (
 )
 from .services.unified_recommender import DEFAULT_WEIGHTS, recommend_unified_semantic
 from .settings import get_settings
+from .static_assets import CachedStaticFiles, static_url
 from .stripe_payments import router as stripe_router
 from .watchlist import router as watchlist_router
 
@@ -105,11 +105,12 @@ app.add_middleware(
 if settings.RATE_LIMIT_ENABLED:
     app.add_middleware(RateLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware, hsts=_https_only)
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/static", CachedStaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Autoescaping makes a value safe as text but says nothing about a URL scheme,
 # so every poster URL rendered into a src/href goes through this first.
 templates.env.filters["safe_url"] = safe_url
+templates.env.globals["static_url"] = static_url
 templates.env.filters["poster_variant"] = poster_variant
 # Every page embeds the session's CSRF token (see _base.html), so forms and
 # fetch() calls on any page can send it back.
