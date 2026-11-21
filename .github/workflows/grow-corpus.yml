@@ -58,6 +58,12 @@ jobs:
           TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+          # Outside production the app's settings insist on SECRET_KEY and
+          # PUBLIC_BASE_URL; this job serves nothing and has neither.
+          DEBUG: "1"
+        # pipefail: without it `| tee` reports success when the script crashes,
+        # and a broken run is recorded as "nothing added".
+        shell: bash -eo pipefail {0}
         run: |
           uv run python scripts/grow_corpus.py \
             --add "${{ inputs.add || '40' }}" \
@@ -75,6 +81,7 @@ jobs:
         if: steps.grow.outputs.changed == 'true'
         env:
           OMDB_API_KEY: dummy
+          DEBUG: "1"
         run: |
           uv run python scripts/build_corpus.py --validate-only
           uv run pytest -q
