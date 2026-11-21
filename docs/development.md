@@ -7,15 +7,15 @@ This guide covers local setup, code organisation, testing, linting, and contribu
 - Python 3.11+
 - Git
 - (Optional) Docker & Docker Compose
-- A TMDB API Read Access Token (corpus discovery) and an OMDb API key (rating enrichment)
+- Only to rebuild or grow the corpus: a TMDB API Read Access Token (discovery) and an OMDb API key (rating enrichment)
 
 ## Local Setup
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/maruanottoni/terror_reco.git
-cd terror_reco
+git clone https://github.com/mbottoni/terror-reco.git
+cd terror-reco
 ```
 
 ### 2. Create a virtual environment and install dependencies
@@ -33,20 +33,34 @@ The `[dev]` extra installs testing and linting tools: pytest, mypy, ruff, black,
 
 ### 3. Configure environment
 
-```bash
-cp .env.example .env
-# Edit .env with your OMDB_API_KEY
-```
-
-### 4. Build the horror corpus
+Create a `.env` file in the project root (there is no `.env.example`):
 
 ```bash
-make corpus              # ~500 films; resumable, safe to re-run after any interruption
-make corpus-validate     # re-check an existing corpus against the quality gates
+DEBUG=1
+SECRET_KEY=any-value-is-fine-with-debug-on
+# Only to rebuild or grow the corpus, or refresh the where-to-watch snapshot:
+TMDB_BEARER_TOKEN=...
+OMDB_API_KEY=...
 ```
 
-Requires `TMDB_BEARER_TOKEN` (discovery) and `OMDB_API_KEY` (rating enrichment). Corpus-based
-strategies raise `CorpusNotBuiltError` until this has run -- the build deliberately never
+Email, Google sign-in and Stripe are off until their variables are set; see
+[deployment.md](deployment.md).
+
+### 4. The horror corpus
+
+The corpus (`data/horror_corpus.json`) and its tags (`data/film_tags.json`) are committed, so
+there is nothing to build. Embeddings are computed on the first search (a minute or so) and
+cached in `data/`.
+
+```bash
+make grow                # add the next 40 horror films the corpus lacks
+make corpus-validate     # re-check the existing corpus against the quality gates
+```
+
+`make grow` requires `TMDB_BEARER_TOKEN` and `OMDB_API_KEY`; see
+[corpus-growth.md](corpus-growth.md). `make corpus` rebuilds the original 500-film base and
+writes out only the films in its own checkpoint, so on the grown corpus it would drop the films
+added since. If the corpus file is missing, a search raises `CorpusNotBuiltError`: a build never
 happens inside a user request.
 
 ### 5. (Optional) Pre-download the ML model
@@ -75,10 +89,13 @@ The `--reload` flag enables auto-restart on code changes.
 app/
 ├── main.py              # App, middleware, recommendation routes and JSON APIs
 ├── auth.py              # Register, sign in, sign out, session revocation
+├── email_verification.py  # Confirm an address by emailed link
+├── google_auth.py       # Sign in with Google
 ├── account.py           # Change password/email, export, delete account
 ├── password_reset.py    # Reset by emailed single-use link
 ├── onboarding.py        # Pick films you love after sign-up
-├── history.py, watchlist.py
+├── history.py           # Past searches
+├── watchlist.py         # Saved films; publishing them at a public link
 ├── stripe_payments.py   # Checkout and webhook (records payments)
 ├── models.py            # SQLAlchemy models
 ├── schemas.py           # Request/response models for the JSON APIs
@@ -89,17 +106,26 @@ app/
 ├── static_assets.py     # Fingerprinted static URLs
 ├── settings.py          # Pydantic settings
 ├── services/
-│   ├── corpus.py             # Corpus, embeddings, semantic search
+│   ├── corpus.py             # Corpus, tags, embeddings, semantic search
 │   ├── recommender.py        # Semantic strategy, filters, shared links
-│   ├── unified_recommender.py  # Blended scoring, BM25, MMR
+│   ├── unified_recommender.py  # Blended scoring, tag signal, BM25, MMR
+│   ├── query_understanding.py  # Qualities, exclusions, decades, people in a query
+│   ├── title_reference.py    # Queries that name a film
 │   ├── personalization.py    # Taste vector, "because you liked"
 │   ├── providers.py          # Where-to-watch lookups
 │   ├── email.py              # Transactional email
 │   ├── tmdb_client.py        # Async TMDB client (offline scripts)
 │   └── omdb_client.py        # Async OMDb client (offline scripts)
 ├── templates/           # Jinja2 templates
-└── static/              # Stylesheet, fonts, preview image
+└── static/              # Stylesheet, fonts, icons, preview image
 ```
+
+`corpus.py`, `unified_recommender.py`, `query_understanding.py` and `title_reference.py` must
+not import from the rest of the app: the Docker build computes embeddings with only the first
+two copied in, and fails if they need anything else at import time.
+
+Outside `app/`: `data/` (corpus, tags, where-to-watch snapshot, growth log), `eval/` (benchmark
+queries and graded judgments), `scripts/` (corpus, tags, evaluation), `migrations/`, `ops/`.
 
 ## Testing
 
@@ -117,19 +143,27 @@ pytest -q
 |------|-------|
 | `tests/conftest.py` | Shared fixtures: in-memory SQLite DB, TestClient, session override |
 | `tests/test_auth.py` | Registration, sign-in, email normalisation, session revocation, log hygiene |
+| `tests/test_email_verification.py`, `test_google_auth.py` | Address confirmation and neutral sign-up answers; Google sign-in with the profile fetch stubbed |
 | `tests/test_account.py`, `test_password_reset.py`, `test_onboarding.py` | Account settings, reset flow, taste picks |
-| `tests/test_csrf.py`, `test_middleware.py`, `test_settings.py` | CSRF on every write route, headers and rate limits, startup guards |
+| `tests/test_csrf.py`, `test_middleware.py`, `test_settings.py`, `test_security_hardening.py` | CSRF on every write route, headers and rate limits, startup guards |
 | `tests/test_ranking.py`, `test_personalization.py`, `test_query_cache.py` | BM25, MMR, franchise rule, taste signal, query cache |
-| `tests/test_eval_gate.py` | Frozen slice of the eval, replayed without the model |
+| `tests/test_tag_signal.py`, `test_film_tags.py` | The tag signal in the blend; the tag file's vocabulary, coverage and where tags are used |
+| `tests/test_query_understanding.py`, `test_title_reference.py` | Reading qualities, exclusions, decades and people; detecting a named film, and never in a benchmark mood |
+| `tests/test_strategy_routing.py`, `test_served_ranking.py`, `test_recently_shown.py`, `test_blank_filters.py` | Strategy fallback and default, what a request actually serves, demotion of films just shown, blank filter fields |
+| `tests/test_eval_gate.py`, `test_graded_eval.py` | Frozen slice of the eval, replayed without the model; the graded benchmark's scoring |
 | `tests/test_refine.py`, `test_share.py`, `test_templates.py`, `test_link_previews.py` | Results page behaviour, shared links, escaping, accessibility, previews |
+| `tests/test_ui_shell.py`, `test_error_pages.py`, `test_privacy.py`, `test_favicon.py` | Nav and account menu on every page, error pages, privacy page, icon |
 | `tests/test_set_feedback.py`, `test_interactions.py`, `test_json_bodies.py` | Feedback and usage APIs, body validation |
-| `tests/test_stripe.py` | Checkout, success page, webhook and payment recording, with the SDK mocked |
+| `tests/test_watchlist.py`, `test_public_lists.py` | Saving films; publishing and withdrawing a public list |
+| `tests/test_stripe.py` | Checkout, chosen amounts, success page, webhook and payment recording, with the SDK mocked |
 | `tests/test_providers.py`, `test_static_assets.py`, `test_observability.py`, `test_startup.py` | Where to watch, static caching, logging, lifespan |
-| `tests/test_corpus_build.py` | TMDB to corpus mapping, OMDb overlay, embedding cache key, shipped corpus checks |
+| `tests/test_corpus_build.py`, `test_grow_corpus.py` | TMDB to corpus mapping, OMDb overlay, embedding cache key, shipped corpus checks; growth rules, API budget and predicted tags |
+| `tests/test_discovery.py` | Match explanations on each card and "more like this" |
 
 ### Key testing patterns
 
-- **No test touches the network.** The request path makes no outbound calls; Stripe and the email sender are replaced with fakes.
+- **No test touches the network.** The request path makes no outbound calls; Stripe, the email sender and Google's profile fetch are replaced with fakes.
+- **Accounts have two modes.** With an email provider configured, sign-up requires a confirmed address; without one it signs in at once. Tests cover both; use the `outbox` fixture for the first.
 - **The model is not needed.** Ranking tests supply vectors directly, and the eval gate replays stored ones.
 - **The client behaves like a page.** The `client` fixture sends the session's CSRF token on `POST`, as real pages do. Use a plain `TestClient`, or pass an explicit `X-CSRF-Token`, to test the check itself.
 - **Never assert a specific film order.** Ranking is deliberately random; assert on shape, count and membership, or pass `temperature=0`.
@@ -202,7 +236,7 @@ A strategy must search the corpus. Nothing on the request path may call TMDB or 
 1. **Write the ranking function** in `app/services/` (see `recommend_movies_advanced()` and `recommend_unified_semantic()`). It is synchronous and CPU-bound, so the route calls it through `run_in_threadpool`.
 2. **Add a branch** for it in `ui_recommendations()` in `app/main.py`, and an entry in `STRATEGY_LABELS`.
 3. **Add the `<option>`** in `app/templates/index.html`. The results page's selector is built from `STRATEGY_LABELS` automatically.
-4. **Measure it**: `make eval`, and read `docs/evaluation-baseline.md` first. A single run is not a measurement.
+4. **Measure it**: `make eval-graded` (55 moods, the tighter interval) and `make eval`, and read `docs/evaluation-baseline.md` first. A single run is not a measurement, and a ranker whose results were never graded shows holes that score zero: run `make eval-pool` and grade them first.
 5. **Write tests** that assert on shape and membership, not order.
 
 ## Adding a New Filter
@@ -215,7 +249,9 @@ A strategy must search the corpus. Nothing on the request path may call TMDB or 
 
 ## Changing What Gets Embedded
 
-Editing `embedding_text()`, or rebuilding the corpus, changes ranking and will turn the CI eval gate red on purpose. Run `make eval` to see the effect, then `make eval-gate` to rebuild the fixture, and commit both.
+Editing `embedding_text()`, the keyword-vector share (`KEYWORD_VECTOR_SHARE`), the text of a film the eval gate holds, or the tag vocabulary in `data/film_tags.json` changes ranking and will turn the CI eval gate red on purpose. Run `make eval-graded` to see the effect, then `make eval-gate` to rebuild the fixture, and commit both.
+
+Tags must come from the vocabulary in `data/film_tags.json`. They go into the keyword vector, BM25's text and the match chips, and deliberately not into `embedding_text()`.
 
 ## Database Changes
 
@@ -235,12 +271,19 @@ make lint        # Check ruff + black
 make typecheck   # Run mypy
 make ci          # Full CI: lint + typecheck + test
 make format      # Auto-fix linting issues
-make corpus      # Build/refresh the horror corpus (resumable)
+make grow        # Add the next 40 horror films the corpus lacks
+make corpus      # Rebuild the 500-film base corpus (resumable; drops films added by make grow)
 make corpus-validate  # Validate the existing corpus
-make eval        # Score the recommender against the gold set
+make eval        # Score the recommender against the hand-written gold set
+make eval-graded # Score against the graded judgments (55 moods)
+make eval-pool   # List films the rankers return that have no grade yet
 make eval-gate   # Rebuild the frozen eval slice CI replays
+make eval-export # Export an eval set from real feedback and usage
+make tune        # Grid-search blend weights
 make providers   # Refresh the where-to-watch snapshot
 make migration m="..."  # Generate a migration; make migrate applies it
+make migrate-check      # Fail if models and migrations have drifted
+make requirements       # Regenerate requirements.txt from uv.lock
 make docker      # Build and run Docker
 make clean       # Remove .venv and caches
 ```

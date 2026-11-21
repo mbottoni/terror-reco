@@ -5,6 +5,16 @@
 > below is the record of the first round of work, kept for the measurements and the
 > "deliberately not doing" decisions.
 
+> Several entries below were later superseded and are left as written:
+> item 10 (the `/loading` page and the `keyword` strategy are both gone),
+> item 15 (a shared link now carries the film ids, not a seed),
+> item 17 (the corpus now grows daily, 650 films on 2026-11-20; see
+> `docs/corpus-growth.md`), item 18 (descriptive tags were added to supply the
+> missing tone vocabulary; the weakest moods improved but are still weak), and
+> "Tuned blend weights" under
+> *Deliberately not doing* (a fitted blend with a tag signal shipped; the
+> cross-encoder is still off). `docs/evaluation-baseline.md` has the numbers.
+
 Ordered by value per unit of effort. Measurements referenced here live in
 `docs/evaluation-baseline.md`; latency figures were taken on this machine with a
 warm model and the 500-film corpus.

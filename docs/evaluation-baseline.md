@@ -1,6 +1,32 @@
 # Evaluation Baseline
 
-Two measurements, both **2026-08-16**, both against the 500-film TMDB corpus.
+This file is a log, oldest first. Each section records what was measured at the
+time and is left as written, so early sections describe a ranker, a corpus and
+a benchmark that have since changed. **For the current state, read from the
+bottom.**
+
+Where things stand (2026-11-20, 650-film corpus, unified strategy as served,
+five draws per query, graded benchmark):
+
+| Queries | NDCG@6 | Page judged a fit |
+|---|---:|---:|
+| 55 moods | 0.755 | 90% |
+| 24 queries that name a film | 0.711 | |
+| 23 constraint queries | 0.801 | 86% |
+
+These come from the last section. The grades are an AI judge's, not a
+person's. What happened to the benchmark when the corpus grew from 500 to 650
+films is in [corpus-growth.md](corpus-growth.md).
+
+Superseded by later sections: the fixed blend weights and "tuned weights:
+rejected" (a fitted blend with a tag signal shipped), "unified vs semantic is
+not established" (it is, as served), and "1,200 films measured worse" (growth
+to 650 measured as no change on the graded benchmark). Still standing:
+cross-encoder reranking is off.
+
+---
+
+The first two measurements, both **2026-08-16**, both against the 500-film TMDB corpus.
 
 ## Result summary
 

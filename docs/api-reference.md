@@ -11,7 +11,8 @@ Three rules apply throughout:
   wrong token is `403`.
 - **Rate limits** are per client address, per minute: 10 for sign-in,
   registration, password reset and account changes; 10 for checkout; 30 for
-  searches; 120 for feedback, watchlist and usage writes; 120 for
+  searches (`/recommend`, `/api/recommendations`, `/api/similar/`); 60 for
+  public list pages; 120 for feedback, watchlist and usage writes; 120 for
   where-to-watch lookups. Over the limit is `429` with `Retry-After`.
 - **Validation.** JSON bodies are validated; a malformed body is `422`.
 
@@ -19,7 +20,8 @@ Three rules apply throughout:
 
 ### `GET /`
 
-Home page: search form, strategy selector, filters, and the account menu.
+Home page: search form, strategy selector, filters, and a shelf of well-known
+films, each linking to a `like <title>` search.
 
 ### `GET /privacy`
 
@@ -31,17 +33,20 @@ The results page.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `mood` | string, required | -- | Free-text description of what to watch |
+| `mood` | string, required | -- | Free-text description of what to watch. May name a film ("like Hereditary but less bleak"), and may state qualities, exclusions, a decade or people ("80s slasher, no gore") |
 | `strategy` | string | `unified` | `unified` or `semantic`. Anything else falls back to the default |
 | `min_year`, `max_year` | int | none | Release year bounds (1900 to 2100) |
 | `min_rating` | float | none | Minimum IMDb rating (0 to 10) |
 | `limit` | int | `6` | Number of films (1 to 20) |
 | `english` | int | none | `1` for English-language films only |
+| `tilt` | string | none | `mainstream` or `obscure`: raises or removes the weight of popularity. Forces the unified strategy, the only one with a popularity signal |
 | `seed` | int | none | Makes the result reproducible and turns the randomness off. Used by the eval |
 | `ids` | string | none | Comma-separated IMDb ids. Shows exactly these films, with no ranking. This is what a shared link carries |
 
 Filters are applied before ranking. If they leave nothing, the page names the
-filter responsible.
+filter responsible. A filter field submitted blank counts as unset. When the
+query names a film, that film and the rest of its franchise are left out and
+the page says so.
 
 ### Accounts
 
@@ -76,7 +81,8 @@ Pages that need an account redirect to `/auth/login` when signed out.
 
 ### `GET /api/recommendations`
 
-Semantic-strategy results as JSON.
+Semantic-strategy results as JSON. (The results page defaults to the unified
+strategy; this endpoint does not offer it.)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -156,15 +162,16 @@ Response: `{"status": "added" | "removed", "imdb_id": "...", "saved": true | fal
 
 ### `GET /healthz`
 
-Liveness and readiness. `{"status": "ok", "corpus_films": 500, "embeddings_ready": true}`,
+Liveness and readiness. `{"status": "ok", "corpus_films": 650, "embeddings_ready": true}`,
 or `"degraded"` when the corpus or its embeddings are missing. Always `200`.
+`corpus_films` rises as the catalogue grows.
 
 ## Stripe
 
 | Route | Purpose |
 |-------|---------|
-| `GET /stripe/coffee` | The donation page. `503` page when Stripe is not configured |
-| `POST /stripe/create-checkout-session` | Starts a Checkout session. Returns `{"checkout_url": "..."}` |
+| `GET /stripe/coffee` | The donation page: $3, $5, $10 or another whole amount. `503` page when Stripe is not configured |
+| `POST /stripe/create-checkout-session` | Starts a Checkout session. Optional JSON body `{"amount": 5}`: whole dollars, 1 to 500; no body means $3. Returns `{"checkout_url": "..."}` |
 | `GET /stripe/success?session_id=...` | Thank-you page, shown only when Stripe confirms the session is paid and belongs to this app |
 | `GET /stripe/cancel` | Shown when checkout is abandoned |
 | `POST /stripe/webhook` | Stripe events, verified by signature. Records completed payments once, and marks refunds |
@@ -173,3 +180,4 @@ or `"degraded"` when the corpus or its embeddings are missing. Always `200`.
 
 `/static/...`. The stylesheet is linked with a content hash
 (`/static/styles.css?v=...`) and cached for a year; fonts likewise.
+`GET /favicon.ico` serves the icon for browsers that ask for it at the root.

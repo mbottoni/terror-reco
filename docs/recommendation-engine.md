@@ -8,7 +8,7 @@ This document explains how TerrorReco matches a typed mood to horror films: the 
 - **Corpus only.** A pre-built collection of films is searched. Nothing on the request path calls TMDB or OMDb; the strategies that did were removed.
 - **Built offline.** The corpus is assembled by `scripts/build_corpus.py`, never inside a request. See [Architecture](architecture.md).
 - **Non-deterministic by design.** Controlled randomness means a repeat search shows different, still relevant films.
-- **Measured.** Ranking changes are checked against an evaluation set, and the honest interval on its headline number is about ±0.06 NDCG, so small "gains" are treated as noise.
+- **Measured.** Ranking changes are checked against two benchmarks. The honest interval on a paired comparison is about ±0.034 NDCG@6 on the 55-mood graded benchmark and ±0.06 on the 15 hand-written moods, so smaller "gains" are treated as noise.
 
 ## Strategies
 
@@ -118,11 +118,11 @@ The notebook `notebooks/3-cross-encoder.py` evaluates cross-encoder reranking:
 - `cross-encoder/ms-marco-MiniLM-L-6-v2`
 - `cross-encoder/ms-marco-TinyBERT-L-2-v2`
 
-On the current 500-film corpus the cross-encoder gained +0.0026 NDCG, lost precision and added about 1.1 seconds per query, so it is off by default (`UNIFIED_USE_CROSS_ENCODER`). The notebook's larger gain was measured on an old 21-film corpus and should not be cited.
+On the 500-film corpus of the time the cross-encoder gained +0.0026 NDCG, lost precision and added about 1.1 seconds per query, so it is off by default (`UNIFIED_USE_CROSS_ENCODER`). It has not been re-measured since the tag signal and the larger corpus. The notebook's larger gain was measured on an old 21-film corpus and should not be cited.
 
 ## The horror corpus
 
-500 films, committed as `data/horror_corpus.json` and built offline by `scripts/build_corpus.py` (`make corpus`):
+650 films at the time of writing, committed as `data/horror_corpus.json`. The first 500 were built offline by `scripts/build_corpus.py` (`make corpus`):
 
 1. **Seed** the evaluation gold set, so the films the eval scores against are present.
 2. **Discover** with TMDB (`/discover/movie?with_genres=27`), sorted by vote count, then a decade-stratified fill so the corpus is not all recent films. OMDb is not used for discovery: its search matches titles only and cannot browse a genre.
@@ -138,7 +138,11 @@ vote_average (IMDb), imdbVotes, Metascore, rating_source, director, actors, writ
 runtime, language, country, rated, awards, collection_id, collection
 ```
 
-A request never builds or extends the corpus. A 1,200-film version was tried and measured worse on the gold set, so the size stayed at 500; the gold set favours famous films, so that result says the larger corpus could not be shown to be better, not that it is worse.
+Tags are not in the corpus file. `load_corpus()` attaches them from `data/film_tags.json` as a `tags` field and `save_corpus()` strips them again.
+
+**It grows.** `scripts/grow_corpus.py` (`make grow`, and daily in GitHub Actions) adds the next horror films the corpus lacks, alternating TMDB's most-voted and best-rated lists, within OMDb's free daily quota. A new film gets predicted tags until a proper pass replaces them. See [corpus-growth.md](corpus-growth.md).
+
+A request never builds or extends the corpus. An early 1,200-film version measured worse on the hand-written gold set, which can only reward famous films. Measured again on the graded benchmark, growing from 500 to 650 films changed page quality by nothing measurable (+0.009 NDCG@6, interval [-0.015, +0.035]) while widening what gets shown, so the corpus is now allowed to grow. New films have no grades, so benchmark numbers taken before and after a batch are not comparable until the new films are judged (`make eval-pool`).
 
 ## Non-Deterministic Recommendations
 
@@ -169,6 +173,7 @@ Users can apply these filters from the Advanced Filters panel:
 | Min IMDb rating | `min_rating` | Exclude movies below this IMDb score (0-10) |
 | Results count | `limit` | Number of recommendations (1-20) |
 | English only | `english` | Only show English-language titles |
+| Tilt | `tilt` | `mainstream` raises the popularity weight to 0.45, `obscure` sets it to 0. Not a filter: it changes the blend, and forces the unified strategy |
 
 Filters are applied to the corpus **before** ranking. Applied afterwards, a strict filter could leave only a few weak survivors out of the top results. When filters leave nothing at all, the results page names the filter responsible and how many films removing it would allow.
 
@@ -176,9 +181,10 @@ Filters are applied to the corpus **before** ranking. Applied afterwards, a stri
 
 - **Gold set:** 15 hand-written moods with expected films, in `notebooks/1-evaluation.py`.
 - **`make eval`** (`scripts/run_eval.py`): Hit Rate, Precision, NDCG and MRR at 6, a paired comparison of the two strategies with a bootstrap confidence interval, and retrieval recall separately from ranking.
-- **CI gate** (`tests/test_eval_gate.py`): a frozen slice of the eval, replayed on every push without the model. It fails if NDCG collapses or if the text that gets embedded changes.
+- **Graded benchmark** (`scripts/graded_eval.py`, `make eval-graded`): the queries in `eval/moods.json` scored against pooled judgments in `eval/judgments.json`, each film graded 0, 1 or 2 **by an AI judge, not a person**. Four groups of queries: 55 moods (the 15 hand-written plus 40 pooled), 24 that name a film (`graded_eval.py titles`), 23 that state constraints (`score --group constraint`) and 8 with no right answer (`nulls`). It has "as served" arms that go through the request path with the randomness on. A film a ranker returns that nobody graded is a **hole** and scores zero: run `make eval-pool`, grade what it lists, merge with `graded_eval.py add`, then score.
+- **CI gate** (`tests/test_eval_gate.py`): a frozen slice of the eval, replayed on every push without the model. It fails if NDCG collapses or if the text that gets embedded changes. It replays without query understanding.
 - **From real use:** per-film likes, one-click verdicts on a whole result set, and anonymous usage data (what was shown, opened, clicked through to and saved) are exported as graded cases by `make eval-export`.
 
-The limits are recorded in `docs/evaluation-baseline.md`: the gold set is small and favours famous films, and the honest interval on NDCG@6 is about ±0.06, so a ranking change smaller than that cannot be shown to help.
+The limits are recorded in `docs/evaluation-baseline.md`: the hand-written gold set is small and favours famous films; the graded benchmark has one AI judge, and the tags it rewards were also written by an AI model. A ranking change smaller than the paired interval (about ±0.034 on the graded moods) cannot be shown to help.
 
 See [notebooks.md](notebooks.md) for the experiments.

@@ -1,6 +1,8 @@
 # Research Notebooks
 
-TerrorReco includes a set of interactive notebooks for evaluating and tuning the recommendation engine. The Marimo notebooks (`.py` files) are the primary evaluation tools; the Jupyter notebooks (`.ipynb`) are earlier explorations.
+TerrorReco includes a set of interactive notebooks from the early evaluation and tuning of the recommendation engine. The Marimo notebooks (`.py` files) are the interactive tools; the Jupyter notebooks (`.ipynb`) are earlier explorations.
+
+**The notebooks are no longer where ranking is measured.** That is done by scripts: `make eval` (`scripts/run_eval.py`) and `make eval-graded` (`scripts/graded_eval.py`), with results recorded in [evaluation-baseline.md](evaluation-baseline.md). The notebooks predate the film tags, the keyword-vector mix, the fitted blend and query understanding, and some of their conclusions were later overturned (see *Key Insights* below). One thing still depends on them: the 15-mood gold set (`TEST_SET` in `1-evaluation.py`) is read from that file by the corpus build and by the benchmarks, so do not move or rename it.
 
 ## Running the Notebooks
 
@@ -111,10 +113,10 @@ These are kept for historical reference but are superseded by the Marimo noteboo
 
 ## Key Insights
 
-The notebook experiments produced these findings (your specific numbers will vary based on corpus size):
+What the notebooks suggested, and what later measurement on the full corpus said (details in [evaluation-baseline.md](evaluation-baseline.md)):
 
-1. **`all-mpnet-base-v2` is the best bi-encoder** for this task, with consistently higher NDCG@K and Hit Rate@K than smaller models.
-2. **Cross-encoder reranking provides a modest precision boost** at the cost of significantly higher latency. For real-time recommendations, the bi-encoder alone is a good trade-off.
-3. **Blending multiple signals outperforms pure semantic search** -- adding popularity and keyword overlap as secondary signals catches cases where semantic similarity alone misses well-known genre staples.
-4. **MMR diversity is essential** -- without it, results tend to cluster around the same subgenre. Lambda ~0.7 balances relevance and variety well.
-5. **Corpus quality matters more than model choice** -- a comprehensive, well-detailed corpus (with full plots) makes a bigger difference than switching between similarly-sized embedding models.
+1. **`all-mpnet-base-v2` is the best bi-encoder of those tried.** Still the model in use.
+2. **Cross-encoder reranking: rejected.** The notebook's gain was measured on an old 21-film corpus. On 500 films it gained +0.0026 NDCG, lost precision and added about 1.1 seconds per query. It is wired to a setting and off.
+3. **Blending beats pure semantic search, but only once a new signal existed.** Re-weighting the notebook's four signals gained nothing, twice. The shipped blend (tags .35, semantic .30, keyword .25, popularity .10, recency 0) was fitted by ridge regression on graded judgments after the tag signal was added; as served, unified beats semantic by +0.063 NDCG@6.
+4. **MMR costs a little NDCG and is kept on purpose.** Turning it off scores higher, because the metric gives no credit for variety. Lambda stays at 0.7.
+5. **What is embedded matters more than which model embeds it.** Not "full plots": plot summaries carry almost none of the tone and subgenre words people type. Adding TMDB keywords to the embedded text moved NDCG@6 from 0.31 to 0.50, and descriptive tags added more.
