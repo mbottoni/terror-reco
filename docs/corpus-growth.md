@@ -59,6 +59,10 @@ Measured on the first growth, 500 to 650 films (100 from the most-voted list, 55
 
 No measurable change in page quality, in either direction. That is the result worth having: the earlier attempt at 1,200 films measured worse, on a gold set that could only reward famous films. What growth buys so far is breadth: a fifth of all slots now go to films that were not in the catalogue, in proportion to their share of it, and three thin moods are no longer thin.
 
+## If a run fails
+
+The workflow step fails when the script fails, so a broken run shows as a red run in the Actions tab; it is not recorded as "nothing added". Nothing is committed unless the corpus validation and the whole test suite pass on the grown corpus. The job sets `DEBUG=1` because the app's settings otherwise insist on a `SECRET_KEY` and `PUBLIC_BASE_URL` that a job serving nothing does not have. It needs the `TMDB_BEARER_TOKEN`, `TMDB_API_KEY` and `OMDB_API_KEY` Actions secrets.
+
 ## If the schedule does not run
 
 GitHub runs scheduled workflows late and sometimes not at all on a quiet repository (the uptime check's schedule had not fired once on the day this was written). The workflow can be started by hand from the Actions tab or with `gh workflow run grow-corpus.yml`, and `make grow` does the same work locally; a local run needs a commit and push afterwards.

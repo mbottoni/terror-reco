@@ -3,9 +3,7 @@
 ## Quick Start Testing
 
 ### 1. Install Dependencies
-```bash
-pip install stripe python-dotenv requests
-```
+`make setup` installs everything the app needs, including `stripe`.
 
 ### 2. Set Up Environment Variables
 Create a `.env` file in your project root:
@@ -19,10 +17,12 @@ COFFEE_PRICE_ID=price_your_price_id_here
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 ```
 
-### 3. Run the Test Script
+### 3. Run the automated tests
 ```bash
-python test_stripe_local.py
+pytest tests/test_stripe.py
 ```
+
+These mock the Stripe SDK and need no keys. The old hand-run scripts that talk to Stripe are in `scripts/manual/` (`manual_stripe_local.py`, `manual_stripe_simple.py`, `debug_stripe.py`); they are not maintained.
 
 ## Manual Testing Steps
 
@@ -34,16 +34,16 @@ Server will start at: http://localhost:8000
 
 ### Step 2: Test the Homepage
 1. Open http://localhost:8000
-2. Scroll to the bottom
-3. Verify you see: **☕ Buy me a coffee** button
+2. Scroll to the footer
+3. Verify you see the **Buy me a coffee** link
 
 ### Step 3: Test Payment Page
-1. Click the coffee button
+1. Click the coffee link
 2. Should redirect to: http://localhost:8000/stripe/coffee
-3. Verify you see the payment page with coffee emoji
+3. Verify you see the payment page with the amounts $3, $5, $10 and "other"
 
 ### Step 4: Test Stripe Checkout
-1. Click "☕ Buy me a coffee ($3)" button
+1. Pick an amount and click "☕ Support with $N"
 2. Should redirect to Stripe checkout page
 3. Use test card: **4242 4242 4242 4242**
 4. Any future expiry date and CVC
@@ -92,7 +92,7 @@ Server will start at: http://localhost:8000
 3. Copy the HTTPS URL
 4. In Stripe Dashboard, create webhook:
    - URL: `https://your-ngrok-url.ngrok.io/stripe/webhook`
-   - Events: `checkout.session.completed`
+   - Events: `checkout.session.completed`, `charge.refunded`
 5. Copy webhook secret to environment
 
 ### Using Stripe CLI
@@ -103,8 +103,8 @@ Server will start at: http://localhost:8000
 
 ## What to Look For
 
-✅ **Homepage**: Coffee button visible at bottom
-✅ **Payment Page**: Clean design with coffee emoji
+✅ **Footer**: Coffee link visible on every page
+✅ **Payment Page**: Amount picker with $3, $5, $10 and a custom amount
 ✅ **Stripe Checkout**: Professional Stripe interface
 ✅ **Success Page**: Thank you message with amount
 ✅ **Cancel Page**: Graceful cancellation handling

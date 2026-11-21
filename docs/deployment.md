@@ -6,10 +6,12 @@ How TerrorReco is deployed: one server running Docker Compose, shipped by GitHub
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `OMDB_API_KEY` | Yes | -- | OMDb API key ([get one free](https://www.omdbapi.com/apikey.aspx)) |
 | `SECRET_KEY` | Production | -- | Signs sessions and CSRF tokens. The app refuses to start in production without a random value of at least 32 characters |
-| `PUBLIC_BASE_URL` | Production | -- | The site's origin, e.g. `https://example.com`. Absolute URLs (Stripe return URLs) are built from it. The app refuses to start in production without it |
+| `PUBLIC_BASE_URL` | Production | -- | The site's origin, e.g. `https://example.com`. Absolute URLs (Stripe return URLs, emailed links, the Google redirect) are built from it. The app refuses to start in production without it |
 | `DATABASE_URL` | Production | SQLite file | PostgreSQL connection URL |
+| `DATABASE_SSLMODE` | No | `require` | `disable` for the Postgres container in the production stack, which has no TLS |
+| `OMDB_API_KEY` | Corpus scripts only | -- | OMDb API key ([get one free](https://www.omdbapi.com/apikey.aspx)). IMDb ratings when building or growing the corpus. The running app never calls OMDb |
+| `TMDB_BEARER_TOKEN` (or `TMDB_API_KEY`) | Corpus scripts only | -- | TMDB credentials for discovery, film detail and the where-to-watch snapshot. The running app never calls TMDB |
 | `DEBUG` | No | `false` | Set to `1` or `true` for development mode |
 | `LOG_LEVEL` | No | `INFO` | Level for the app's own log lines |
 | `SENTRY_DSN` | Optional | -- | Turns on error tracking. Unset means off. No request bodies, cookies or user details are sent |
@@ -20,12 +22,21 @@ How TerrorReco is deployed: one server running Docker Compose, shipped by GitHub
 | `STRIPE_WEBHOOK_SECRET` | Optional | -- | Stripe webhook signing secret |
 | `COFFEE_PRICE_ID` | Optional | -- | Stripe Price used for the default $3 donation. Other amounts are priced by the app; without this, the default is too |
 
+Ranking switches, all optional and normally left alone (`app/settings.py`):
+`USE_UNIFIED_RECOMMENDER` (default on: unified is the default strategy),
+`UNIFIED_WEIGHTS` (a JSON object overriding the fitted blend),
+`UNIFIED_DIVERSITY_LAMBDA` (0.7), `UNIFIED_USE_CROSS_ENCODER` (off; measured
+and rejected), `PERSONALIZATION_ENABLED` (on), `PERSONALIZATION_TASTE_WEIGHT`
+(0.15) and `RATE_LIMIT_ENABLED` (on).
+
 ### Creating a `.env` file
 
 ```bash
-OMDB_API_KEY=your_key_here
-SECRET_KEY=a-long-random-string
 DEBUG=1
+SECRET_KEY=any-value-is-fine-with-debug-on
+# Only to rebuild or grow the corpus, or refresh the where-to-watch snapshot:
+TMDB_BEARER_TOKEN=...
+OMDB_API_KEY=...
 ```
 
 ## Production (Hetzner, deployed from GitHub)
@@ -59,7 +70,8 @@ two commits before rolling back across one that removed or renamed something.
 |-------|----------|
 | Code, compose file, Caddyfile | this repository |
 | `DEPLOY_HOST`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` | GitHub Actions secrets |
-| `DEPLOY_URL` (health-check base URL) | GitHub Actions variable |
+| `DEPLOY_URL` (health-check base URL, also used by the uptime check) | GitHub Actions variable |
+| `TMDB_BEARER_TOKEN`, `TMDB_API_KEY`, `OMDB_API_KEY` (for the daily corpus growth job) | GitHub Actions secrets |
 | App secrets, `SITE_ADDRESS`, DB password | `/opt/terror-reco/.env.prod` on the server |
 | Database | `terror-reco_pgdata` Docker volume on the server |
 
@@ -120,6 +132,16 @@ commit. To test the alert, run the workflow by hand with a URL that fails:
 gh workflow run uptime.yml -f url=https://example.invalid/healthz
 ```
 
+### Daily corpus growth
+
+`.github/workflows/grow-corpus.yml` runs `scripts/grow_corpus.py` every day at
+04:17 UTC (and on demand). When it adds films it validates the corpus, runs
+the whole test suite, commits the data files to `main` and starts `ci.yml`
+itself, because a push made with the workflow token does not trigger other
+workflows. So **a deploy can happen without anyone pushing**. A run that adds
+nothing commits only its log, with no deploy. See
+[corpus-growth.md](corpus-growth.md).
+
 ### Setting up a new server
 
 1. Ubuntu 24.04 with Docker; firewall open on 22, 80, 443 only.
@@ -135,8 +157,8 @@ gh workflow run uptime.yml -f url=https://example.invalid/healthz
    POSTGRES_PASSWORD=<random>
    DATABASE_URL=postgresql://terror:<same password>@db:5432/terror
    DATABASE_SSLMODE=disable
-   OMDB_API_KEY=...
-   # plus the Stripe and TMDB keys from the table above
+   # plus, as wanted, the Stripe, email, Google and Sentry settings from the
+   # table above. The server needs no TMDB or OMDb key.
    ```
 
 4. Point the domain's `A` record at the server, update the three `DEPLOY_*`
@@ -156,9 +178,9 @@ The Dockerfile:
 2. Installs the CPU build of PyTorch, then the locked Python dependencies from `requirements.txt` (generated from `uv.lock`), leaving out the CUDA wheels a CPU-only server never uses. The image is about 3.5 GB; with them it was 11.9 GB.
 3. Switches to an unprivileged user.
 4. **Downloads the sentence-transformer model** and then sets the hub to offline mode, so the container never contacts huggingface.co.
-5. Copies the app, the corpus and the where-to-watch snapshot.
-6. **Computes the corpus embeddings**, so a new container never encodes 500 films while a user waits.
-7. Runs `uvicorn`.
+5. Copies in only the corpus, the film tags and the two modules that turn a film into a vector, and **computes the corpus embeddings**, so a new container never encodes the corpus while a user waits. Copying so little first means the layer is reused unless the corpus, the tags or those modules change.
+6. Copies the rest of the app and data, and the migrations.
+7. Runs `uvicorn` on `$PORT` (10000 by default; the production compose file runs it on 8000 behind Caddy).
 
 CI boots every image it builds with no network and production settings, and requires `/healthz` to report `ok`, before the image can be pushed.
 
@@ -178,15 +200,21 @@ The `docker-compose.yml` mounts `./app` as a read-only volume for live developme
 
 ## CI/CD Pipeline
 
-`.github/workflows/ci.yml` runs on every push and pull request to `main`:
+`.github/workflows/ci.yml` runs on every push and pull request to `main`, and when the corpus growth workflow starts it:
 
 | Job | What it does |
 |-----|--------------|
 | `build-test` | Installs from the lockfile and checks it is current, then `ruff`, `black --check`, `mypy app` and `pytest` (which includes the ranking regression gate) |
 | `image` | Builds the Docker image, boots it offline with production settings and checks `/healthz`. On a push to `main`, pushes it to GHCR |
-| `deploy` | Push to `main` only: ships that image to the server and fails unless the site reports healthy |
+| `deploy` | Any run on `main` that is not a pull request: ships that image to the server and fails unless the site reports healthy |
 
-`.github/workflows/deploy.yml` is the manual deploy and rollback described above. Both use the same deploy action, `.github/actions/deploy`.
+The other workflows:
+
+| Workflow | What it does |
+|----------|--------------|
+| `deploy.yml` | The manual deploy and rollback described above. Uses the same deploy action as `ci.yml`, `.github/actions/deploy` |
+| `grow-corpus.yml` | Daily: adds films to the corpus, commits them and starts `ci.yml` |
+| `uptime.yml` | Every five minutes: checks `/healthz` and opens an issue when the site is down |
 
 ### Running CI Locally
 
@@ -208,7 +236,7 @@ make ci && docker build -t terror-reco:ci .
 
 Nothing is built on first request. The corpus is committed and the image carries its embeddings. In local development, embeddings are computed from the corpus the first time a search runs (a minute or so) and cached in `data/`.
 
-To rebuild the corpus, run `make corpus` (needs TMDB and OMDb keys). A search with no corpus present returns a clear error page and `/healthz` reports `degraded`; the app never crawls for data inside a request.
+To add films to the corpus, run `make grow` (needs TMDB and OMDb keys). A search with no corpus present returns a clear error page and `/healthz` reports `degraded`; the app never crawls for data inside a request.
 
 For local development without Docker, `python scripts/download_model.py` caches the model in `models/`.
 
@@ -228,8 +256,10 @@ Recommended, and off until configured:
 
 - [ ] Off-box backups: the four `BACKUP_S3_*` variables (see *Backups*)
 - [ ] Error tracking: `SENTRY_DSN`
-- [ ] An external uptime check on `/healthz`
+- [ ] Uptime: `uptime.yml` checks `/healthz` at `DEPLOY_URL` already; an external monitor is still worth having, since GitHub runs schedules late
+- [ ] Corpus growth: the `TMDB_BEARER_TOKEN`, `TMDB_API_KEY` and `OMDB_API_KEY` Actions secrets
 - [ ] Email (password reset, address confirmation): `RESEND_API_KEY` and `EMAIL_FROM`, which need a verified sending domain
+- [ ] Sign in with Google: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
 - [ ] Stripe: the four Stripe variables, and a webhook endpoint in the Stripe dashboard pointing at `https://<domain>/stripe/webhook`
 
 When the domain changes, update `SITE_ADDRESS`, `PUBLIC_BASE_URL` and `DEPLOY_URL` together.

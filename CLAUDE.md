@@ -13,9 +13,13 @@ make typecheck   # mypy app  (strict mode)
 make test        # pytest -q
 make format      # ruff --fix + black, never fails
 make docker      # build + run container
-make corpus      # build/refresh the corpus (resumable)
-make eval        # score against the gold set
+make grow        # add the next 40 horror films the corpus lacks
+make corpus      # rebuild the 500-film base corpus (resumable; see the warning under Corpus building)
+make eval        # score against the hand-written gold set
+make eval-graded # score against the graded judgments (55 moods)
+make eval-pool   # list films the rankers return that have no grade yet
 make eval-gate   # rebuild the frozen eval slice CI replays
+make eval-export # export an eval set from real feedback and usage
 make providers   # refresh the where-to-watch snapshot (then commit it)
 make migrate     # alembic upgrade head
 make tune        # grid-search blend weights
@@ -63,10 +67,12 @@ Three things about this pipeline are load-bearing:
 
 **The catalogue grows by itself.** `scripts/grow_corpus.py` (`make grow`, and daily in `.github/workflows/grow-corpus.yml`) adds the next horror films the corpus lacks, alternating TMDB's most-voted and best-rated lists, within OMDb's free 1,000 requests a day (default budget 200 a run). Rules for inclusion and the 90-day memory of declined films are in `rejection_reason()` and `data/corpus_growth.json`. New films get **predicted** tags (`scripts/tag_predictor.py`, about 55% right on new films, listed under `predicted` in the tag file) until a proper pass replaces them. The workflow commits to `main` with the workflow token, which does not trigger CI, so it starts `ci.yml` itself (`workflow_dispatch`); `ci.yml` deploys on any event that is not a pull request. **A grown corpus invalidates benchmark comparisons until the new films are judged** (`make eval-pool`). See `docs/corpus-growth.md`.
 
+**`make corpus` would undo growth.** `build_corpus.py` writes out the films in its own checkpoint (`_merge_with_existing()` restores fields for those films, it does not keep films the checkpoint lacks), and `grow_corpus.py` does not write to that checkpoint. Run on the grown corpus it would drop every film growth added. Use `make grow` to add films.
+
 The build checkpoints to `data/.corpus_build_state.json` after every stage and every 50 records; `--resume` skips completed work. Embeddings are keyed on a **content hash** of the embedded text (`corpus_fingerprint()`), so editing plot text invalidates the cache even when the film count is unchanged.
 
 **One film per franchise.** Each corpus record carries `collection_id`/`collection` from TMDB's
-`belongs_to_collection` (253 of 500 films are in one). Both strategies drop all but the best-ranked
+`belongs_to_collection` (301 of 650 films at the time of writing). Both strategies drop all but the best-ranked
 entry of a collection (`first_of_each_collection()`): semantic on the retrieval order, unified on
 the blended score, before MMR. MMR alone does not do this -- sequels are near-identical in
 embedding space and a relevant one still wins a slot beside its sibling. Measured before the rule:
@@ -87,7 +93,7 @@ Two randomness sources, both intentional: Gaussian score perturbation scaled to 
 
 ### Config and DB
 
-`settings.py` is a Pydantic `BaseSettings` behind `@lru_cache`. Tests that change env vars must call `get_settings.cache_clear()` — see `tests/test_recommender_omdb.py`.
+`settings.py` is a Pydantic `BaseSettings` behind `@lru_cache`. A test that changes env vars must call `get_settings.cache_clear()`, or build an `AppSettings(_env_file=None, ...)` directly as `tests/test_settings.py` does.
 
 `db.py` normalises `postgres://` URLs to the `postgresql+psycopg` dialect and passes SSL/keepalive via `connect_args` rather than the URL query string (putting `sslmode` in the query is unreliable with this dialect). `init_db()` retries with backoff but never raises — the app boots even with the DB down.
 
@@ -135,7 +141,7 @@ new signal existed.) Both are wired to settings (`UNIFIED_WEIGHTS`,
 notebooks** — `notebooks/3-cross-encoder.py` measured its gain on the old 21-film corpus.
 
 CI replays a frozen slice of the eval without the model (`tests/test_eval_gate.py`, fixture in
-`tests/fixtures/`): 236 films and the 8 dev-split moods, with precomputed vectors. It fails if
+`tests/fixtures/`): 271 films and the 8 dev-split moods, with precomputed vectors. It fails if
 NDCG@6 drops more than 0.10 below the recorded baseline, **and** if the text that gets embedded
 changes for any fixture film -- so editing `embedding_text()` or rebuilding the corpus will turn
 it red on purpose. Rebuild with `make eval-gate` (needs the model) and commit the fixture with the
@@ -154,6 +160,10 @@ not a measurement, since the pipeline's stddev is comparable to most effects wor
 ## Interface
 
 One stylesheet, `app/static/styles.css`, built on the custom properties at its top (`--bg`, `--surface`, `--text`, `--red`, `--serif`, ...). **Use the tokens, never a literal colour**, and reuse the existing classes before adding one. Headlines are Instrument Serif, everything else Inter; both are self-hosted in `app/static/fonts/` and nothing loads from another origin. The nav, the account menu and the footer live in `_base.html` and read `user` from the template context: **a page that does not pass `user` shows "Log in" to a signed-in visitor** (`tests/test_ui_shell.py`). The film grid is `.grid` > `.card` > `.card-media` + `.card-body`, six columns down to two. Under `prefers-reduced-motion` transitions are set to `none`, not to a tiny duration: a near-zero `transition: all` on every element also transitions inherited `visibility` and left the film dialog blank. The home page's shelf links each poster to a `like <title>` search (`_catalogue()` in `main.py`), so it only offers films the title detector recognises.
+
+## Docs
+
+`README.md` and `docs/` describe the same things as this file for people: `architecture.md`, `recommendation-engine.md`, `api-reference.md`, `database.md`, `deployment.md`, `development.md`, `corpus-growth.md`. `docs/evaluation-baseline.md` is a dated log, oldest first: add a section, do not rewrite old ones. `plan.md` is a historical record; the live plan is the Roadmap issue. Counts that drift as the corpus grows (films, films in a franchise, eval-gate fixture size) are written "at the time of writing" for that reason.
 
 ## Adding a strategy
 

@@ -3,9 +3,7 @@
 ## 🚀 Quick Setup Steps
 
 ### 1. Install Dependencies
-```bash
-pip install stripe>=7.0.0
-```
+`stripe` is already a project dependency: `make setup` installs it.
 
 ### 2. Stripe Dashboard Setup
 1. Go to [Stripe Dashboard](https://dashboard.stripe.com/)
@@ -18,6 +16,8 @@ pip install stripe>=7.0.0
 3. Set price to $3.00 USD
 4. Copy the Price ID (starts with `price_`)
 
+This Price is used only for the default $3 donation. The page also offers $5, $10 and any other whole amount from $1 to $500, which the app prices itself. Without `COFFEE_PRICE_ID` the app prices the $3 one too.
+
 ### 4. Environment Variables
 Add these to your `.env` file locally, or to `/opt/terror-reco/.env.prod` on the server:
 
@@ -29,19 +29,24 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 COFFEE_PRICE_ID=price_your_price_id_here
 ```
 
-### 5. Webhook Setup (Optional)
+### 5. Webhook Setup
+Without the webhook, checkout still works but no payment is recorded, so a signed-in supporter is never thanked in the app.
+
 1. In Stripe Dashboard, go to Webhooks
 2. Add endpoint: `https://your-domain.com/stripe/webhook`
-3. Select events: `checkout.session.completed`
+3. Select events: `checkout.session.completed` and `charge.refunded`
 4. Copy the webhook secret
 
-## 🎯 Features Added
+`PUBLIC_BASE_URL` must be set in production: Stripe's return URLs are built from it.
 
-✅ **Coffee Button**: Added to homepage with coffee mug emoji ☕
-✅ **Payment Page**: Dedicated page for coffee purchase
-✅ **Success Page**: Thank you message after payment
+## 🎯 Features
+
+✅ **Coffee link**: "Buy me a coffee" in the footer of every page
+✅ **Payment Page**: $3, $5, $10 or another whole amount
+✅ **Success Page**: Shown only when Stripe confirms the session is paid and belongs to this app
 ✅ **Cancel Page**: Graceful handling of cancelled payments
-✅ **Webhook Support**: Ready for payment notifications
+✅ **Webhook**: Records each completed payment once in the `payments` table and marks refunds
+✅ **Thanks**: A signed-in supporter sees a thank-you in place of the coffee link
 
 ## 🔧 Testing
 
@@ -56,9 +61,9 @@ COFFEE_PRICE_ID=price_your_price_id_here
 
 ## 📱 User Flow
 
-1. User clicks "☕ Buy me a coffee" button on homepage
+1. User clicks "Buy me a coffee" in the page footer
 2. Redirected to `/stripe/coffee` page
-3. Clicks payment button to create Stripe checkout session
+3. Chooses an amount and clicks the payment button, which creates a Stripe checkout session
 4. Redirected to Stripe checkout page
 5. Completes payment
 6. Redirected to success page with thank you message
@@ -73,8 +78,8 @@ COFFEE_PRICE_ID=price_your_price_id_here
 ## 🎨 Customization
 
 The coffee button and pages can be customized by editing:
-- `app/templates/index.html` - Homepage button
-- `app/templates/coffee.html` - Payment page
+- `app/templates/_base.html` - The footer link
+- `app/templates/coffee.html` - Payment page (the amounts offered are `DONATION_PRESETS` in `app/stripe_payments.py`)
 - `app/templates/coffee_success.html` - Success page
 - `app/templates/coffee_cancel.html` - Cancel page
 
