@@ -95,6 +95,26 @@
    "title": "Rakka",
    "why": "shorter than 60 minutes",
    "on": "2026-11-20"
+  },
+  "615774": {
+   "title": "Scooby-Doo! Return to Zombie Island",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-22"
+  },
+  "894205": {
+   "title": "Werewolf by Night",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-22"
+  },
+  "10166": {
+   "title": "The Witches",
+   "why": "listed as family",
+   "on": "2026-11-22"
+  },
+  "33914": {
+   "title": "Frankenweenie",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-22"
   }
  },
  "runs": [
@@ -111,6 +131,13 @@
    "declined": 14,
    "omdb_requests": 69,
    "corpus_size": 650
+  },
+  {
+   "on": "2026-11-22",
+   "added": 40,
+   "declined": 4,
+   "omdb_requests": 44,
+   "corpus_size": 690
   }
  ]
 }
