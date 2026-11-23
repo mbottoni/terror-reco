@@ -115,6 +115,21 @@
    "title": "Frankenweenie",
    "why": "shorter than 60 minutes",
    "on": "2026-11-22"
+  },
+  "919": {
+   "title": "Blood: The Last Vampire",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-23"
+  },
+  "442062": {
+   "title": "Goosebumps 2: Haunted Halloween",
+   "why": "listed as family",
+   "on": "2026-11-23"
+  },
+  "893370": {
+   "title": "Virus: 32",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-23"
   }
  },
  "runs": [
@@ -138,6 +153,13 @@
    "declined": 4,
    "omdb_requests": 44,
    "corpus_size": 690
+  },
+  {
+   "on": "2026-11-23",
+   "added": 40,
+   "declined": 3,
+   "omdb_requests": 43,
+   "corpus_size": 730
   }
  ]
 }
