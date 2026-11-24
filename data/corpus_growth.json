@@ -130,6 +130,16 @@
    "title": "Virus: 32",
    "why": "under 5000 IMDb votes",
    "on": "2026-11-23"
+  },
+  "726139": {
+   "title": "Project Silence",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-24"
+  },
+  "164052": {
+   "title": "The Strange Thing About the Johnsons",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-24"
   }
  },
  "runs": [
@@ -160,6 +170,13 @@
    "declined": 3,
    "omdb_requests": 43,
    "corpus_size": 730
+  },
+  {
+   "on": "2026-11-24",
+   "added": 40,
+   "declined": 2,
+   "omdb_requests": 42,
+   "corpus_size": 770
   }
  ]
 }
