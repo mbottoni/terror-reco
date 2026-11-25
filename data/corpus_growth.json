@@ -140,6 +140,21 @@
    "title": "The Strange Thing About the Johnsons",
    "why": "shorter than 60 minutes",
    "on": "2026-11-24"
+  },
+  "1381071": {
+   "title": "Godzilla Minus Zero",
+   "why": "no IMDb rating",
+   "on": "2026-11-25"
+  },
+  "48466": {
+   "title": "Scared Shrekless",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-25"
+  },
+  "39145": {
+   "title": "Dragon Ball: Sleeping Princess in Devil's Castle",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-25"
   }
  },
  "runs": [
@@ -177,6 +192,13 @@
    "declined": 2,
    "omdb_requests": 42,
    "corpus_size": 770
+  },
+  {
+   "on": "2026-11-25",
+   "added": 40,
+   "declined": 3,
+   "omdb_requests": 43,
+   "corpus_size": 810
   }
  ]
 }
