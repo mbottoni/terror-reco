@@ -155,6 +155,16 @@
    "title": "Dragon Ball: Sleeping Princess in Devil's Castle",
    "why": "under 5000 IMDb votes",
    "on": "2026-11-25"
+  },
+  "943221": {
+   "title": "Evil Eye",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-26"
+  },
+  "723072": {
+   "title": "Host",
+   "why": "shorter than 60 minutes",
+   "on": "2026-11-26"
   }
  },
  "runs": [
@@ -199,6 +209,13 @@
    "declined": 3,
    "omdb_requests": 43,
    "corpus_size": 810
+  },
+  {
+   "on": "2026-11-26",
+   "added": 40,
+   "declined": 2,
+   "omdb_requests": 42,
+   "corpus_size": 850
   }
  ]
 }
