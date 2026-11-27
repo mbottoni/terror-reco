@@ -165,6 +165,11 @@
    "title": "Host",
    "why": "shorter than 60 minutes",
    "on": "2026-11-26"
+  },
+  "628866": {
+   "title": "The Return",
+   "why": "under 5000 IMDb votes",
+   "on": "2026-11-27"
   }
  },
  "runs": [
@@ -216,6 +221,13 @@
    "declined": 2,
    "omdb_requests": 42,
    "corpus_size": 850
+  },
+  {
+   "on": "2026-11-27",
+   "added": 40,
+   "declined": 1,
+   "omdb_requests": 41,
+   "corpus_size": 890
   }
  ]
 }
