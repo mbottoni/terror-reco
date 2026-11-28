@@ -170,6 +170,16 @@
    "title": "The Return",
    "why": "under 5000 IMDb votes",
    "on": "2026-11-27"
+  },
+  "1198870": {
+   "title": "Return",
+   "why": "no IMDb rating",
+   "on": "2026-11-28"
+  },
+  "1400837": {
+   "title": "Other Mommy",
+   "why": "no IMDb rating",
+   "on": "2026-11-28"
   }
  },
  "runs": [
@@ -228,6 +238,13 @@
    "declined": 1,
    "omdb_requests": 41,
    "corpus_size": 890
+  },
+  {
+   "on": "2026-11-28",
+   "added": 40,
+   "declined": 2,
+   "omdb_requests": 42,
+   "corpus_size": 930
   }
  ]
 }
